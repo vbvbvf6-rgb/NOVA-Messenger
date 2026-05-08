@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, chatMembersTable } from "@workspace/db";
+import { db, usersTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 
@@ -75,13 +75,11 @@ router.post("/auth/register", async (req, res) => {
     );
     const newUser = result.rows[0] as any;
 
-    // Auto-join Pulse Official channel (id=2), set lastReadAt so no false unread count
     try {
       await db.execute(
         sql`INSERT INTO chat_members (chat_id, user_id, role, last_read_at) VALUES (2, ${newUser.id}, 'member', NOW()) ON CONFLICT DO NOTHING`
       );
     } catch {
-      // Channel may not exist
     }
 
     res.status(201).json({
@@ -96,6 +94,29 @@ router.post("/auth/register", async (req, res) => {
         createdAt: newUser.created_at,
       },
     });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
+router.post("/auth/change-password", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Укажите текущий и новый пароль" });
+    }
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ error: "Новый пароль должен быть не менее 6 символов" });
+    }
+    const rows = await db.execute(sql`SELECT password_hash FROM users WHERE id = ${uid}`);
+    const user = rows.rows[0] as any;
+    if (!user || user.password_hash !== hash(String(currentPassword))) {
+      return res.status(401).json({ error: "Неверный текущий пароль" });
+    }
+    await db.execute(sql`UPDATE users SET password_hash = ${hash(String(newPassword))} WHERE id = ${uid}`);
+    res.json({ success: true, message: "Пароль успешно изменён" });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Ошибка сервера" });

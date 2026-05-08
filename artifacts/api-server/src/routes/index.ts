@@ -10,6 +10,7 @@ import giftsRouter from "./gifts";
 import storiesRouter from "./stories";
 import postsRouter from "./posts";
 import adminRouter from "./admin";
+import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(giftsRouter);
 router.use(storiesRouter);
 router.use(postsRouter);
 router.use(adminRouter);
+router.use(aiRouter);
 
 export default router;

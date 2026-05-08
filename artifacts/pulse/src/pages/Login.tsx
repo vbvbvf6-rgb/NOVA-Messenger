@@ -84,7 +84,12 @@ export default function Login({ onLogin }: LoginProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-1.5">Пароль</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-semibold text-foreground">Пароль</label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:text-primary/80 transition-colors font-medium">
+                  Забыли пароль?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}

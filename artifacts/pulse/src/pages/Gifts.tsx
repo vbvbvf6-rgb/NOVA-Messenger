@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useGetGiftCatalog, useGetSentGifts, useGetReceivedGifts, GiftItem, Gift } from "@workspace/api-client-react";
-import { Zap, ArrowUpRight, ArrowDownLeft, Gift as GiftIcon, Search, AlertTriangle } from "lucide-react";
+import { Zap, ArrowUpRight, ArrowDownLeft, Gift as GiftIcon, Search, AlertTriangle, X, UserRound, MessageSquare, EyeOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 
 const RARITY_CONFIG: Record<string, { gradient: string; glow: string; badge: string; label: string }> = {
   legendary: {
@@ -40,7 +41,7 @@ function getEmojiAnimation(animationType: string) {
     case "hearts": return { animate: { scale: [1, 1.3, 1], rotate: [0, -10, 10, 0] }, transition: { duration: 1.5, repeat: Infinity, ease: "easeInOut" } };
     case "fireworks": return { animate: { scale: [1, 1.4, 0.9, 1.2, 1], rotate: [0, 15, -15, 8, 0] }, transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut" } };
     case "stars": return { animate: { rotate: [0, 360], scale: [1, 1.2, 1] }, transition: { duration: 3, repeat: Infinity, ease: "linear" } };
-    case "sparkle": return { animate: { scale: [1, 1.25, 1, 1.15, 1], filter: ["brightness(1)", "brightness(1.8)", "brightness(1)"] }, transition: { duration: 1.8, repeat: Infinity } };
+    case "sparkle": return { animate: { scale: [1, 1.25, 1, 1.15, 1] }, transition: { duration: 1.8, repeat: Infinity } };
     case "confetti": return { animate: { y: [0, -12, 0], rotate: [0, 10, -10, 0] }, transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" } };
     case "balloons": return { animate: { y: [0, -15, 0], rotate: [-5, 5, -5] }, transition: { duration: 2.5, repeat: Infinity, ease: "easeInOut" } };
     case "diamonds": return { animate: { rotate: [0, 20, -20, 0], scale: [1, 1.3, 1] }, transition: { duration: 2.2, repeat: Infinity } };
@@ -98,7 +99,7 @@ function GiftCard({ item, onClick }: { item: GiftItem; onClick: () => void }) {
       <div className={`p-[1.5px] rounded-2xl bg-gradient-to-br ${cfg.gradient}`}>
         <div className="bg-[hsl(222,47%,13%)] rounded-2xl p-4 flex flex-col items-center justify-center text-center min-h-[160px] relative overflow-hidden">
           {hovered && item.rarity !== "common" && <FloatingParticles rarity={item.rarity} />}
-          <motion.span className="text-5xl mb-3 filter drop-shadow-lg inline-block relative z-10" {...emojiAnim}>
+          <motion.span className="text-5xl mb-3 filter drop-shadow-lg inline-block relative z-10" {...(emojiAnim as any)}>
             {item.emoji}
           </motion.span>
           <h3 className="font-bold text-sm mb-1 leading-tight relative z-10">{item.name}</h3>
@@ -173,9 +174,18 @@ function CelebrationOverlay({ animationType, giftName, onDone }: { animationType
   );
 }
 
+interface UserSearchResult {
+  id: number;
+  username: string;
+  displayName: string;
+  avatarColor: string;
+  avatarUrl?: string | null;
+}
+
 const RARITY_ORDER = ["legendary", "epic", "rare", "common"];
 
 export default function Gifts() {
+  const queryClient = useQueryClient();
   const { data: catalog, isLoading: catalogLoading } = useGetGiftCatalog();
   const { data: receivedGifts, isLoading: receivedLoading } = useGetReceivedGifts();
   const { data: sentGifts, isLoading: sentLoading } = useGetSentGifts();
@@ -188,8 +198,18 @@ export default function Gifts() {
   const [celebrationGift, setCelebrationGift] = useState("");
   const [balance, setBalance] = useState<number>(0);
   const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
-  const getUserIdHeader = () => {
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [recipientResults, setRecipientResults] = useState<UserSearchResult[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState<UserSearchResult | null>(null);
+  const [recipientLoading, setRecipientLoading] = useState(false);
+  const [showRecipientDropdown, setShowRecipientDropdown] = useState(false);
+  const [giftMessage, setGiftMessage] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const recipientRef = useRef<HTMLDivElement>(null);
+
+  const getUserIdHeader = (): Record<string, string> => {
     const uid = localStorage.getItem("pulse-user-id");
     return uid ? { "x-user-id": uid } : {};
   };
@@ -204,53 +224,97 @@ export default function Gifts() {
     } catch {}
   }, []);
 
-  useEffect(() => {
-    fetchBalance();
-  }, []);
+  useEffect(() => { fetchBalance(); }, []);
+  useEffect(() => { if (selectedGift) { fetchBalance(); setSendError(null); } }, [selectedGift]);
 
   useEffect(() => {
-    if (selectedGift) fetchBalance();
-  }, [selectedGift]);
+    if (!recipientSearch.trim()) {
+      setRecipientResults([]);
+      setShowRecipientDropdown(false);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setRecipientLoading(true);
+      try {
+        const res = await fetch(`/api/users/search?q=${encodeURIComponent(recipientSearch)}`, { headers: getUserIdHeader() });
+        if (res.ok) {
+          const data = await res.json();
+          setRecipientResults(data);
+          setShowRecipientDropdown(true);
+        }
+      } catch {}
+      setRecipientLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [recipientSearch]);
 
-  const filtered = catalog?.filter(item => {
+  const filtered = catalog?.filter((item: GiftItem) => {
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchRarity = filterRarity === "all" || item.rarity === filterRarity;
     return matchSearch && matchRarity;
-  }).sort((a, b) => {
-    return RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity);
-  });
+  }).sort((a: GiftItem, b: GiftItem) => RARITY_ORDER.indexOf(a.rarity) - RARITY_ORDER.indexOf(b.rarity));
 
   const getRarityColor = (rarity: string) => RARITY_CONFIG[rarity] || RARITY_CONFIG.common;
 
+  const canAfford = selectedGift ? balance >= selectedGift.stars : false;
+  const canSend = canAfford && !!selectedRecipient && !isSending;
+
   const handleSendGift = async () => {
-    if (!selectedGift) return;
+    if (!selectedGift || !selectedRecipient) {
+      setSendError("Выберите получателя подарка");
+      return;
+    }
     const cost = selectedGift.stars;
     setIsSending(true);
+    setSendError(null);
     try {
-      const res = await fetch("/api/wallet/spend", {
+      const spendRes = await fetch("/api/wallet/spend", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getUserIdHeader() },
         body: JSON.stringify({ amount: cost }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        if (data.error?.includes("Недостаточно") || res.status === 400) {
-          setBalance(data.balance ?? balance);
-        }
+      if (!spendRes.ok) {
+        const data = await spendRes.json();
+        setSendError(data.error || "Недостаточно средств");
+        if (data.balance !== undefined) setBalance(data.balance);
         setIsSending(false);
         return;
       }
-      const data = await res.json();
-      setBalance(data.balance);
+      const spendData = await spendRes.json();
+      setBalance(spendData.balance);
+
+      await fetch("/api/gifts/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getUserIdHeader() },
+        body: JSON.stringify({
+          giftItemId: selectedGift.id,
+          receiverId: selectedRecipient.id,
+          message: giftMessage.trim() || undefined,
+          isAnonymous,
+        }),
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/gifts/sent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/gifts/received"] });
+
       setCelebrationAnim(selectedGift.animationType);
       setCelebrationGift(selectedGift.name);
       setSelectedGift(null);
+      setSelectedRecipient(null);
+      setRecipientSearch("");
+      setGiftMessage("");
+      setIsAnonymous(false);
       setShowCelebration(true);
-    } catch {}
+    } catch {
+      setSendError("Ошибка при отправке подарка");
+    }
     setIsSending(false);
   };
 
-  const canAfford = selectedGift ? balance >= selectedGift.stars : false;
+  const handleCloseDialog = () => {
+    setSelectedGift(null);
+    setSendError(null);
+  };
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden relative">
@@ -296,14 +360,14 @@ export default function Gifts() {
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Поиск подарков..." className="pl-8 h-9 bg-card border-border text-sm" />
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   {["all", "legendary", "epic", "rare", "common"].map(r => (
                     <button
                       key={r}
                       onClick={() => setFilterRarity(r)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all border ${filterRarity === r ? r === "all" ? "bg-primary text-primary-foreground border-primary" : `border ${getRarityColor(r).badge}` : "bg-card border-border text-muted-foreground hover:text-foreground"}`}
                     >
-                      {r}
+                      {r === "all" ? "Все" : r}
                     </button>
                   ))}
                 </div>
@@ -320,7 +384,7 @@ export default function Gifts() {
               <div className="text-center text-muted-foreground py-20">Подарки не найдены</div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                {filtered?.map(item => (
+                {filtered?.map((item: GiftItem) => (
                   <GiftCard key={item.id} item={item} onClick={() => setSelectedGift(item)} />
                 ))}
               </div>
@@ -346,7 +410,7 @@ export default function Gifts() {
                         <span className="text-4xl">{gift.giftItem?.emoji}</span>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold">{gift.giftItem?.name}</p>
-                          <p className="text-sm text-muted-foreground">От {gift.isAnonymous ? "Аноним" : (gift.sender?.displayName || "Неизвестно")}</p>
+                          <p className="text-sm text-muted-foreground">От {gift.isAnonymous ? "Анонима" : (gift.sender?.displayName || "Неизвестно")}</p>
                           {gift.message && <p className="text-sm mt-1 italic opacity-80">&quot;{gift.message}&quot;</p>}
                           <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNow(new Date(gift.createdAt), { addSuffix: true })}</p>
                         </div>
@@ -399,8 +463,8 @@ export default function Gifts() {
 
       <AnimatePresence>
         {selectedGift && (
-          <Dialog open onOpenChange={() => setSelectedGift(null)}>
-            <DialogContent className="sm:max-w-sm border-none bg-transparent shadow-none p-0" aria-describedby={undefined}>
+          <Dialog open onOpenChange={handleCloseDialog}>
+            <DialogContent className="sm:max-w-md border-none bg-transparent shadow-none p-0 max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
               <DialogTitle className="sr-only">{selectedGift?.name}</DialogTitle>
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
@@ -409,24 +473,122 @@ export default function Gifts() {
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
               >
                 <div className={`p-[2px] rounded-3xl bg-gradient-to-br ${getRarityColor(selectedGift.rarity).gradient}`}>
-                  <div className="bg-[hsl(222,47%,13%)] rounded-3xl p-6 flex flex-col items-center text-center">
+                  <div className="bg-[hsl(222,47%,13%)] rounded-3xl p-5 flex flex-col items-center text-center">
                     <motion.span
-                      className="text-8xl mb-4 filter drop-shadow-2xl inline-block"
-                      {...getEmojiAnimation(selectedGift.animationType)}
+                      className="text-7xl mb-3 filter drop-shadow-2xl inline-block"
+                      {...(getEmojiAnimation(selectedGift.animationType) as any)}
                     >
                       {selectedGift.emoji}
                     </motion.span>
-                    <h2 className="text-2xl font-black mb-1">{selectedGift.name}</h2>
-                    <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-full border mb-3 ${getRarityColor(selectedGift.rarity).badge}`}>
+                    <h2 className="text-xl font-black mb-1">{selectedGift.name}</h2>
+                    <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-full border mb-2 ${getRarityColor(selectedGift.rarity).badge}`}>
                       {selectedGift.rarity}
                     </span>
-                    <p className="text-muted-foreground text-sm mb-5 max-w-xs">{selectedGift.description}</p>
+                    <p className="text-muted-foreground text-sm mb-4 max-w-xs">{selectedGift.description}</p>
+
+                    <div className="w-full space-y-3 mb-4">
+                      <div className="text-left">
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                          <UserRound size={12} /> Кому отправить *
+                        </label>
+                        <div className="relative" ref={recipientRef}>
+                          {selectedRecipient ? (
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/30">
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden"
+                                style={{ backgroundColor: selectedRecipient.avatarColor }}
+                              >
+                                {selectedRecipient.avatarUrl ? (
+                                  <img src={selectedRecipient.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                ) : selectedRecipient.displayName[0].toUpperCase()}
+                              </div>
+                              <div className="flex-1 text-left min-w-0">
+                                <p className="font-semibold text-sm">{selectedRecipient.displayName}</p>
+                                <p className="text-xs text-muted-foreground">@{selectedRecipient.username}</p>
+                              </div>
+                              <button
+                                onClick={() => { setSelectedRecipient(null); setRecipientSearch(""); }}
+                                className="text-muted-foreground hover:text-foreground p-1"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="relative">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                  value={recipientSearch}
+                                  onChange={e => setRecipientSearch(e.target.value)}
+                                  onFocus={() => recipientResults.length > 0 && setShowRecipientDropdown(true)}
+                                  placeholder="Поиск по имени или никнейму..."
+                                  className="w-full pl-8 pr-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                                />
+                              </div>
+                              {showRecipientDropdown && recipientResults.length > 0 && (
+                                <div className="absolute top-full mt-1 w-full bg-card border border-border rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
+                                  {recipientResults.map(user => (
+                                    <button
+                                      key={user.id}
+                                      onClick={() => {
+                                        setSelectedRecipient(user);
+                                        setRecipientSearch("");
+                                        setShowRecipientDropdown(false);
+                                      }}
+                                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary text-left transition-colors"
+                                    >
+                                      <div
+                                        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 overflow-hidden"
+                                        style={{ backgroundColor: user.avatarColor }}
+                                      >
+                                        {user.avatarUrl ? (
+                                          <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" />
+                                        ) : user.displayName[0].toUpperCase()}
+                                      </div>
+                                      <div>
+                                        <p className="font-semibold text-sm">{user.displayName}</p>
+                                        <p className="text-xs text-muted-foreground">@{user.username}</p>
+                                      </div>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {recipientLoading && (
+                                <p className="text-xs text-muted-foreground mt-1 px-1">Поиск...</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-left">
+                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                          <MessageSquare size={12} /> Сообщение (необязательно)
+                        </label>
+                        <textarea
+                          value={giftMessage}
+                          onChange={e => setGiftMessage(e.target.value)}
+                          placeholder="Добавьте пожелание..."
+                          rows={2}
+                          maxLength={200}
+                          className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors resize-none"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => setIsAnonymous(v => !v)}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-sm font-medium ${isAnonymous ? "bg-primary/10 border-primary/30 text-primary" : "bg-black/20 border-white/10 text-muted-foreground hover:border-white/20"}`}
+                      >
+                        <EyeOff size={15} />
+                        {isAnonymous ? "Анонимно (вкл.)" : "Отправить анонимно"}
+                      </button>
+                    </div>
 
                     <div className="flex items-center justify-between w-full p-3.5 rounded-xl bg-black/30 border border-white/5 mb-3">
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Стоимость</p>
-                        <div className="flex items-center gap-1.5 text-primary font-black text-xl">
-                          <Zap size={18} className="text-primary" /> {selectedGift.stars} Spark
+                        <div className="flex items-center gap-1.5 text-primary font-black text-lg">
+                          <Zap size={16} className="text-primary" /> {selectedGift.stars} Spark
                         </div>
                       </div>
                       <div className="text-right">
@@ -448,14 +610,25 @@ export default function Gifts() {
                       </motion.div>
                     )}
 
+                    {sendError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="w-full flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-2.5 text-sm font-semibold mb-3"
+                      >
+                        <AlertTriangle size={16} className="shrink-0" />
+                        {sendError}
+                      </motion.div>
+                    )}
+
                     <motion.button
-                      whileHover={canAfford ? { scale: 1.03 } : {}}
-                      whileTap={canAfford ? { scale: 0.97 } : {}}
+                      whileHover={canSend ? { scale: 1.03 } : {}}
+                      whileTap={canSend ? { scale: 0.97 } : {}}
                       onClick={handleSendGift}
-                      disabled={!canAfford || isSending}
-                      className={`w-full py-3.5 rounded-xl font-black text-base transition-all ${canAfford ? "bg-primary text-primary-foreground hover:opacity-90 shadow-[0_0_25px_rgba(0,188,212,0.4)]" : "bg-secondary text-muted-foreground cursor-not-allowed opacity-60"}`}
+                      disabled={!canAfford || isSending || !selectedRecipient}
+                      className={`w-full py-3.5 rounded-xl font-black text-base transition-all ${canAfford && selectedRecipient ? "bg-primary text-primary-foreground hover:opacity-90 shadow-[0_0_25px_rgba(0,188,212,0.4)]" : "bg-secondary text-muted-foreground cursor-not-allowed opacity-60"}`}
                     >
-                      {isSending ? "Отправляем..." : canAfford ? "Отправить подарок" : "Недостаточно средств"}
+                      {isSending ? "Отправляем..." : !selectedRecipient ? "Выберите получателя" : !canAfford ? "Недостаточно средств" : "Отправить подарок"}
                     </motion.button>
                   </div>
                 </div>

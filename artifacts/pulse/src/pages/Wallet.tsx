@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, Copy, Check, Trophy, Star, MessageSquare, Phone, Gift,
-  TrendingUp, Sparkles, History, Shield, ChevronRight, ArrowUpRight, ArrowDownLeft
+  TrendingUp, Sparkles, History, Shield, ChevronRight, ArrowUpRight, ArrowDownLeft, AlertTriangle, CheckCircle2
 } from "lucide-react";
 
 const CURRENCY_NAME = "SPARK";
@@ -39,9 +39,64 @@ interface TxEntry {
   time: Date;
 }
 
-function getUserIdHeader() {
+function getUserIdHeader(): Record<string, string> {
   const uid = localStorage.getItem("pulse-user-id");
   return uid ? { "x-user-id": uid } : {};
+}
+
+async function verifyTask(taskId: string): Promise<{ ok: boolean; reason?: string }> {
+  try {
+    const headers = getUserIdHeader();
+    switch (taskId) {
+      case "daily_login":
+        return { ok: true };
+
+      case "send_message": {
+        const res = await fetch("/api/stats/me", { headers });
+        if (!res.ok) return { ok: false, reason: "Не удалось проверить" };
+        const data = await res.json();
+        if ((data.messagesSent || 0) > 0) return { ok: true };
+        return { ok: false, reason: "Сначала отправь хотя бы одно сообщение" };
+      }
+
+      case "make_call": {
+        const res = await fetch("/api/stats/me", { headers });
+        if (!res.ok) return { ok: false, reason: "Не удалось проверить" };
+        const data = await res.json();
+        if ((data.callsMade || 0) > 0) return { ok: true };
+        return { ok: false, reason: "Сначала позвони кому-нибудь" };
+      }
+
+      case "send_gift": {
+        const res = await fetch("/api/gifts/sent", { headers });
+        if (!res.ok) return { ok: false, reason: "Не удалось проверить" };
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return { ok: true };
+        return { ok: false, reason: "Сначала отправь подарок кому-нибудь" };
+      }
+
+      case "add_contact": {
+        const res = await fetch("/api/contacts", { headers });
+        if (!res.ok) return { ok: false, reason: "Не удалось проверить" };
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) return { ok: true };
+        return { ok: false, reason: "Сначала добавь хотя бы один контакт" };
+      }
+
+      case "update_profile": {
+        const res = await fetch("/api/users/me", { headers });
+        if (!res.ok) return { ok: false, reason: "Не удалось проверить" };
+        const data = await res.json();
+        if (data.bio && data.bio.trim().length > 0) return { ok: true };
+        return { ok: false, reason: "Добавь биографию в Настройках" };
+      }
+
+      default:
+        return { ok: true };
+    }
+  } catch {
+    return { ok: false, reason: "Ошибка проверки" };
+  }
 }
 
 export default function Wallet() {
@@ -49,6 +104,7 @@ export default function Wallet() {
   const [walletAddress, setWalletAddress] = useState("");
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [earningTask, setEarningTask] = useState<string | null>(null);
+  const [taskErrors, setTaskErrors] = useState<Record<string, string>>({});
   const [txHistory, setTxHistory] = useState<TxEntry[]>([]);
   const [tab, setTab] = useState<"tasks" | "history">("tasks");
 
@@ -88,6 +144,7 @@ export default function Wallet() {
     const completed = currentCompleted ?? completedTasks;
     if (completed.includes(taskId)) return;
     setEarningTask(taskId);
+    setTaskErrors(prev => ({ ...prev, [taskId]: "" }));
     try {
       const res = await fetch("/api/wallet/earn", {
         method: "POST",
@@ -116,6 +173,19 @@ export default function Wallet() {
     setEarningTask(null);
   };
 
+  const handleClickTask = async (task: typeof TASKS[number]) => {
+    if (completedTasks.includes(task.id)) return;
+    setEarningTask(task.id);
+    setTaskErrors(prev => ({ ...prev, [task.id]: "" }));
+    const result = await verifyTask(task.id);
+    if (!result.ok) {
+      setTaskErrors(prev => ({ ...prev, [task.id]: result.reason || "Условие не выполнено" }));
+      setEarningTask(null);
+      return;
+    }
+    await earnTask(task.id, task.reward);
+  };
+
   const timeAgo = (date: Date) => {
     const diff = Date.now() - date.getTime();
     const mins = Math.floor(diff / 60000);
@@ -142,7 +212,6 @@ export default function Wallet() {
 
       <div className="flex-1 overflow-y-auto p-4 md:p-6 scrollbar-thin">
         <div className="max-w-2xl mx-auto space-y-5">
-          {/* Balance card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -174,7 +243,6 @@ export default function Wallet() {
             </div>
           </motion.div>
 
-          {/* Admin shortcut */}
           {isAdmin && (
             <motion.a
               href="/admin"
@@ -193,7 +261,6 @@ export default function Wallet() {
             </motion.a>
           )}
 
-          {/* Tabs */}
           <div className="flex gap-1 p-1 bg-card border border-border rounded-2xl">
             <button
               onClick={() => setTab("tasks")}
@@ -221,43 +288,61 @@ export default function Wallet() {
                 {TASKS.map((task, i) => {
                   const done = completedTasks.includes(task.id);
                   const earning = earningTask === task.id;
+                  const errMsg = taskErrors[task.id];
                   return (
                     <motion.div
                       key={task.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
-                      className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+                      className={`flex flex-col gap-2 p-4 rounded-2xl border transition-all ${
                         done
                           ? "bg-card/50 border-border opacity-60"
+                          : errMsg
+                          ? "bg-card border-red-500/30"
                           : "bg-card border-border hover:border-primary/30"
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${done ? "bg-secondary" : "bg-background"}`}>
-                        {done ? <Check size={18} className="text-primary" /> : task.icon}
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${done ? "bg-secondary" : "bg-background"}`}>
+                          {done ? <Check size={18} className="text-primary" /> : task.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-semibold text-sm ${done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                            {task.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{task.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="flex items-center gap-1 text-primary font-bold text-sm">
+                            <Zap size={12} /> +{task.reward}
+                          </span>
+                          {!done && (
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleClickTask(task)}
+                              disabled={earning}
+                              className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 transition-all disabled:opacity-50"
+                            >
+                              {earning ? "..." : "Выполнить"}
+                            </motion.button>
+                          )}
+                          {done && (
+                            <CheckCircle2 size={18} className="text-primary" />
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-semibold text-sm ${done ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                          {task.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{task.description}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="flex items-center gap-1 text-primary font-bold text-sm">
-                          <Zap size={12} /> +{task.reward}
-                        </span>
-                        {!done && (
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => earnTask(task.id, task.reward)}
-                            disabled={earning}
-                            className="px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 transition-all disabled:opacity-50"
-                          >
-                            {earning ? "..." : "Выполнить"}
-                          </motion.button>
-                        )}
-                      </div>
+                      {errMsg && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex items-center gap-2 text-xs text-red-400 bg-red-500/10 rounded-xl px-3 py-2 border border-red-500/20"
+                        >
+                          <AlertTriangle size={13} className="shrink-0" />
+                          {errMsg}
+                        </motion.div>
+                      )}
                     </motion.div>
                   );
                 })}

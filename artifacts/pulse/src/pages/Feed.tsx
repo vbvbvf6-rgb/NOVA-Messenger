@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useGetPosts, useCreatePost, useLikePost, useCreatePostComment, useGetPostComments, Post } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Heart, MessageCircle, Send, Image, X, BadgeCheck, Plus, ChevronDown } from "lucide-react";
+import { Heart, MessageCircle, Send, Image, X, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { useLocation } from "wouter";
+
+const ADMIN_USER_IDS = [4];
 
 function VerifiedBadge() {
   return (
@@ -13,6 +15,14 @@ function VerifiedBadge() {
       <circle cx="12" cy="12" r="12" fill="#00BCD4"/>
       <path d="M7 12l3.5 3.5L17 8" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
+  );
+}
+
+function AdminBadge() {
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 shrink-0">
+      ADMIN
+    </span>
   );
 }
 
@@ -48,6 +58,7 @@ function PostCard({ post }: { post: Post }) {
   };
 
   const isVerified = (post.author as any)?.isVerified;
+  const isAdmin = ADMIN_USER_IDS.includes((post.author as any)?.id);
 
   return (
     <motion.div
@@ -55,7 +66,6 @@ function PostCard({ post }: { post: Post }) {
       animate={{ opacity: 1, y: 0 }}
       className="bg-card border border-border rounded-2xl overflow-hidden"
     >
-      {/* Author Header */}
       <div className="flex items-center gap-3 p-4 pb-3">
         <button
           onClick={() => post.author?.id && setLocation(`/user/${post.author.id}`)}
@@ -69,7 +79,7 @@ function PostCard({ post }: { post: Post }) {
           )}
         </button>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={() => post.author?.id && setLocation(`/user/${post.author.id}`)}
               className="font-semibold text-sm hover:text-primary transition-colors truncate"
@@ -77,6 +87,7 @@ function PostCard({ post }: { post: Post }) {
               {post.author?.displayName || "Unknown"}
             </button>
             {isVerified && <VerifiedBadge />}
+            {isAdmin && <AdminBadge />}
           </div>
           <p className="text-xs text-muted-foreground">
             @{post.author?.username} · {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
@@ -84,19 +95,16 @@ function PostCard({ post }: { post: Post }) {
         </div>
       </div>
 
-      {/* Post Content */}
       <div className="px-4 pb-3">
         <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.text}</p>
       </div>
 
-      {/* Image */}
       {post.imageUrl && (
         <div className="border-t border-b border-border">
           <img src={post.imageUrl} alt="" className="w-full max-h-80 object-cover" />
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex items-center gap-4 px-4 py-3 border-t border-border">
         <button
           onClick={handleLike}
@@ -120,7 +128,6 @@ function PostCard({ post }: { post: Post }) {
         </button>
       </div>
 
-      {/* Comments */}
       <AnimatePresence>
         {showComments && (
           <motion.div
@@ -130,7 +137,7 @@ function PostCard({ post }: { post: Post }) {
             className="overflow-hidden border-t border-border"
           >
             <div className="p-4 space-y-3">
-              {comments?.map((comment) => (
+              {comments?.map((comment: any) => (
                 <div key={comment.id} className="flex gap-2">
                   <div
                     className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden"
@@ -146,17 +153,18 @@ function PostCard({ post }: { post: Post }) {
                     <div className="flex items-center gap-1 mb-0.5">
                       <span className="text-xs font-semibold">{(comment.author as any)?.displayName}</span>
                       {(comment.author as any)?.isVerified && <VerifiedBadge />}
+                      {ADMIN_USER_IDS.includes((comment.author as any)?.id) && <AdminBadge />}
                     </div>
                     <p className="text-xs text-foreground">{comment.text}</p>
                   </div>
                 </div>
               ))}
-              
+
               <form onSubmit={handleComment} className="flex gap-2 mt-2">
                 <input
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Write a comment..."
+                  placeholder="Написать комментарий..."
                   className="flex-1 bg-secondary border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary/50 transition-colors"
                 />
                 <button
@@ -182,12 +190,22 @@ export default function Feed() {
   const { data: posts, isLoading } = useGetPosts();
   const createPost = useCreatePost();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setNewPostImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPostText.trim()) return;
+    if (!newPostText.trim() && !newPostImage) return;
     createPost.mutate(
-      { data: { text: newPostText, imageUrl: newPostImage || undefined } },
+      { data: { text: newPostText || " ", imageUrl: newPostImage || undefined } },
       {
         onSuccess: () => {
           setNewPostText("");
@@ -203,20 +221,19 @@ export default function Feed() {
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       <header className="h-16 border-b border-border flex items-center px-6 justify-between bg-card/80 backdrop-blur-md z-10 shrink-0">
         <h1 className="text-xl font-bold flex items-center gap-2">
-          <span className="text-primary">📡</span> Feed
+          <span className="text-primary">📡</span> Лента
         </h1>
         <button
           onClick={() => setShowCreatePost(!showCreatePost)}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors shadow-[0_0_10px_rgba(0,188,212,0.2)]"
         >
-          <Plus size={16} /> New Post
+          <Plus size={16} /> Новый пост
         </button>
       </header>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         <div className="max-w-2xl mx-auto p-4 space-y-4">
-          
-          {/* Create Post Form */}
+
           <AnimatePresence>
             {showCreatePost && (
               <motion.div
@@ -227,34 +244,52 @@ export default function Feed() {
               >
                 <form onSubmit={handleCreatePost} className="p-4 space-y-3">
                   <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold">Create Post</h3>
-                    <button type="button" onClick={() => setShowCreatePost(false)} className="text-muted-foreground hover:text-foreground">
+                    <h3 className="font-semibold">Создать пост</h3>
+                    <button type="button" onClick={() => { setShowCreatePost(false); setNewPostImage(null); }} className="text-muted-foreground hover:text-foreground">
                       <X size={18} />
                     </button>
                   </div>
                   <textarea
                     value={newPostText}
                     onChange={(e) => setNewPostText(e.target.value)}
-                    placeholder="What's on your mind?"
+                    placeholder="Что происходит?"
                     rows={3}
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-colors resize-none"
                     autoFocus
                   />
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
+                  {newPostImage && (
+                    <div className="relative inline-block">
+                      <img src={newPostImage} alt="preview" className="max-h-40 rounded-xl object-contain border border-border" />
                       <button
                         type="button"
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-primary/10"
+                        onClick={() => setNewPostImage(null)}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80 transition-colors"
                       >
-                        <Image size={16} /> Photo
+                        <X size={14} />
                       </button>
                     </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-primary/10"
+                    >
+                      <Image size={16} /> {newPostImage ? "Сменить фото" : "Фото"}
+                    </button>
                     <button
                       type="submit"
-                      disabled={!newPostText.trim() || createPost.isPending}
+                      disabled={(!newPostText.trim() && !newPostImage) || createPost.isPending}
                       className="px-5 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-colors"
                     >
-                      {createPost.isPending ? "Posting..." : "Post"}
+                      {createPost.isPending ? "Публикуем..." : "Опубликовать"}
                     </button>
                   </div>
                 </form>
@@ -262,7 +297,6 @@ export default function Feed() {
             )}
           </AnimatePresence>
 
-          {/* Posts List */}
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
@@ -282,11 +316,11 @@ export default function Feed() {
           ) : posts?.length === 0 ? (
             <div className="text-center py-16 text-muted-foreground">
               <div className="text-6xl mb-4">📡</div>
-              <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
-              <p className="text-sm">Be the first to share something!</p>
+              <h3 className="text-lg font-semibold mb-2">Нет постов</h3>
+              <p className="text-sm">Будь первым кто поделится чем-нибудь!</p>
             </div>
           ) : (
-            posts?.map((post) => <PostCard key={post.id} post={post} />)
+            posts?.map((post: any) => <PostCard key={post.id} post={post} />)
           )}
         </div>
       </div>

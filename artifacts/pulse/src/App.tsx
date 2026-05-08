@@ -19,6 +19,7 @@ import Wallet from "@/pages/Wallet";
 import Admin from "@/pages/Admin";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
+import ForgotPassword from "@/pages/ForgotPassword";
 import NotFound from "@/pages/not-found";
 
 let queryClient = new QueryClient();
@@ -53,6 +54,7 @@ function AuthPages({ onLogin }: { onLogin: (userId: number) => void }) {
   return (
     <Switch>
       <Route path="/register" component={() => <Register onLogin={onLogin} />} />
+      <Route path="/forgot-password" component={ForgotPassword} />
       <Route component={() => <Login onLogin={onLogin} />} />
     </Switch>
   );

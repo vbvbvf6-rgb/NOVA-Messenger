@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings as SettingsIcon, Bell, Moon, Lock, Shield, Smartphone, Save, Sun, Palette, Database, Edit3, CheckCircle, LogOut } from "lucide-react";
+import { Settings as SettingsIcon, Bell, Moon, Lock, Shield, Smartphone, Save, Sun, Palette, Database, Edit3, CheckCircle, LogOut, Link, Key, Eye, EyeOff } from "lucide-react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
 import { useAppContext } from "@/contexts/AppContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,14 +26,14 @@ const AVATAR_COLORS = [
 ];
 
 const STATUS_PRESETS = [
-  { emoji: "💬", text: "Available" },
-  { emoji: "🔕", text: "Do not disturb" },
-  { emoji: "📍", text: "At the office" },
-  { emoji: "🏠", text: "Working from home" },
-  { emoji: "🚗", text: "Commuting" },
-  { emoji: "😴", text: "Sleeping" },
-  { emoji: "🎮", text: "Gaming" },
-  { emoji: "🎧", text: "Listening to music" },
+  { emoji: "💬", text: "Доступен" },
+  { emoji: "🔕", text: "Не беспокоить" },
+  { emoji: "📍", text: "В офисе" },
+  { emoji: "🏠", text: "Дома" },
+  { emoji: "🚗", text: "В дороге" },
+  { emoji: "😴", text: "Сплю" },
+  { emoji: "🎮", text: "Играю" },
+  { emoji: "🎧", text: "Слушаю музыку" },
 ];
 
 export default function Settings() {
@@ -47,9 +47,28 @@ export default function Settings() {
   const [bio, setBio] = useState("");
   const [statusText, setStatusText] = useState("");
   const [avatarColor, setAvatarColor] = useState("#3B82F6");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+
+  const [reduceAnimations, setReduceAnimations] = useState(() => {
+    return localStorage.getItem("pulse-reduce-animations") === "true";
+  });
+  const [notifyMessages, setNotifyMessages] = useState(() => {
+    return localStorage.getItem("pulse-notify-messages") !== "false";
+  });
+  const [notifySounds, setNotifySounds] = useState(() => {
+    return localStorage.getItem("pulse-notify-sounds") !== "false";
+  });
+
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -57,6 +76,7 @@ export default function Settings() {
       setBio(user.bio || "");
       setStatusText((user as any).statusText || "");
       setAvatarColor(user.avatarColor || "#3B82F6");
+      setAvatarUrl(user.avatarUrl || "");
     }
   }, [user]);
 
@@ -66,13 +86,14 @@ export default function Settings() {
       displayName !== (user.displayName || "") ||
       bio !== (user.bio || "") ||
       statusText !== ((user as any).statusText || "") ||
-      avatarColor !== (user.avatarColor || "#3B82F6");
+      avatarColor !== (user.avatarColor || "#3B82F6") ||
+      avatarUrl !== (user.avatarUrl || "");
     setHasChanges(changed);
-  }, [displayName, bio, statusText, avatarColor, user]);
+  }, [displayName, bio, statusText, avatarColor, avatarUrl, user]);
 
   const handleSave = () => {
     updateMe.mutate(
-      { data: { displayName, bio, avatarColor, statusText } as any },
+      { data: { displayName, bio, avatarColor, statusText, avatarUrl: avatarUrl || undefined } as any },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
@@ -88,11 +109,65 @@ export default function Settings() {
     );
   };
 
+  const handleReduceAnimations = (val: boolean) => {
+    setReduceAnimations(val);
+    localStorage.setItem("pulse-reduce-animations", String(val));
+  };
+
+  const handleNotifyMessages = (val: boolean) => {
+    setNotifyMessages(val);
+    localStorage.setItem("pulse-notify-messages", String(val));
+  };
+
+  const handleNotifySounds = (val: boolean) => {
+    setNotifySounds(val);
+    localStorage.setItem("pulse-notify-sounds", String(val));
+  };
+
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      toast({ title: "Ошибка", description: "Заполните все поля пароля.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Ошибка", description: "Новые пароли не совпадают.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Ошибка", description: "Пароль должен быть не менее 6 символов.", variant: "destructive" });
+      return;
+    }
+    setPwLoading(true);
+    try {
+      const uid = localStorage.getItem("pulse-user-id");
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(uid ? { "x-user-id": uid } : {}) },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({ title: "Ошибка", description: data.error || "Ошибка смены пароля.", variant: "destructive" });
+      } else {
+        toast({ title: "Готово", description: "Пароль успешно изменён." });
+        setShowChangePassword(false);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch {
+      toast({ title: "Ошибка", description: "Ошибка соединения.", variant: "destructive" });
+    }
+    setPwLoading(false);
+  };
+
+  const avatarPreview = avatarUrl || null;
+
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden relative">
       <header className="h-16 border-b border-border flex items-center px-6 justify-between bg-card/80 backdrop-blur-md z-10 shrink-0">
         <h1 className="text-xl font-bold flex items-center gap-2">
-          <SettingsIcon className="text-primary" size={22} /> Settings
+          <SettingsIcon className="text-primary" size={22} /> Настройки
         </h1>
         {hasChanges && (
           <button
@@ -115,16 +190,36 @@ export default function Settings() {
             <div className="p-4">
               <div className="flex items-center gap-4 mb-4">
                 <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shrink-0 shadow-lg"
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl shrink-0 shadow-lg overflow-hidden"
                   style={{ backgroundColor: avatarColor }}
                 >
-                  {displayName[0]?.toUpperCase() || "?"}
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="" className="w-full h-full object-cover" onError={() => setAvatarUrl("")} />
+                  ) : (
+                    displayName[0]?.toUpperCase() || "?"
+                  )}
                 </div>
                 <div>
                   <p className="font-semibold">{displayName || "Ваше имя"}</p>
                   {statusText && <p className="text-sm text-muted-foreground">{statusText}</p>}
                 </div>
               </div>
+
+              <div className="mb-4">
+                <Label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1.5">
+                  <Link size={12} /> URL аватара (необязательно)
+                </Label>
+                <Input
+                  value={avatarUrl}
+                  onChange={e => setAvatarUrl(e.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  className="bg-background text-sm"
+                />
+                {avatarUrl && (
+                  <p className="text-xs text-muted-foreground mt-1">Если URL рабочий, фото отобразится в аватаре</p>
+                )}
+              </div>
+
               <div>
                 <Label className="text-xs text-muted-foreground mb-2 block">Цвет аватара</Label>
                 <div className="flex flex-wrap gap-2">
@@ -198,7 +293,7 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground">Отключить сложные эффекты</p>
                 </div>
               </div>
-              <Switch checked={false} />
+              <Switch checked={reduceAnimations} onCheckedChange={handleReduceAnimations} />
             </div>
           </div>
         </section>
@@ -216,7 +311,7 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground">Получать сообщения в фоне</p>
                 </div>
               </div>
-              <Switch defaultChecked />
+              <Switch checked={notifyMessages} onCheckedChange={handleNotifyMessages} />
             </div>
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -226,26 +321,86 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground">Звук при получении сообщений</p>
                 </div>
               </div>
-              <Switch defaultChecked />
+              <Switch checked={notifySounds} onCheckedChange={handleNotifySounds} />
             </div>
           </div>
         </section>
 
         <section>
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 px-2 flex items-center gap-2">
-            <Lock size={14} /> Конфиденциальность
+            <Lock size={14} /> Безопасность
           </h2>
           <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border">
-            <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-secondary transition-colors">
+            <div
+              className="p-4 flex items-center justify-between cursor-pointer hover:bg-secondary transition-colors"
+              onClick={() => setShowChangePassword(!showChangePassword)}
+            >
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/10 text-purple-500 rounded-lg"><Lock size={20} /></div>
+                <div className="p-2 bg-purple-500/10 text-purple-500 rounded-lg"><Key size={20} /></div>
                 <div>
-                  <h3 className="text-base font-medium">Настройки приватности</h3>
-                  <p className="text-sm text-muted-foreground">Кто видит вашу активность</p>
+                  <h3 className="text-base font-medium">Сменить пароль</h3>
+                  <p className="text-sm text-muted-foreground">Обновить пароль аккаунта</p>
                 </div>
               </div>
-              <span className="text-muted-foreground">›</span>
+              <span className="text-muted-foreground">{showChangePassword ? "▲" : "›"}</span>
             </div>
+
+            {showChangePassword && (
+              <div className="p-4 space-y-3 bg-background/50">
+                <div className="relative">
+                  <Label className="text-sm mb-1 block">Текущий пароль</Label>
+                  <Input
+                    type={showCurrentPw ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    placeholder="Текущий пароль"
+                    className="bg-background pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPw(v => !v)}
+                    className="absolute right-3 bottom-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <div className="relative">
+                  <Label className="text-sm mb-1 block">Новый пароль</Label>
+                  <Input
+                    type={showNewPw ? "text" : "password"}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Минимум 6 символов"
+                    className="bg-background pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPw(v => !v)}
+                    className="absolute right-3 bottom-2.5 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <div>
+                  <Label className="text-sm mb-1 block">Подтвердите пароль</Label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Повторите новый пароль"
+                    className="bg-background"
+                  />
+                </div>
+                <button
+                  onClick={handleChangePassword}
+                  disabled={pwLoading}
+                  className="w-full py-2.5 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {pwLoading ? "Сохраняем..." : "Сменить пароль"}
+                </button>
+              </div>
+            )}
+
             <div className="p-4 flex items-center justify-between cursor-pointer hover:bg-secondary transition-colors">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-red-500/10 text-red-500 rounded-lg"><Shield size={20} /></div>
