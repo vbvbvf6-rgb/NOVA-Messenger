@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { Call } from "@workspace/api-client-react";
+import { getSavedAccounts, SavedAccount, MAX_ACCOUNTS } from "@/lib/accounts";
 
 interface AppState {
   currentUserId: number;
@@ -12,6 +13,11 @@ interface AppState {
   logout: () => void;
   typingByChat: Record<number, string[]>;
   setTypingForChat: (chatId: number, names: string[]) => void;
+  savedAccounts: SavedAccount[];
+  switchAccount: (userId: number) => void;
+  removeAccount: (userId: number) => void;
+  openAddAccount: () => void;
+  canAddAccount: boolean;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -19,12 +25,16 @@ const AppContext = createContext<AppState | undefined>(undefined);
 interface AppProviderProps {
   children: ReactNode;
   onLogout: () => void;
+  onSwitchAccount: (userId: number) => void;
+  onRemoveAccount: (userId: number) => void;
+  onOpenAddAccount: () => void;
 }
 
-export function AppProvider({ children, onLogout }: AppProviderProps) {
+export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccount, onOpenAddAccount }: AppProviderProps) {
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [activeCall, setActiveCall] = useState<Call | null>(null);
   const [typingByChat, setTypingByChat] = useState<Record<number, string[]>>({});
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("pulse-theme");
     return stored !== "light";
@@ -46,8 +56,6 @@ export function AppProvider({ children, onLogout }: AppProviderProps) {
   const toggleTheme = () => setIsDark(prev => !prev);
 
   const logout = () => {
-    localStorage.removeItem("pulse-user-id");
-    localStorage.removeItem("pulse-user");
     onLogout();
   };
 
@@ -64,6 +72,22 @@ export function AppProvider({ children, onLogout }: AppProviderProps) {
     });
   }, []);
 
+  const switchAccount = useCallback((userId: number) => {
+    setSavedAccounts(getSavedAccounts());
+    onSwitchAccount(userId);
+  }, [onSwitchAccount]);
+
+  const removeAccount = useCallback((userId: number) => {
+    onRemoveAccount(userId);
+    setSavedAccounts(getSavedAccounts());
+  }, [onRemoveAccount]);
+
+  const openAddAccount = useCallback(() => {
+    onOpenAddAccount();
+  }, [onOpenAddAccount]);
+
+  const canAddAccount = savedAccounts.length < MAX_ACCOUNTS;
+
   const state: AppState = {
     currentUserId,
     selectedChatId,
@@ -75,6 +99,11 @@ export function AppProvider({ children, onLogout }: AppProviderProps) {
     logout,
     typingByChat,
     setTypingForChat,
+    savedAccounts,
+    switchAccount,
+    removeAccount,
+    openAddAccount,
+    canAddAccount,
   };
 
   return <AppContext.Provider value={state}>{children}</AppContext.Provider>;

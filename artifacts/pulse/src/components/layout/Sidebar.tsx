@@ -18,6 +18,10 @@ import {
   Crown,
   X,
   Menu,
+  UserPlus,
+  Check,
+  ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppContext } from "@/contexts/AppContext";
@@ -36,6 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { SavedAccount } from "@/lib/accounts";
 
 const ADMIN_USER_IDS = [4];
 
@@ -48,6 +53,54 @@ function VerifiedBadge() {
   );
 }
 
+function AccountRow({
+  account,
+  isActive,
+  onSwitch,
+  onRemove,
+}: {
+  account: SavedAccount;
+  isActive: boolean;
+  onSwitch: () => void;
+  onRemove: () => void;
+}) {
+  const initial = account.displayName[0]?.toUpperCase() || "?";
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors group",
+        isActive ? "bg-primary/10" : "hover:bg-secondary cursor-pointer"
+      )}
+      onClick={!isActive ? onSwitch : undefined}
+    >
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 overflow-hidden"
+        style={{ backgroundColor: account.avatarColor }}
+      >
+        {account.avatarUrl ? (
+          <img src={account.avatarUrl} alt="" className="w-full h-full object-cover" />
+        ) : initial}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground truncate leading-tight">{account.displayName}</p>
+        <p className="text-xs text-muted-foreground truncate">@{account.username}</p>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        {isActive && <Check size={14} className="text-primary" />}
+        {!isActive && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            className="p-1 rounded opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
+            title="Удалить аккаунт"
+          >
+            <Trash2 size={13} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface SidebarProps {
   mobileSidebarOpen: boolean;
   onMobileClose: () => void;
@@ -56,7 +109,7 @@ interface SidebarProps {
 
 export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: SidebarProps) {
   const [location, navigate] = useLocation();
-  const { logout } = useAppContext();
+  const { logout, currentUserId, savedAccounts, switchAccount, removeAccount, openAddAccount, canAddAccount } = useAppContext();
   const { t } = useLanguage();
   const { data: me } = useGetMe();
   const { data: chats } = useGetChats();
@@ -90,6 +143,37 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
     { href: "/profile",  icon: UserCircle,    label: t("nav.profile") },
     { href: "/settings", icon: Settings,      label: t("nav.settings") },
   ];
+
+  const AccountsSection = (
+    <>
+      {savedAccounts.length > 0 && (
+        <div className="px-1 pb-1">
+          {savedAccounts.map(acc => (
+            <AccountRow
+              key={acc.userId}
+              account={acc}
+              isActive={acc.userId === currentUserId}
+              onSwitch={() => switchAccount(acc.userId)}
+              onRemove={() => removeAccount(acc.userId)}
+            />
+          ))}
+        </div>
+      )}
+      {canAddAccount && (
+        <DropdownMenuItem
+          onClick={openAddAccount}
+          className="flex items-center gap-2 text-primary focus:text-primary cursor-pointer"
+        >
+          <UserPlus size={15} />
+          Добавить аккаунт
+          {savedAccounts.length > 0 && (
+            <span className="ml-auto text-xs text-muted-foreground">{savedAccounts.length}/3</span>
+          )}
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuSeparator />
+    </>
+  );
 
   const openSupportChat = async () => {
     const uid = localStorage.getItem("pulse-user-id");
@@ -205,7 +289,7 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
           )}
         </nav>
 
-        {/* User avatar + dropdown at bottom */}
+        {/* User avatar + accounts dropdown at bottom */}
         <div className="w-full px-2 pt-2 mt-auto border-t border-border flex flex-col items-center">
           <DropdownMenu>
             <Tooltip>
@@ -230,15 +314,24 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
                         <Sparkles size={9} className="text-yellow-900" />
                       </div>
                     )}
+                    {savedAccounts.length > 1 && (
+                      <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center shadow-sm">
+                        {savedAccounts.length}
+                      </div>
+                    )}
                   </button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
               <TooltipContent side="right">
                 <p className="font-semibold">{me?.displayName}</p>
                 <p className="text-xs text-muted-foreground">@{me?.username}</p>
+                {savedAccounts.length > 1 && (
+                  <p className="text-xs text-primary mt-0.5">{savedAccounts.length} аккаунта</p>
+                )}
               </TooltipContent>
             </Tooltip>
-            <DropdownMenuContent side="right" align="end" className="w-52">
+            <DropdownMenuContent side="right" align="end" className="w-64">
+              {AccountsSection}
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="flex items-center w-full cursor-pointer">
                   <UserCircle size={15} className="mr-2 text-primary" />
@@ -361,6 +454,32 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
       </nav>
 
       <div className="w-full px-2 pt-3 mt-auto border-t border-border">
+        {/* Accounts list on mobile */}
+        {savedAccounts.length > 0 && (
+          <div className="mb-2 space-y-0.5">
+            {savedAccounts.map(acc => (
+              <AccountRow
+                key={acc.userId}
+                account={acc}
+                isActive={acc.userId === currentUserId}
+                onSwitch={() => { switchAccount(acc.userId); onMobileClose(); }}
+                onRemove={() => removeAccount(acc.userId)}
+              />
+            ))}
+          </div>
+        )}
+
+        {canAddAccount && (
+          <button
+            onClick={() => { openAddAccount(); onMobileClose(); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-primary hover:bg-primary/10 transition-colors text-sm font-medium mb-2"
+          >
+            <UserPlus size={16} />
+            Добавить аккаунт
+            <span className="ml-auto text-xs text-muted-foreground">{savedAccounts.length}/3</span>
+          </button>
+        )}
+
         <div className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-secondary transition-colors">
           <div className="relative shrink-0">
             <div

@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/contexts/AppContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AddAccountDialog } from "@/components/layout/AddAccountDialog";
+import { getSavedAccounts, saveAccount, removeAccount, SavedAccount } from "@/lib/accounts";
 
 import Home from "@/pages/Home";
 import Calls from "@/pages/Calls";
@@ -26,10 +28,22 @@ import NotFound from "@/pages/not-found";
 
 let queryClient = new QueryClient();
 
-function MainApp({ onLogout }: { onLogout: () => void }) {
+interface MainAppProps {
+  onLogout: () => void;
+  onSwitchAccount: (userId: number) => void;
+  onRemoveAccount: (userId: number) => void;
+  onOpenAddAccount: () => void;
+}
+
+function MainApp({ onLogout, onSwitchAccount, onRemoveAccount, onOpenAddAccount }: MainAppProps) {
   return (
     <LanguageProvider>
-    <AppProvider onLogout={onLogout}>
+    <AppProvider
+      onLogout={onLogout}
+      onSwitchAccount={onSwitchAccount}
+      onRemoveAccount={onRemoveAccount}
+      onOpenAddAccount={onOpenAddAccount}
+    >
       <TooltipProvider>
         <AppLayout>
           <Switch>
@@ -75,26 +89,117 @@ function AuthPages({ onLogin }: { onLogin: (userId: number) => void }) {
 function App() {
   const [userId, setUserId] = useState<number | null>(() => {
     const stored = localStorage.getItem("pulse-user-id");
-    return stored ? Number(stored) : null;
+    if (!stored) return null;
+    const id = Number(stored);
+    const accounts = getSavedAccounts();
+    if (!accounts.some(a => a.userId === id)) {
+      const user = (() => { try { return JSON.parse(localStorage.getItem("pulse-user") || "{}"); } catch { return {}; } })();
+      if (user.displayName || user.username) {
+        saveAccount({
+          userId: id,
+          displayName: user.displayName || "User",
+          username: user.username || "",
+          avatarUrl: user.avatarUrl || null,
+          avatarColor: user.avatarColor || "#3B82F6",
+        });
+      }
+    }
+    return id;
   });
+  const [addingAccount, setAddingAccount] = useState(false);
 
-  const handleLogin = (id: number) => {
+  const persistAndSwitch = (id: number) => {
     queryClient.clear();
     setUserId(id);
   };
 
+  const handleLogin = (id: number) => {
+    const user = (() => { try { return JSON.parse(localStorage.getItem("pulse-user") || "{}"); } catch { return {}; } })();
+    saveAccount({
+      userId: id,
+      displayName: user.displayName || "User",
+      username: user.username || "",
+      avatarUrl: user.avatarUrl || null,
+      avatarColor: user.avatarColor || "#3B82F6",
+    });
+    persistAndSwitch(id);
+  };
+
+  const handleSwitchAccount = (id: number) => {
+    const accounts = getSavedAccounts();
+    const acc = accounts.find(a => a.userId === id);
+    if (!acc) return;
+    localStorage.setItem("pulse-user-id", String(id));
+    localStorage.setItem("pulse-user", JSON.stringify({
+      id: acc.userId,
+      displayName: acc.displayName,
+      username: acc.username,
+      avatarUrl: acc.avatarUrl,
+      avatarColor: acc.avatarColor,
+    }));
+    persistAndSwitch(id);
+  };
+
+  const handleRemoveAccount = (id: number) => {
+    removeAccount(id);
+    if (id === userId) {
+      const remaining = getSavedAccounts();
+      if (remaining.length > 0) {
+        handleSwitchAccount(remaining[0].userId);
+      } else {
+        localStorage.removeItem("pulse-user-id");
+        localStorage.removeItem("pulse-user");
+        queryClient.clear();
+        setUserId(null);
+      }
+    }
+  };
+
   const handleLogout = () => {
+    const currentId = userId;
+    if (currentId) removeAccount(currentId);
     localStorage.removeItem("pulse-user-id");
     localStorage.removeItem("pulse-user");
-    queryClient.clear();
-    setUserId(null);
+    const remaining = getSavedAccounts();
+    if (remaining.length > 0) {
+      const acc = remaining[0];
+      localStorage.setItem("pulse-user-id", String(acc.userId));
+      localStorage.setItem("pulse-user", JSON.stringify({
+        id: acc.userId,
+        displayName: acc.displayName,
+        username: acc.username,
+        avatarUrl: acc.avatarUrl,
+        avatarColor: acc.avatarColor,
+      }));
+      persistAndSwitch(acc.userId);
+    } else {
+      queryClient.clear();
+      setUserId(null);
+    }
+  };
+
+  const handleAccountAdded = (id: number) => {
+    setAddingAccount(false);
+    persistAndSwitch(id);
   };
 
   return (
     <QueryClientProvider client={queryClient}>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         {userId ? (
-          <MainApp onLogout={handleLogout} />
+          <>
+            <MainApp
+              onLogout={handleLogout}
+              onSwitchAccount={handleSwitchAccount}
+              onRemoveAccount={handleRemoveAccount}
+              onOpenAddAccount={() => setAddingAccount(true)}
+            />
+            <AddAccountDialog
+              open={addingAccount}
+              onClose={() => setAddingAccount(false)}
+              onAccountAdded={handleAccountAdded}
+            />
+          </>
         ) : (
           <AuthPages onLogin={handleLogin} />
         )}
