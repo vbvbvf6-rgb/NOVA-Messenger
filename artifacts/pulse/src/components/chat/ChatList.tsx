@@ -83,14 +83,10 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
     const uid = localStorage.getItem("pulse-user-id");
     if (!uid) return;
     try {
-      const aiRes = await fetch("/api/users/search?q=deepseek_ai", { headers: { "x-user-id": uid } });
-      const botUsers = aiRes.ok ? await aiRes.json() : [];
-      if (!botUsers.length) { toast({ variant: "destructive", title: t("support.unavailable") }); return; }
-      const bot = botUsers[0];
       const chatRes = await fetch("/api/chats/direct", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-user-id": uid },
-        body: JSON.stringify({ userId: bot.id }),
+        body: JSON.stringify({ userId: 1 }),
       });
       if (chatRes.ok) {
         const chat = await chatRes.json();
