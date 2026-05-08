@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, messagesTable, reactionsTable, usersTable, chatMembersTable, chatsTable } from "@workspace/db";
 import { eq, and, lt, desc, sql, lte } from "drizzle-orm";
+import { broadcastToChat } from "../lib/sse";
 import { SendMessageBody, EditMessageBody, AddReactionBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -78,6 +79,9 @@ router.post("/messages", async (req, res) => {
     const built = await buildMessage(msg);
     res.status(201).json(built);
 
+    // Broadcast new message to SSE subscribers
+    broadcastToChat(body.chatId, "new-message", { messageId: msg.id, chatId: body.chatId });
+
     // Auto-reply from bot if chat has a bot member
     if (body.type === "text" && body.text) {
       setImmediate(async () => {
@@ -103,26 +107,55 @@ router.post("/messages", async (req, res) => {
             ? `Ты — дружелюбный и умный ИИ-помощник в мессенджере Pulse. Отвечай по-русски, кратко и по существу. ${pulseContext} Помогай с любыми вопросами — о мессенджере и не только.`
             : `Ты — помощник службы поддержки мессенджера Pulse. Отвечай дружелюбно и по-русски. ${pulseContext} Помогай пользователям разобраться с функциями приложения.`;
 
-          // Use Pollinations AI — free, no API key required
-          const response = await fetch("https://text.pollinations.ai/openai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: "openai",
-              messages: [
-                { role: "system", content: systemPrompt },
-                ...historyMessages,
-                { role: "user", content: body.text },
-              ],
-              max_tokens: 800,
-              temperature: 0.7,
-              private: true,
-            }),
-          });
+          // Use OpenRouter if key available, fall back to Pollinations
+          const openRouterKey = process.env["OPENROUTER_API_KEY"];
+          let reply: string | undefined;
 
-          if (!response.ok) return;
-          const data = await response.json() as any;
-          const reply = data.choices?.[0]?.message?.content;
+          if (openRouterKey) {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${openRouterKey}`,
+                "HTTP-Referer": "https://pulse-messenger.replit.app",
+                "X-Title": "Pulse Messenger"
+              },
+              body: JSON.stringify({
+                model: "google/gemini-flash-1.5",
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  ...historyMessages,
+                  { role: "user", content: body.text },
+                ],
+                max_tokens: 800,
+                temperature: 0.7,
+              }),
+            });
+            if (response.ok) {
+              const data = await response.json() as any;
+              reply = data.choices?.[0]?.message?.content;
+            }
+          } else {
+            const response = await fetch("https://text.pollinations.ai/openai", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model: "openai",
+                messages: [
+                  { role: "system", content: systemPrompt },
+                  ...historyMessages,
+                  { role: "user", content: body.text },
+                ],
+                max_tokens: 800,
+                temperature: 0.7,
+                private: true,
+              }),
+            });
+            if (response.ok) {
+              const data = await response.json() as any;
+              reply = data.choices?.[0]?.message?.content;
+            }
+          }
           if (!reply) return;
 
           await db.insert(messagesTable).values({
@@ -131,6 +164,7 @@ router.post("/messages", async (req, res) => {
             text: reply,
             type: "text",
           });
+          broadcastToChat(body.chatId, "new-message", { chatId: body.chatId });
         } catch {}
       });
     }

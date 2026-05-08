@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useGetPosts, useCreatePost, useLikePost, useCreatePostComment, useGetPostComments, Post } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Heart, MessageCircle, Send, Image, X, Plus, Trash2, MoreVertical } from "lucide-react";
+import { Heart, MessageCircle, Send, Image, X, Plus, Trash2, MoreVertical, ZoomIn } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
@@ -33,10 +33,38 @@ function AdminBadge() {
   );
 }
 
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-white/10 rounded-full transition-colors"
+      >
+        <X size={22} />
+      </button>
+      <motion.img
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        src={src}
+        alt=""
+        className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </motion.div>
+  );
+}
+
 function PostCard({ post }: { post: Post }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const likePost = useLikePost();
@@ -56,13 +84,24 @@ function PostCard({ post }: { post: Post }) {
     } catch {}
     setIsDeleting(false);
   };
+
   const { data: comments, refetch: refetchComments } = useGetPostComments(post.id, {
     query: { enabled: showComments }
   });
 
   const handleLike = () => {
+    // Optimistic update
+    queryClient.setQueryData(["/api/posts"], (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((p: any) => {
+        if (p.id !== post.id) return p;
+        const wasLiked = p.isLiked;
+        return { ...p, isLiked: !wasLiked, likesCount: p.likesCount + (wasLiked ? -1 : 1) };
+      });
+    });
     likePost.mutate({ postId: post.id }, {
-      onSuccess: () => {
+      onError: () => {
+        // Rollback on error
         queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       }
     });
@@ -84,144 +123,154 @@ function PostCard({ post }: { post: Post }) {
   const isAdmin = ADMIN_USER_IDS.includes((post.author as any)?.id);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-card border border-border rounded-2xl overflow-hidden"
-    >
-      <div className="flex items-center gap-3 p-4 pb-3">
-        <button
-          onClick={() => post.author?.id && setLocation(`/user/${post.author.id}`)}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 overflow-hidden hover:opacity-85 transition-opacity"
-          style={{ backgroundColor: post.author?.avatarColor || "#333" }}
-        >
-          {post.author?.avatarUrl ? (
-            <img src={post.author.avatarUrl} alt="" className="w-full h-full object-cover" />
-          ) : (
-            (post.author?.displayName || "U")[0].toUpperCase()
-          )}
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => post.author?.id && setLocation(`/user/${post.author.id}`)}
-              className="font-semibold text-sm hover:text-primary transition-colors truncate"
-            >
-              {post.author?.displayName || "Unknown"}
-            </button>
-            {isVerified && <VerifiedBadge />}
-            {isAdmin && <AdminBadge />}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            @{post.author?.username} · {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-          </p>
-        </div>
-        {canDelete && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary transition-colors shrink-0">
-                <MoreVertical size={16} />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 size={14} className="mr-2" />
-                {isDeleting ? "Удаление..." : "Удалить пост"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-      </div>
-
-      <div className="px-4 pb-3">
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.text}</p>
-      </div>
-
-      {post.imageUrl && (
-        <div className="border-t border-b border-border">
-          <img src={post.imageUrl} alt="" className="w-full max-h-80 object-cover" />
-        </div>
-      )}
-
-      <div className="flex items-center gap-4 px-4 py-3 border-t border-border">
-        <button
-          onClick={handleLike}
-          disabled={likePost.isPending}
-          className={`flex items-center gap-1.5 text-sm transition-colors group ${
-            post.isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
-          }`}
-        >
-          <Heart
-            size={18}
-            className={`transition-transform group-hover:scale-110 ${post.isLiked ? "fill-current" : ""}`}
-          />
-          <span className="font-medium">{post.likesCount}</span>
-        </button>
-        <button
-          onClick={() => setShowComments(!showComments)}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
-        >
-          <MessageCircle size={18} className="transition-transform group-hover:scale-110" />
-          <span className="font-medium">{post.commentsCount}</span>
-        </button>
-      </div>
-
+    <>
       <AnimatePresence>
-        {showComments && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-border"
-          >
-            <div className="p-4 space-y-3">
-              {comments?.map((comment: any) => (
-                <div key={comment.id} className="flex gap-2">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden"
-                    style={{ backgroundColor: (comment.author as any)?.avatarColor || "#333" }}
-                  >
-                    {(comment.author as any)?.avatarUrl ? (
-                      <img src={(comment.author as any).avatarUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      ((comment.author as any)?.displayName || "U")[0].toUpperCase()
-                    )}
-                  </div>
-                  <div className="flex-1 bg-secondary rounded-xl px-3 py-2">
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <span className="text-xs font-semibold">{(comment.author as any)?.displayName}</span>
-                      {(comment.author as any)?.isVerified && <VerifiedBadge />}
-                      {ADMIN_USER_IDS.includes((comment.author as any)?.id) && <AdminBadge />}
-                    </div>
-                    <p className="text-xs text-foreground">{comment.text}</p>
-                  </div>
-                </div>
-              ))}
-
-              <form onSubmit={handleComment} className="flex gap-2 mt-2">
-                <input
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Написать комментарий..."
-                  className="flex-1 bg-secondary border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary/50 transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={!commentText.trim() || createComment.isPending}
-                  className="p-2 bg-primary text-primary-foreground rounded-xl disabled:opacity-50 hover:bg-primary/90 transition-colors"
-                >
-                  <Send size={16} />
-                </button>
-              </form>
-            </div>
-          </motion.div>
+        {lightboxImg && (
+          <ImageLightbox src={lightboxImg} onClose={() => setLightboxImg(null)} />
         )}
       </AnimatePresence>
-    </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-card border border-border rounded-2xl overflow-hidden"
+      >
+        <div className="flex items-center gap-3 p-4 pb-3">
+          <button
+            onClick={() => post.author?.id && setLocation(`/user/${post.author.id}`)}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 overflow-hidden hover:opacity-85 transition-opacity"
+            style={{ backgroundColor: post.author?.avatarColor || "#333" }}
+          >
+            {post.author?.avatarUrl ? (
+              <img src={post.author.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              (post.author?.displayName || "U")[0].toUpperCase()
+            )}
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => post.author?.id && setLocation(`/user/${post.author.id}`)}
+                className="font-semibold text-sm hover:text-primary transition-colors truncate max-w-[150px]"
+              >
+                {post.author?.displayName || "Unknown"}
+              </button>
+              {isVerified && <VerifiedBadge />}
+              {isAdmin && <AdminBadge />}
+            </div>
+            <p className="text-xs text-muted-foreground truncate">
+              @{post.author?.username} · {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+            </p>
+          </div>
+          {canDelete && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary transition-colors shrink-0">
+                  <MoreVertical size={16} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 size={14} className="mr-2" />
+                  {isDeleting ? "Удаление..." : "Удалить пост"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        <div className="px-4 pb-3">
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.text}</p>
+        </div>
+
+        {post.imageUrl && (
+          <div className="border-t border-b border-border relative group cursor-pointer" onClick={() => setLightboxImg(post.imageUrl!)}>
+            <img src={post.imageUrl} alt="" className="w-full max-h-80 object-cover" />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+              <ZoomIn size={28} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-4 px-4 py-3 border-t border-border">
+          <button
+            onClick={handleLike}
+            className={`flex items-center gap-1.5 text-sm transition-colors group ${
+              post.isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
+            }`}
+          >
+            <Heart
+              size={18}
+              className={`transition-transform group-hover:scale-110 ${post.isLiked ? "fill-current" : ""}`}
+            />
+            <span className="font-medium">{post.likesCount}</span>
+          </button>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
+          >
+            <MessageCircle size={18} className="transition-transform group-hover:scale-110" />
+            <span className="font-medium">{post.commentsCount}</span>
+          </button>
+        </div>
+
+        <AnimatePresence>
+          {showComments && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden border-t border-border"
+            >
+              <div className="p-4 space-y-3">
+                {comments?.map((comment: any) => (
+                  <div key={comment.id} className="flex gap-2">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden"
+                      style={{ backgroundColor: (comment.author as any)?.avatarColor || "#333" }}
+                    >
+                      {(comment.author as any)?.avatarUrl ? (
+                        <img src={(comment.author as any).avatarUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        ((comment.author as any)?.displayName || "U")[0].toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 bg-secondary rounded-xl px-3 py-2">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <span className="text-xs font-semibold truncate max-w-[120px]">{(comment.author as any)?.displayName}</span>
+                        {(comment.author as any)?.isVerified && <VerifiedBadge />}
+                        {ADMIN_USER_IDS.includes((comment.author as any)?.id) && <AdminBadge />}
+                      </div>
+                      <p className="text-xs text-foreground">{comment.text}</p>
+                    </div>
+                  </div>
+                ))}
+
+                <form onSubmit={handleComment} className="flex gap-2 mt-2">
+                  <input
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Написать комментарий..."
+                    className="flex-1 bg-secondary border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!commentText.trim() || createComment.isPending}
+                    className="p-2 bg-primary text-primary-foreground rounded-xl disabled:opacity-50 hover:bg-primary/90 transition-colors"
+                  >
+                    <Send size={16} />
+                  </button>
+                </form>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </>
   );
 }
 
@@ -233,6 +282,7 @@ export default function Feed() {
   const createPost = useCreatePost();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const currentUserId = getCurrentUserId();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -246,16 +296,18 @@ export default function Feed() {
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostText.trim() && !newPostImage) return;
+    const text = newPostText;
+    const image = newPostImage;
+    setNewPostText("");
+    setNewPostImage(null);
+    setShowCreatePost(false);
     try {
       await createPost.mutateAsync(
-        { data: { text: newPostText || " ", imageUrl: newPostImage || undefined } },
+        { data: { text: text || " ", imageUrl: image || undefined } },
       );
-      setNewPostText("");
-      setNewPostImage(null);
-      setShowCreatePost(false);
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     } catch {
-      // error handled silently, button resets
+      // silently fail
     }
   };
 
@@ -328,10 +380,10 @@ export default function Feed() {
                     </button>
                     <button
                       type="submit"
-                      disabled={(!newPostText.trim() && !newPostImage) || createPost.isPending}
+                      disabled={!newPostText.trim() && !newPostImage}
                       className="px-5 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-colors"
                     >
-                      {createPost.isPending ? "Публикуем..." : "Опубликовать"}
+                      Опубликовать
                     </button>
                   </div>
                 </form>

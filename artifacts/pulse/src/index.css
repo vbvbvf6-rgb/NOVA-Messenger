@@ -117,6 +117,7 @@
     @apply font-sans antialiased bg-background text-foreground;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    font-size: var(--app-font-size, 15px);
   }
 
   /* Fix text blur on mobile/webkit */

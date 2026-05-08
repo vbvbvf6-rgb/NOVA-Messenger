@@ -46,10 +46,24 @@ export function ChatInput({ chatId, onMessageSent }: { chatId: number; onMessage
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const sendTypingEvent = () => {
+    if (typingTimeoutRef.current) return;
+    const uid = localStorage.getItem("pulse-user-id");
+    fetch(`/api/chats/${chatId}/typing`, {
+      method: "POST",
+      headers: uid ? { "x-user-id": uid } : {},
+    }).catch(() => {});
+    typingTimeoutRef.current = setTimeout(() => {
+      typingTimeoutRef.current = null;
+    }, 3000);
+  };
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       mediaRecorderRef.current?.stream?.getTracks().forEach(t => t.stop());
     };
   }, []);
@@ -164,6 +178,7 @@ export function ChatInput({ chatId, onMessageSent }: { chatId: number; onMessage
     setText(e.target.value);
     e.target.style.height = "40px";
     e.target.style.height = Math.min(e.target.scrollHeight, 128) + "px";
+    if (e.target.value.trim()) sendTypingEvent();
   };
 
   const hasContent = text.trim().length > 0 || imagePreviews.length > 0;

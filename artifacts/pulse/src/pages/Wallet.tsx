@@ -107,6 +107,10 @@ export default function Wallet() {
   const uid = Number(localStorage.getItem("pulse-user-id") || "0");
   const isAdmin = [4].includes(uid);
 
+  const tasksKey = `pulse-completed-tasks-${uid}`;
+  const txKey = `pulse-tx-history-${uid}`;
+  const loginKey = `pulse-last-login-${uid}`;
+
   const fetchWallet = useCallback(async () => {
     try {
       const res = await fetch("/api/wallet", { headers: getUserIdHeader() });
@@ -120,16 +124,16 @@ export default function Wallet() {
 
   useEffect(() => {
     fetchWallet();
-    const stored = localStorage.getItem("pulse-completed-tasks");
+    const stored = localStorage.getItem(tasksKey);
     if (stored) setCompletedTasks(JSON.parse(stored));
-    const storedTx = localStorage.getItem("pulse-tx-history");
+    const storedTx = localStorage.getItem(txKey);
     if (storedTx) {
       try { setTxHistory(JSON.parse(storedTx).map((tx: any) => ({ ...tx, time: new Date(tx.time) }))); } catch {}
     }
-    const lastLogin = localStorage.getItem("pulse-last-login");
+    const lastLogin = localStorage.getItem(loginKey);
     const today = new Date().toDateString();
     if (lastLogin !== today) {
-      localStorage.setItem("pulse-last-login", today);
+      localStorage.setItem(loginKey, today);
       const tasks: string[] = stored ? JSON.parse(stored) : [];
       if (!tasks.includes("daily_login")) earnTask("daily_login", 5, tasks);
     }
@@ -151,12 +155,12 @@ export default function Wallet() {
         setBalance(data.balance);
         const newCompleted = [...completed, taskId];
         setCompletedTasks(newCompleted);
-        localStorage.setItem("pulse-completed-tasks", JSON.stringify(newCompleted));
+        localStorage.setItem(tasksKey, JSON.stringify(newCompleted));
         const task = TASKS.find(t => t.id === taskId);
         const newTx: TxEntry = { id: `${taskId}-${Date.now()}`, type: "earn", amount: reward, label: task?.title || taskId, time: new Date() };
         const updated = [newTx, ...txHistory].slice(0, 50);
         setTxHistory(updated);
-        localStorage.setItem("pulse-tx-history", JSON.stringify(updated));
+        localStorage.setItem(txKey, JSON.stringify(updated));
       }
     } catch {}
     setEarningTask(null);

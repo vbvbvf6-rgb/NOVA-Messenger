@@ -211,26 +211,52 @@ router.post("/admin/announcement", requireAdmin, async (req, res) => {
     const { text } = req.body;
     if (!text || !String(text).trim()) return res.status(400).json({ error: "Укажите текст объявления" });
 
-    // Find all direct chats that include bot user (id=1) and send a message
-    const botId = 1;
-    const botChats = await db.execute(
-      sql`SELECT DISTINCT c.id FROM chats c
-          JOIN chat_members cm1 ON cm1.chat_id = c.id AND cm1.user_id = ${botId}
-          JOIN chat_members cm2 ON cm2.chat_id = c.id AND cm2.user_id != ${botId}
-          WHERE c.type = 'direct'`
-    );
+    // Find the bot by username (not hardcoded ID)
+    const botRow = await db.execute(sql`SELECT id FROM users WHERE username = 'deepseek_ai' LIMIT 1`);
+    const botId = (botRow.rows[0] as any)?.id;
+    if (!botId) return res.status(404).json({ error: "Бот не найден. Перезапустите сервер для создания системных пользователей." });
+
+    // Get all non-bot users
+    const allUsers = await db.execute(sql`SELECT id FROM users WHERE is_bot = false`);
 
     let sent = 0;
-    for (const row of botChats.rows as any[]) {
-      await db.execute(
-        sql`INSERT INTO messages (chat_id, sender_id, type, content, created_at, updated_at)
-            VALUES (${row.id}, ${botId}, 'text', ${String(text).trim()}, NOW(), NOW())`
+    for (const userRow of allUsers.rows as any[]) {
+      const userId = userRow.id;
+
+      // Check if a direct chat between bot and user already exists
+      const existingChat = await db.execute(
+        sql`SELECT c.id FROM chats c
+            JOIN chat_members cm1 ON cm1.chat_id = c.id AND cm1.user_id = ${botId}
+            JOIN chat_members cm2 ON cm2.chat_id = c.id AND cm2.user_id = ${userId}
+            WHERE c.type = 'direct' LIMIT 1`
       );
-      await db.execute(sql`UPDATE chats SET updated_at = NOW() WHERE id = ${row.id}`);
+
+      let chatId: number;
+      if ((existingChat.rows as any[]).length > 0) {
+        chatId = (existingChat.rows[0] as any).id;
+      } else {
+        // Create direct chat between bot and user
+        const newChat = await db.execute(
+          sql`INSERT INTO chats (type, created_at, updated_at) VALUES ('direct', NOW(), NOW()) RETURNING id`
+        );
+        chatId = (newChat.rows[0] as any).id;
+        await db.execute(
+          sql`INSERT INTO chat_members (chat_id, user_id, role, joined_at) VALUES
+              (${chatId}, ${botId}, 'member', NOW()),
+              (${chatId}, ${userId}, 'member', NOW())`
+        );
+      }
+
+      // Insert the announcement message (column is "text" not "content")
+      await db.execute(
+        sql`INSERT INTO messages (chat_id, sender_id, type, text, created_at, updated_at)
+            VALUES (${chatId}, ${botId}, 'text', ${String(text).trim()}, NOW(), NOW())`
+      );
+      await db.execute(sql`UPDATE chats SET updated_at = NOW() WHERE id = ${chatId}`);
       sent++;
     }
 
-    res.json({ success: true, chatsSent: sent, message: `Объявление отправлено в ${sent} чат(ов)` });
+    res.json({ success: true, chatsSent: sent, message: `Объявление отправлено ${sent} пользователям` });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Ошибка сервера" });

@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, messagesTable, chatsTable, usersTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { db } from "@workspace/db";
+import { sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -8,10 +8,10 @@ const BOT_USERNAME = "deepseek_ai";
 
 router.post("/ai/chat", async (req, res) => {
   try {
-    const apiKey = process.env["DEEPSEEK_API_KEY"];
+    const apiKey = process.env["OPENROUTER_API_KEY"];
 
     if (!apiKey) {
-      return res.status(503).json({ error: "AI недоступен. Администратор должен добавить DEEPSEEK_API_KEY." });
+      return res.status(503).json({ error: "AI недоступен. Администратор должен добавить OPENROUTER_API_KEY." });
     }
 
     const { message, history } = req.body;
@@ -28,14 +28,16 @@ router.post("/ai/chat", async (req, res) => {
       { role: "user", content: message }
     ];
 
-    const response = await fetch("https://api.deepseek.com/chat/completions", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://pulse-messenger.replit.app",
+        "X-Title": "Pulse Messenger"
       },
       body: JSON.stringify({
-        model: "deepseek-chat",
+        model: "google/gemini-flash-1.5",
         messages,
         max_tokens: 800,
         temperature: 0.7,
@@ -44,7 +46,7 @@ router.post("/ai/chat", async (req, res) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      req.log.error({ status: response.status, errText }, "DeepSeek API error");
+      req.log.error({ status: response.status, errText }, "OpenRouter API error");
       return res.status(502).json({ error: "Ошибка AI сервиса. Попробуйте позже." });
     }
 

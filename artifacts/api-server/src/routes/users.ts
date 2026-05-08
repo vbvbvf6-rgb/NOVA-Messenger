@@ -211,6 +211,17 @@ router.post("/prime/subscribe", async (req, res) => {
   }
 });
 
+router.post("/prime/cancel", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    await db.execute(sql`UPDATE users SET has_prime = false, prime_expires_at = NULL WHERE id = ${uid}`);
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.get("/stats/me", async (req, res) => {
   try {
     const uid = req.currentUserId;

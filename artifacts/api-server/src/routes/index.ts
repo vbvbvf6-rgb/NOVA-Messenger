@@ -11,6 +11,7 @@ import storiesRouter from "./stories";
 import postsRouter from "./posts";
 import adminRouter from "./admin";
 import aiRouter from "./ai";
+import eventsRouter from "./events";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(storiesRouter);
 router.use(postsRouter);
 router.use(adminRouter);
 router.use(aiRouter);
+router.use(eventsRouter);
 
 export default router;

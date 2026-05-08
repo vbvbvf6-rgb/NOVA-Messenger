@@ -65,10 +65,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<{ userId: number; displayName: string }[]>([]);
   const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
   const [autoDeleteLoading, setAutoDeleteLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastMessageCountRef = useRef<number>(0);
+  const sseRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -78,6 +80,40 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const isBot = chat && chat.type === "direct" && (chat.otherUser as any)?.isBot;
   const autoDeleteTimer = (chat as any)?.autoDeleteTimer as number | null | undefined;
+
+  // SSE subscription for real-time messages and typing
+  useEffect(() => {
+    if (!chatId) return;
+    const uid = localStorage.getItem("pulse-user-id") || "1";
+    const es = new EventSource(`/api/chats/${chatId}/events?_uid=${uid}`, );
+    sseRef.current = es;
+
+    es.addEventListener("new-message", () => {
+      queryClient.refetchQueries({ queryKey: getGetMessagesQueryKey({ chatId }) });
+      queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
+    });
+
+    es.addEventListener("typing", (e: MessageEvent) => {
+      try {
+        const currentUid = Number(localStorage.getItem("pulse-user-id") || "1");
+        const data = JSON.parse(e.data) as { userId: number; displayName: string; typing: boolean };
+        if (data.userId === currentUid) return;
+        setTypingUsers(prev => {
+          if (data.typing) {
+            if (prev.some(u => u.userId === data.userId)) return prev;
+            return [...prev, { userId: data.userId, displayName: data.displayName }];
+          } else {
+            return prev.filter(u => u.userId !== data.userId);
+          }
+        });
+      } catch {}
+    });
+
+    return () => {
+      es.close();
+      sseRef.current = null;
+    };
+  }, [chatId]);
 
   useEffect(() => {
     if (chatId) {
@@ -91,6 +127,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     setShowSearch(false);
     setShowAutoDeleteMenu(false);
     setBotTyping(false);
+    setTypingUsers([]);
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
   }, [chatId]);
 
@@ -402,24 +439,41 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         )}
       </div>
 
-      {/* Bot typing indicator */}
-      {botTyping && (
-        <div className="px-4 pb-3 flex items-end gap-2">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 overflow-hidden"
-            style={{ backgroundColor: (chat?.otherUser as any)?.avatarColor || "#00BCD4" }}
-          >
-            {(chat?.otherUser as any)?.avatarUrl ? (
-              <img src={(chat?.otherUser as any).avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              (chat?.otherUser as any)?.displayName?.[0]?.toUpperCase() || "AI"
-            )}
-          </div>
-          <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
-            <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
-            <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.2s" }} />
-            <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.4s" }} />
-          </div>
+      {/* Typing indicators */}
+      {(botTyping || typingUsers.length > 0) && (
+        <div className="px-4 pb-3 flex flex-col gap-1.5">
+          {botTyping && (
+            <div className="flex items-end gap-2">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0 overflow-hidden"
+                style={{ backgroundColor: (chat?.otherUser as any)?.avatarColor || "#00BCD4" }}
+              >
+                {(chat?.otherUser as any)?.avatarUrl ? (
+                  <img src={(chat?.otherUser as any).avatarUrl} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  (chat?.otherUser as any)?.displayName?.[0]?.toUpperCase() || "AI"
+                )}
+              </div>
+              <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
+                <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.2s" }} />
+                <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.4s" }} />
+              </div>
+            </div>
+          )}
+          {typingUsers.map(u => (
+            <div key={u.userId} className="flex items-end gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+                {u.displayName[0]?.toUpperCase() || "?"}
+              </div>
+              <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground mr-1.5">{u.displayName}</span>
+                <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
+                <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.2s" }} />
+                <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.4s" }} />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

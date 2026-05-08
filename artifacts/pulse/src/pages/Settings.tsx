@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import {
   Sun, Palette, Database, Edit3, CheckCircle, LogOut, Link, Key, Eye,
   EyeOff, Phone, Globe, Type, Download, Trash2, Copy, Check, ChevronDown,
   ChevronRight, User, Radio, BellOff, Volume2, VolumeX, Clock, MessageSquare,
-  Gift, PhoneCall, Monitor, Zap, AlertTriangle, X, Flame
+  Gift, PhoneCall, Monitor, Zap, AlertTriangle, X, Flame, Upload, Camera, Crown
 } from "lucide-react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
 import { useAppContext } from "@/contexts/AppContext";
@@ -150,6 +150,42 @@ export default function Settings() {
     const v = localStorage.getItem("pulse-global-auto-delete");
     return v ? Number(v) : null;
   });
+
+  // Avatar file upload
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const [cancelPrimeLoading, setCancelPrimeLoading] = useState(false);
+
+  const handleAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setAvatarUrl(result);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleCancelPrime = async () => {
+    setCancelPrimeLoading(true);
+    try {
+      const uid = localStorage.getItem("pulse-user-id");
+      const res = await fetch("/api/prime/cancel", {
+        method: "POST",
+        headers: uid ? { "x-user-id": uid } : {},
+      });
+      if (res.ok) {
+        queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
+        toast({ title: lang === "ru" ? "Подписка отменена" : "Subscription cancelled", description: lang === "ru" ? "Pulse Prime деактивирован." : "Pulse Prime has been deactivated." });
+      } else {
+        toast({ title: t("common.error"), variant: "destructive" });
+      }
+    } catch {
+      toast({ title: t("common.error"), variant: "destructive" });
+    }
+    setCancelPrimeLoading(false);
+  };
 
   // Username change
   const [showUsernameEdit, setShowUsernameEdit] = useState(false);
@@ -431,16 +467,35 @@ export default function Settings() {
               </button>
             </div>
 
-            {/* Avatar URL */}
+            {/* Avatar Upload */}
             <div className="mb-3">
               <Label className="text-xs text-muted-foreground mb-1.5 block flex items-center gap-1.5">
-                <Link size={11} /> {t("settings.avatarUrl")}
+                <Camera size={11} /> {t("settings.avatarUrl")}
               </Label>
-              <Input
-                value={avatarUrl}
-                onChange={e => setAvatarUrl(e.target.value)}
-                placeholder="https://example.com/photo.jpg"
-                className="bg-background text-sm"
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => avatarFileRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+                >
+                  <Upload size={14} /> {lang === "ru" ? "Загрузить фото" : "Upload photo"}
+                </button>
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setAvatarUrl("")}
+                    className="px-3 py-2 text-sm text-destructive/70 hover:text-destructive transition-colors"
+                  >
+                    {lang === "ru" ? "Удалить" : "Remove"}
+                  </button>
+                )}
+              </div>
+              <input
+                ref={avatarFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarFile}
               />
             </div>
 
@@ -948,6 +1003,37 @@ export default function Settings() {
             <ChevronRight size={18} className="text-muted-foreground" />
           </div>
         </Section>
+
+        {/* ── PULSE PRIME ── */}
+        {(user as any)?.hasPrime && (
+          <Section title="Pulse Prime" icon={<Crown size={13} />}>
+            <div className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0">
+                  <Crown size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-amber-400">
+                    {lang === "ru" ? "Подписка активна" : "Subscription active"}
+                  </p>
+                  {(user as any)?.primeExpiresAt && (
+                    <p className="text-xs text-muted-foreground">
+                      {lang === "ru" ? "До" : "Until"}: {new Date((user as any).primeExpiresAt).toLocaleDateString(lang === "ru" ? "ru-RU" : "en-US")}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleCancelPrime}
+                disabled={cancelPrimeLoading}
+                className="flex items-center gap-2 w-full py-2.5 px-4 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/5 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                <X size={15} />
+                {cancelPrimeLoading ? (lang === "ru" ? "Отменяем..." : "Cancelling...") : (lang === "ru" ? "Отменить Prime подписку" : "Cancel Prime subscription")}
+              </button>
+            </div>
+          </Section>
+        )}
 
         {/* ── ABOUT ── */}
         <Section title={t("settings.about")} icon={<Zap size={13} />}>
