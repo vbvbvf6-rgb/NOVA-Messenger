@@ -106,7 +106,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     }
   };
 
-  const filteredMessages = messages?.slice().reverse().filter(msg => {
+  const filteredMessages = messages?.slice().filter(msg => {
     if (!searchQuery.trim()) return true;
     return msg.text?.toLowerCase().includes(searchQuery.toLowerCase());
   });
