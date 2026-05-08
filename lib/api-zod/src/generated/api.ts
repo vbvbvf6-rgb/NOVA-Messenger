@@ -43,6 +43,7 @@ export const UpdateMeBody = zod.object({
   avatarColor: zod.string().optional(),
   statusText: zod.string().optional(),
   status: zod.enum(["online", "offline", "away"]).optional(),
+  phoneNumber: zod.string().optional(),
 });
 
 export const UpdateMeResponse = zod.object({

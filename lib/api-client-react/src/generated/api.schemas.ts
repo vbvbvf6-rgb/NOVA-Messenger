@@ -49,6 +49,7 @@ export interface UpdateUserBody {
   avatarColor?: string;
   statusText?: string;
   status?: UpdateUserBodyStatus;
+  phoneNumber?: string;
 }
 
 export interface AddContactBody {
