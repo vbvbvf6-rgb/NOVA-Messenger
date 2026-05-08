@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, messagesTable, reactionsTable, usersTable, chatMembersTable } from "@workspace/db";
-import { eq, and, lt, desc, sql } from "drizzle-orm";
+import { db, messagesTable, reactionsTable, usersTable, chatMembersTable, chatsTable } from "@workspace/db";
+import { eq, and, lt, desc, sql, lte } from "drizzle-orm";
 import { SendMessageBody, EditMessageBody, AddReactionBody } from "@workspace/api-zod";
 
 const router = Router();
@@ -37,6 +37,15 @@ router.get("/messages", async (req, res) => {
     const chatId = Number(req.query.chatId);
     const limit = Number(req.query.limit ?? 50);
     const before = req.query.before ? Number(req.query.before) : undefined;
+
+    // Auto-delete cleanup: remove expired messages for this chat
+    const chat = await db.query.chatsTable.findFirst({ where: eq(chatsTable.id, chatId) });
+    if (chat?.autoDeleteTimer) {
+      const cutoff = new Date(Date.now() - chat.autoDeleteTimer * 1000);
+      await db.delete(messagesTable).where(
+        and(eq(messagesTable.chatId, chatId), lte(messagesTable.createdAt, cutoff))
+      );
+    }
 
     let query = db.select().from(messagesTable).where(eq(messagesTable.chatId, chatId));
     if (before) {

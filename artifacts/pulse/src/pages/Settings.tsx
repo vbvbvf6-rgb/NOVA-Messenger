@@ -8,7 +8,7 @@ import {
   Sun, Palette, Database, Edit3, CheckCircle, LogOut, Link, Key, Eye,
   EyeOff, Phone, Globe, Type, Download, Trash2, Copy, Check, ChevronDown,
   ChevronRight, User, Radio, BellOff, Volume2, VolumeX, Clock, MessageSquare,
-  Gift, PhoneCall, Monitor, Zap, AlertTriangle, X
+  Gift, PhoneCall, Monitor, Zap, AlertTriangle, X, Flame
 } from "lucide-react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
 import { useAppContext } from "@/contexts/AppContext";
@@ -146,6 +146,10 @@ export default function Settings() {
   const [lastSeenVisibility, setLastSeenVisibility] = useState(() => ls("pulse-privacy-last-seen", "everyone"));
   const [readReceipts, setReadReceipts] = useState(() => lsb("pulse-privacy-read-receipts", true));
   const [profilePhotoVisible, setProfilePhotoVisible] = useState(() => lsb("pulse-privacy-photo-visible", true));
+  const [globalAutoDelete, setGlobalAutoDelete] = useState<number | null>(() => {
+    const v = localStorage.getItem("pulse-global-auto-delete");
+    return v ? Number(v) : null;
+  });
 
   // Username change
   const [showUsernameEdit, setShowUsernameEdit] = useState(false);
@@ -785,6 +789,47 @@ export default function Settings() {
               />
             }
           />
+
+          {/* Global auto-delete default */}
+          <div className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 bg-orange-500/10 text-orange-500 rounded-xl"><Flame size={18} /></div>
+              <div>
+                <p className="text-sm font-medium">{t("autodelete.globalDefault")}</p>
+                <p className="text-xs text-muted-foreground">{t("autodelete.globalDesc")}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {[
+                { value: null,    label: t("autodelete.off") },
+                { value: 3600,    label: t("autodelete.1h") },
+                { value: 86400,   label: t("autodelete.1d") },
+                { value: 604800,  label: t("autodelete.1w") },
+                { value: 2592000, label: t("autodelete.1m") },
+              ].map(opt => {
+                const isActive = opt.value === globalAutoDelete;
+                return (
+                  <button
+                    key={String(opt.value)}
+                    onClick={() => {
+                      setGlobalAutoDelete(opt.value);
+                      if (opt.value) {
+                        localStorage.setItem("pulse-global-auto-delete", String(opt.value));
+                      } else {
+                        localStorage.removeItem("pulse-global-auto-delete");
+                      }
+                      toast({ title: t("common.saved"), description: `${t("autodelete.globalDefault")}: ${opt.label}` });
+                    }}
+                    className={`py-2 rounded-xl border text-xs font-medium transition-all flex flex-col items-center gap-0.5 ${isActive ? "border-orange-400 bg-orange-500/10 text-orange-400" : "border-border hover:border-orange-400/40 hover:bg-secondary"}`}
+                  >
+                    {opt.value ? <Flame size={11} className="text-orange-400" /> : <X size={11} className="text-muted-foreground" />}
+                    {opt.label}
+                    {isActive && <CheckCircle size={9} className="text-orange-400" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </Section>
 
         {/* ── SECURITY ── */}

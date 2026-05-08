@@ -1,12 +1,14 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useGetChatById, useGetMessages, getGetMessagesQueryKey, useInitiateCall, useMarkChatAsRead, useUpdateChat, getGetChatsQueryKey } from "@workspace/api-client-react";
-import { Phone, Video, MoreVertical, ArrowLeft, Search, BellOff, Bell, Pin, PinOff, User, Trash2, X } from "lucide-react";
+import { Phone, Video, MoreVertical, ArrowLeft, Search, BellOff, Bell, Pin, PinOff, User, Trash2, X, Timer, Flame, ChevronRight } from "lucide-react";
 import { useAppContext } from "@/contexts/AppContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,10 +31,28 @@ interface ChatWindowProps {
   chatId: number;
 }
 
+const AUTO_DELETE_OPTIONS = [
+  { value: null,    labelKey: "autodelete.off" as const },
+  { value: 3600,    labelKey: "autodelete.1h" as const },
+  { value: 86400,   labelKey: "autodelete.1d" as const },
+  { value: 604800,  labelKey: "autodelete.1w" as const },
+  { value: 2592000, labelKey: "autodelete.1m" as const },
+];
+
+function formatAutoDeleteLabel(seconds: number | null | undefined, t: (k: any) => string): string {
+  if (!seconds) return t("autodelete.off");
+  if (seconds <= 3600) return t("autodelete.1h");
+  if (seconds <= 86400) return t("autodelete.1d");
+  if (seconds <= 604800) return t("autodelete.1w");
+  return t("autodelete.1m");
+}
+
 export function ChatWindow({ chatId }: ChatWindowProps) {
   const { setSelectedChatId, setActiveCall } = useAppContext();
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data: chat, isLoading: isChatLoading } = useGetChatById(chatId, { query: { enabled: !!chatId } });
   const { data: messages, isLoading: isMessagesLoading } = useGetMessages({ chatId }, { query: { enabled: !!chatId } });
   const initiateCall = useInitiateCall();
@@ -45,6 +65,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
+  const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
+  const [autoDeleteLoading, setAutoDeleteLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastMessageCountRef = useRef<number>(0);
 
@@ -55,6 +77,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   }, [messages]);
 
   const isBot = chat && chat.type === "direct" && (chat.otherUser as any)?.isBot;
+  const autoDeleteTimer = (chat as any)?.autoDeleteTimer as number | null | undefined;
 
   useEffect(() => {
     if (chatId) {
@@ -66,6 +89,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     }
     setSearchQuery("");
     setShowSearch(false);
+    setShowAutoDeleteMenu(false);
     setBotTyping(false);
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
   }, [chatId]);
@@ -85,7 +109,6 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     }, 1500);
   };
 
-  // Detect when bot reply arrives and clear the typing indicator
   useEffect(() => {
     if (!botTyping) return;
     const current = messages?.length ?? 0;
@@ -105,11 +128,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     if (!chat?.otherUser?.id) return;
     initiateCall.mutate(
       { data: { calleeId: chat.otherUser.id, chatId, type } },
-      {
-        onSuccess: (call) => {
-          setActiveCall(call);
-        }
-      }
+      { onSuccess: (call) => { setActiveCall(call); } }
     );
   };
 
@@ -122,7 +141,11 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const handleTogglePin = () => {
     if (!chat) return;
-    fetch(`/api/chats/${chatId}/pin`, { method: "PUT" }).then(() => {
+    const uid = localStorage.getItem("pulse-user-id");
+    fetch(`/api/chats/${chatId}/pin`, {
+      method: "PUT",
+      headers: uid ? { "x-user-id": uid } : {},
+    }).then(() => {
       queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
     });
   };
@@ -130,12 +153,42 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const handleDeleteChat = async () => {
     setIsDeleting(true);
     try {
-      await fetch(`/api/chats/${chatId}`, { method: "DELETE" });
+      const uid = localStorage.getItem("pulse-user-id");
+      await fetch(`/api/chats/${chatId}`, {
+        method: "DELETE",
+        headers: uid ? { "x-user-id": uid } : {},
+      });
       queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
       setSelectedChatId(null);
     } catch {}
     setIsDeleting(false);
     setShowDeleteDialog(false);
+  };
+
+  const handleSetAutoDelete = async (seconds: number | null) => {
+    setAutoDeleteLoading(true);
+    try {
+      const uid = localStorage.getItem("pulse-user-id");
+      await fetch(`/api/chats/${chatId}/auto-delete`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(uid ? { "x-user-id": uid } : {}),
+        },
+        body: JSON.stringify({ timer: seconds }),
+      });
+      queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: [`/api/chats/${chatId}`] });
+      setShowAutoDeleteMenu(false);
+      if (seconds) {
+        toast({ title: t("autodelete.set"), description: `${formatAutoDeleteLabel(seconds, t)}` });
+      } else {
+        toast({ title: t("autodelete.cleared") });
+      }
+    } catch {
+      toast({ title: t("common.error"), variant: "destructive" });
+    }
+    setAutoDeleteLoading(false);
   };
 
   const openProfile = () => {
@@ -146,7 +199,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const filteredMessages = messages?.slice().filter(msg => {
     if (!searchQuery.trim()) return true;
-    return msg.text?.toLowerCase().includes(searchQuery.toLowerCase());
+    return (msg as any).text?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   if (isChatLoading) {
@@ -158,6 +211,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const displayName = chat.type === "direct" ? (chat.otherUser?.displayName || chat.name || "Chat") : (chat.name || "Group");
   const avatarColor = chat.type === "direct" ? (chat.otherUser?.avatarColor || chat.avatarColor || "#333") : (chat.avatarColor || "#333");
   const isVerified = chat.type === "direct" && (chat.otherUser as any)?.isVerified;
+  const autoDeleteLabel = formatAutoDeleteLabel(autoDeleteTimer, t);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background relative overflow-hidden">
@@ -186,7 +240,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             disabled={chat.type !== "direct"}
             className={`text-left min-w-0 ${chat.type === "direct" ? "cursor-pointer hover:opacity-80 transition-opacity" : "cursor-default"}`}
           >
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <h2 className="font-semibold text-sm leading-tight truncate">{displayName}</h2>
               {isVerified && (
                 <svg className="shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -194,13 +248,19 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                   <path d="M7 12l3.5 3.5L17 8" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               )}
+              {autoDeleteTimer ? (
+                <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-400 border border-orange-500/25 shrink-0">
+                  <Flame size={9} />
+                  {autoDeleteLabel}
+                </span>
+              ) : null}
             </div>
             <p className="text-xs text-muted-foreground truncate">
               {chat.type === "direct" && chat.otherUser ? (
                 <span className={chat.otherUser.status === "online" ? "text-green-500" : ""}>
-                  {chat.otherUser.status === "online" ? "в сети" : (chat.otherUser as any).statusText || "не в сети"}
+                  {chat.otherUser.status === "online" ? t("chat.online") : (chat.otherUser as any).statusText || t("chat.offline")}
                 </span>
-              ) : `${chat.members?.length || 0} участников`}
+              ) : `${chat.members?.length || 0} ${t("chat.members")}`}
             </p>
           </button>
         </div>
@@ -233,31 +293,41 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                 <MoreVertical size={20} />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuContent align="end" className="w-56">
               {chat.type === "direct" && chat.otherUser?.id && (
                 <DropdownMenuItem onClick={openProfile}>
                   <User size={16} className="mr-2 text-primary" />
-                  Открыть профиль
+                  {t("chat.openProfile")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => { setShowSearch(v => !v); }}>
                 <Search size={16} className="mr-2 text-muted-foreground" />
-                Поиск сообщений
+                {t("chat.searchMessages")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleToggleMute}>
                 {chat.isMuted ? (
-                  <><Bell size={16} className="mr-2 text-green-500" />Включить уведомления</>
+                  <><Bell size={16} className="mr-2 text-green-500" />{t("chat.muteOff")}</>
                 ) : (
-                  <><BellOff size={16} className="mr-2 text-orange-500" />Выключить уведомления</>
+                  <><BellOff size={16} className="mr-2 text-orange-500" />{t("chat.muteOn")}</>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleTogglePin}>
                 {chat.isPinned ? (
-                  <><PinOff size={16} className="mr-2 text-muted-foreground" />Открепить</>
+                  <><PinOff size={16} className="mr-2 text-muted-foreground" />{t("chat.unpin")}</>
                 ) : (
-                  <><Pin size={16} className="mr-2 text-blue-500" />Закрепить чат</>
+                  <><Pin size={16} className="mr-2 text-blue-500" />{t("chat.pin")}</>
                 )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowAutoDeleteMenu(true)}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center">
+                  <Flame size={16} className={`mr-2 ${autoDeleteTimer ? "text-orange-400" : "text-muted-foreground"}`} />
+                  {t("chat.autoDelete")}
+                </div>
+                <span className="text-xs text-muted-foreground ml-2">{autoDeleteLabel}</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -265,12 +335,28 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                 onClick={() => setShowDeleteDialog(true)}
               >
                 <Trash2 size={16} className="mr-2" />
-                Удалить чат
+                {t("chat.deleteChat")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>
+
+      {/* Auto-delete active banner */}
+      {autoDeleteTimer ? (
+        <div className="flex items-center justify-between px-4 py-1.5 bg-orange-500/8 border-b border-orange-500/15 text-xs text-orange-400 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <Flame size={12} />
+            <span>{t("autodelete.active")} <strong>{autoDeleteLabel}</strong></span>
+          </div>
+          <button
+            onClick={() => setShowAutoDeleteMenu(true)}
+            className="text-orange-400/70 hover:text-orange-400 transition-colors font-medium"
+          >
+            {t("common.change")}
+          </button>
+        </div>
+      ) : null}
 
       {/* Search Bar */}
       {showSearch && (
@@ -280,7 +366,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             autoFocus
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Поиск сообщений..."
+            placeholder={t("chat.searchPlaceholder")}
             className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground"
           />
           {searchQuery && (
@@ -307,7 +393,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           </div>
         ) : filteredMessages?.length === 0 ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-            {searchQuery ? "Сообщения не найдены" : "Нет сообщений. Напишите первым!"}
+            {searchQuery ? t("chat.noSearchResults") : t("chat.noMessages")}
           </div>
         ) : (
           filteredMessages?.map((message) => (
@@ -330,18 +416,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             )}
           </div>
           <div className="bg-card border border-border rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
-            <span
-              className="w-2 h-2 bg-muted-foreground rounded-full"
-              style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0ms" }}
-            />
-            <span
-              className="w-2 h-2 bg-muted-foreground rounded-full"
-              style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.2s" }}
-            />
-            <span
-              className="w-2 h-2 bg-muted-foreground rounded-full"
-              style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.4s" }}
-            />
+            <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0ms" }} />
+            <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.2s" }} />
+            <span className="w-2 h-2 bg-muted-foreground rounded-full" style={{ animation: "typingBounce 1.2s ease-in-out infinite", animationDelay: "0.4s" }} />
           </div>
         </div>
       )}
@@ -351,23 +428,62 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         <ChatInput chatId={chatId} onMessageSent={isBot ? startBotTypingPoll : undefined} />
       </div>
 
-      {/* Delete Dialog */}
+      {/* Auto-delete picker dialog */}
+      <AlertDialog open={showAutoDeleteMenu} onOpenChange={setShowAutoDeleteMenu}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Flame size={18} className="text-orange-400" />
+              {t("autodelete.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t("autodelete.desc")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-2 py-2">
+            {AUTO_DELETE_OPTIONS.map(opt => {
+              const isActive = opt.value === (autoDeleteTimer ?? null);
+              return (
+                <button
+                  key={String(opt.value)}
+                  onClick={() => handleSetAutoDelete(opt.value)}
+                  disabled={autoDeleteLoading}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                    isActive
+                      ? "border-orange-400 bg-orange-500/10 text-orange-400"
+                      : "border-border hover:border-primary/40 hover:bg-secondary"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {opt.value ? <Flame size={15} className="text-orange-400" /> : <X size={15} className="text-muted-foreground" />}
+                    {t(opt.labelKey)}
+                  </div>
+                  {isActive && (
+                    <div className="w-2 h-2 rounded-full bg-orange-400" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Chat Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить чат</AlertDialogTitle>
-            <AlertDialogDescription>
-              Чат и все сообщения будут удалены без возможности восстановления.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("chat.deleteChatTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("chat.deleteChatDesc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteChat}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Удаление..." : "Удалить"}
+              {isDeleting ? t("chat.deleting") : t("chat.deleteChat")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

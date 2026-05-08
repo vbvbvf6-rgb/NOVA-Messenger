@@ -270,6 +270,21 @@ router.post("/chats/:chatId/read", async (req, res) => {
   }
 });
 
+router.patch("/chats/:chatId/auto-delete", async (req, res) => {
+  try {
+    const chatId = Number(req.params.chatId);
+    const { timer } = req.body; // null or seconds (number)
+    const timerVal = timer === null || timer === 0 ? null : Number(timer);
+    await db.update(chatsTable).set({ autoDeleteTimer: timerVal }).where(eq(chatsTable.id, chatId));
+    const uid = req.currentUserId;
+    const chat = await buildChat(chatId, uid);
+    res.json(chat);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.put("/chats/:chatId/pin", async (req, res) => {
   try {
     const uid = req.currentUserId;
