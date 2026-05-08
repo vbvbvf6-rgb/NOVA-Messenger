@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useId } from "react";
 import { useGetGiftCatalog, useGetSentGifts, useGetReceivedGifts, GiftItem, Gift } from "@workspace/api-client-react";
 import { Zap, ArrowUpRight, ArrowDownLeft, Gift as GiftIcon, Search, AlertTriangle, X, UserRound, MessageSquare, EyeOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -82,6 +82,157 @@ function FloatingParticles({ rarity }: { rarity: string }) {
   );
 }
 
+function makeStarPoints(n: number, cx: number, cy: number, r1: number, r2: number): string {
+  return Array.from({ length: n * 2 }, (_, i) => {
+    const r = i % 2 === 0 ? r1 : r2;
+    const a = (i * Math.PI / n) - Math.PI / 2;
+    return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+  }).join(" ");
+}
+
+function GiftIconSVG({ animationType, rarity, size = 80 }: { animationType: string; rarity: string; size?: number }) {
+  const rawId = useId();
+  const id = `gi${rawId.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const palettes: Record<string, string[]> = {
+    legendary: ["#fde68a", "#f59e0b", "#ef4444", "#fcd34d"],
+    epic:      ["#e879f9", "#a855f7", "#7c3aed", "#c084fc"],
+    rare:      ["#67e8f9", "#3b82f6", "#06b6d4", "#38bdf8"],
+    common:    ["#e2e8f0", "#94a3b8", "#64748b", "#cbd5e1"],
+  };
+  const c = palettes[rarity] || palettes.common;
+
+  switch (animationType) {
+    case "sparkle": {
+      const pts = makeStarPoints(4, 50, 50, 46, 19);
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+          <defs>
+            <radialGradient id={`${id}rg`} cx="40%" cy="35%" r="65%">
+              <stop offset="0%" stopColor="white" stopOpacity="0.95"/>
+              <stop offset="30%" stopColor={c[0]}/>
+              <stop offset="70%" stopColor={c[1]}/>
+              <stop offset="100%" stopColor={c[2]}/>
+            </radialGradient>
+            <radialGradient id={`${id}gl`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={c[0]} stopOpacity="0.5"/>
+              <stop offset="100%" stopColor={c[0]} stopOpacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="48" fill={`url(#${id}gl)`}/>
+          <polygon points={pts} fill={`url(#${id}rg)`}/>
+          <circle cx="50" cy="50" r="10" fill="white" opacity="0.4"/>
+          <circle cx="37" cy="37" r="4" fill="white" opacity="0.65"/>
+        </svg>
+      );
+    }
+    case "float": {
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+          <defs>
+            <radialGradient id={`${id}bg`} cx="34%" cy="32%" r="68%">
+              <stop offset="0%" stopColor="white" stopOpacity="0.95"/>
+              <stop offset="28%" stopColor={c[0]}/>
+              <stop offset="65%" stopColor={c[1]}/>
+              <stop offset="100%" stopColor={c[2]}/>
+            </radialGradient>
+            <radialGradient id={`${id}rim`} cx="50%" cy="50%" r="50%">
+              <stop offset="60%" stopColor="transparent"/>
+              <stop offset="100%" stopColor={c[2]} stopOpacity="0.8"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="44" fill={`url(#${id}bg)`}/>
+          <circle cx="50" cy="50" r="44" fill={`url(#${id}rim)`}/>
+          <ellipse cx="36" cy="31" rx="14" ry="9" fill="white" opacity="0.55" transform="rotate(-35 36 31)"/>
+          <ellipse cx="65" cy="68" rx="7" ry="4" fill="white" opacity="0.2" transform="rotate(-35 65 68)"/>
+        </svg>
+      );
+    }
+    case "bounce": {
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+          <defs>
+            <linearGradient id={`${id}l1`} x1="0.2" y1="0" x2="0.8" y2="1">
+              <stop offset="0%" stopColor={c[0]}/>
+              <stop offset="100%" stopColor={c[2]}/>
+            </linearGradient>
+            <linearGradient id={`${id}l2`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={c[1]}/>
+              <stop offset="100%" stopColor={c[3]}/>
+            </linearGradient>
+          </defs>
+          <polygon points="50,8 86,29 86,71 50,92 14,71 14,29" fill={`url(#${id}l1)`}/>
+          <polygon points="50,8 86,29 50,50" fill={`url(#${id}l2)`} opacity="0.75"/>
+          <polygon points="50,8 14,29 50,50" fill="white" opacity="0.22"/>
+          <polygon points="86,71 50,92 50,50" fill="black" opacity="0.2"/>
+          <polygon points="14,29 14,71 50,50" fill="black" opacity="0.1"/>
+          <ellipse cx="42" cy="30" rx="13" ry="7" fill="white" opacity="0.5" transform="rotate(-20 42 30)"/>
+        </svg>
+      );
+    }
+    case "explosion": {
+      const pts = makeStarPoints(6, 50, 50, 46, 22);
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+          <defs>
+            <radialGradient id={`${id}rg`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="white"/>
+              <stop offset="20%" stopColor={c[3] || c[0]}/>
+              <stop offset="60%" stopColor={c[0]}/>
+              <stop offset="100%" stopColor={c[1]}/>
+            </radialGradient>
+            <radialGradient id={`${id}gl`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={c[0]} stopOpacity="0.55"/>
+              <stop offset="100%" stopColor={c[0]} stopOpacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="48" fill={`url(#${id}gl)`}/>
+          <polygon points={pts} fill={`url(#${id}rg)`}/>
+          <circle cx="50" cy="50" r="13" fill="white" opacity="0.4"/>
+          <circle cx="50" cy="50" r="6" fill="white" opacity="0.75"/>
+        </svg>
+      );
+    }
+    case "orbit": {
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+          <defs>
+            <radialGradient id={`${id}pg`} cx="36%" cy="33%" r="67%">
+              <stop offset="0%" stopColor={c[0]}/>
+              <stop offset="55%" stopColor={c[1]}/>
+              <stop offset="100%" stopColor={c[2]}/>
+            </radialGradient>
+            <mask id={`${id}bm`}>
+              <rect width="100" height="100" fill="white"/>
+              <circle cx="50" cy="50" r="29" fill="black"/>
+            </mask>
+            <clipPath id={`${id}fc`}>
+              <rect x="0" y="46" width="100" height="54"/>
+            </clipPath>
+          </defs>
+          <ellipse cx="50" cy="50" rx="46" ry="14" stroke={c[0]} strokeWidth="5" strokeOpacity="0.65" fill="none" transform="rotate(-25 50 50)" mask={`url(#${id}bm)`}/>
+          <circle cx="50" cy="50" r="28" fill={`url(#${id}pg)`}/>
+          <ellipse cx="40" cy="37" rx="10" ry="7" fill="white" opacity="0.45" transform="rotate(-20 40 37)"/>
+          <ellipse cx="50" cy="50" rx="46" ry="14" stroke={c[0]} strokeWidth="5" fill="none" transform="rotate(-25 50 50)" clipPath={`url(#${id}fc)`}/>
+        </svg>
+      );
+    }
+    default: {
+      return (
+        <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+          <defs>
+            <radialGradient id={`${id}fb`} cx="35%" cy="35%" r="65%">
+              <stop offset="0%" stopColor={c[0]}/>
+              <stop offset="100%" stopColor={c[2]}/>
+            </radialGradient>
+          </defs>
+          <circle cx="50" cy="50" r="44" fill={`url(#${id}fb)`}/>
+          <ellipse cx="38" cy="33" rx="12" ry="8" fill="white" opacity="0.4" transform="rotate(-30 38 33)"/>
+        </svg>
+      );
+    }
+  }
+}
+
 function GiftCard({ item, onClick }: { item: GiftItem; onClick: () => void }) {
   const cfg = RARITY_CONFIG[item.rarity] || RARITY_CONFIG.common;
   const emojiAnim = getEmojiAnimation(item.animationType);
@@ -99,9 +250,9 @@ function GiftCard({ item, onClick }: { item: GiftItem; onClick: () => void }) {
       <div className={`p-[1.5px] rounded-2xl bg-gradient-to-br ${cfg.gradient}`}>
         <div className="bg-[hsl(222,47%,13%)] rounded-2xl p-4 flex flex-col items-center justify-center text-center min-h-[160px] relative overflow-hidden">
           {hovered && item.rarity !== "common" && <FloatingParticles rarity={item.rarity} />}
-          <motion.span className="text-5xl mb-3 filter drop-shadow-lg inline-block relative z-10" {...(emojiAnim as any)}>
-            {item.emoji}
-          </motion.span>
+          <motion.div className="mb-3 relative z-10" {...(emojiAnim as any)}>
+            <GiftIconSVG animationType={item.animationType} rarity={item.rarity} size={64} />
+          </motion.div>
           <h3 className="font-bold text-sm mb-1 leading-tight relative z-10">{item.name}</h3>
           <div className="flex items-center gap-1 text-primary font-medium text-xs relative z-10">
             <Zap size={11} className="text-primary" />
@@ -407,7 +558,9 @@ export default function Gifts() {
                   return (
                     <motion.div key={gift.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`p-[1.5px] rounded-2xl bg-gradient-to-br ${cfg.gradient}`}>
                       <div className="bg-card rounded-2xl p-4 flex items-center gap-4">
-                        <span className="text-4xl">{gift.giftItem?.emoji}</span>
+                        <div className="shrink-0">
+                          <GiftIconSVG animationType={gift.giftItem?.animationType || "sparkle"} rarity={gift.giftItem?.rarity || "common"} size={52} />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold">{gift.giftItem?.name}</p>
                           <p className="text-sm text-muted-foreground">От {gift.isAnonymous ? "Анонима" : (gift.sender?.displayName || "Неизвестно")}</p>
@@ -441,7 +594,9 @@ export default function Gifts() {
                   return (
                     <motion.div key={gift.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`p-[1.5px] rounded-2xl bg-gradient-to-br ${cfg.gradient}`}>
                       <div className="bg-card rounded-2xl p-4 flex items-center gap-4">
-                        <span className="text-4xl">{gift.giftItem?.emoji}</span>
+                        <div className="shrink-0">
+                          <GiftIconSVG animationType={gift.giftItem?.animationType || "sparkle"} rarity={gift.giftItem?.rarity || "common"} size={52} />
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-bold">{gift.giftItem?.name}</p>
                           <p className="text-sm text-muted-foreground">Кому: {gift.receiver?.displayName || "Неизвестно"}</p>
@@ -474,12 +629,12 @@ export default function Gifts() {
               >
                 <div className={`p-[2px] rounded-3xl bg-gradient-to-br ${getRarityColor(selectedGift.rarity).gradient}`}>
                   <div className="bg-[hsl(222,47%,13%)] rounded-3xl p-5 flex flex-col items-center text-center">
-                    <motion.span
-                      className="text-7xl mb-3 filter drop-shadow-2xl inline-block"
+                    <motion.div
+                      className="mb-3 drop-shadow-2xl"
                       {...(getEmojiAnimation(selectedGift.animationType) as any)}
                     >
-                      {selectedGift.emoji}
-                    </motion.span>
+                      <GiftIconSVG animationType={selectedGift.animationType} rarity={selectedGift.rarity} size={96} />
+                    </motion.div>
                     <h2 className="text-xl font-black mb-1">{selectedGift.name}</h2>
                     <span className={`text-xs font-black uppercase tracking-widest px-2.5 py-1 rounded-full border mb-2 ${getRarityColor(selectedGift.rarity).badge}`}>
                       {selectedGift.rarity}
