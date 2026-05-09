@@ -113,20 +113,17 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
   const { t } = useLanguage();
   const { data: me } = useGetMe();
   const { data: chats } = useGetChats();
-  const [isAdmin, setIsAdmin] = useState(ADMIN_USER_IDS.includes(me?.id ?? -1));
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const uid = localStorage.getItem("pulse-user-id");
-    if (!uid) return;
-    fetch("/api/admin/check", { headers: { "x-user-id": uid } })
+    setIsAdmin(false);
+    if (!currentUserId) return;
+    if (ADMIN_USER_IDS.includes(currentUserId)) { setIsAdmin(true); return; }
+    fetch("/api/admin/check", { headers: { "x-user-id": String(currentUserId) } })
       .then(r => r.json())
-      .then(d => { if (d.isAdmin) setIsAdmin(true); })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if (me?.id && ADMIN_USER_IDS.includes(me.id)) setIsAdmin(true);
-  }, [me?.id]);
+      .then(d => { setIsAdmin(d.isAdmin === true); })
+      .catch(() => { setIsAdmin(false); });
+  }, [currentUserId]);
 
   const totalUnread = chats?.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) ?? 0;
   const initial = me?.displayName?.[0]?.toUpperCase() || "U";
