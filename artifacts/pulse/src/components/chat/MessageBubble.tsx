@@ -7,6 +7,16 @@ import { getGetMessagesQueryKey } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { Check, CheckCheck, X, Info, Play, Pause, Mic, Reply, Pencil, Trash2, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🔥"];
 
@@ -102,6 +112,7 @@ export function MessageBubble({ message, onReply, onEdit }: MessageBubbleProps) 
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
@@ -178,8 +189,13 @@ export function MessageBubble({ message, onReply, onEdit }: MessageBubbleProps) 
     if (message.text) navigator.clipboard.writeText(message.text).catch(() => {});
   };
 
-  const handleDelete = async () => {
+  const handleDeleteRequest = () => {
     closeMenu();
+    setConfirmDelete(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setConfirmDelete(false);
     setActionLoading("delete");
     try {
       await fetch(`/api/messages/${message.id}`, { method: "DELETE", headers: getAuthHeaders() });
@@ -473,7 +489,7 @@ export function MessageBubble({ message, onReply, onEdit }: MessageBubbleProps) 
                 )}
                 {isMine && (
                   <button
-                    onClick={handleDelete}
+                    onClick={handleDeleteRequest}
                     disabled={actionLoading === "delete"}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors text-left"
                   >
@@ -486,6 +502,29 @@ export function MessageBubble({ message, onReply, onEdit }: MessageBubbleProps) 
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 size={18} className="text-destructive" />
+              Удалить сообщение?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие нельзя отменить. Сообщение будет удалено навсегда.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
