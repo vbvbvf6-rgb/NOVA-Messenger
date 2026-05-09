@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useGetGiftCatalog, useGetSentGifts, useGetReceivedGifts, GiftItem, Gift } from "@workspace/api-client-react";
 import { Zap, ArrowUpRight, ArrowDownLeft, Gift as GiftIcon, Search, AlertTriangle, X, UserRound, MessageSquare, EyeOff } from "lucide-react";
+import { GiftArt } from "./GiftArt";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -186,8 +187,7 @@ function GiftVisual({ name, emoji, rarity, animationType, size = 64 }: {
   size?: number;
 }) {
   const theme = getGiftTheme(name);
-  const emojiAnim = getEmojiAnimation(animationType);
-  const emojiSize = Math.round(size * 0.55);
+  const artAnim = getEmojiAnimation(animationType);
   const isHighRarity = rarity === "legendary" || rarity === "epic";
   const isRare = rarity === "rare";
 
@@ -197,14 +197,14 @@ function GiftVisual({ name, emoji, rarity, animationType, size = 64 }: {
       style={{
         width: size,
         height: size,
-        background: `radial-gradient(circle at 35% 30%, ${theme.bg1}55 0%, ${theme.bg2}99 100%)`,
-        boxShadow: `0 0 ${size * 0.35}px ${theme.glow}50, inset 0 1px 0 rgba(255,255,255,0.12)`,
+        background: `radial-gradient(circle at 35% 30%, ${theme.bg1}22 0%, ${theme.bg2}cc 100%)`,
+        boxShadow: `0 0 ${size * 0.4}px ${theme.glow}60, inset 0 1px 0 rgba(255,255,255,0.15)`,
       }}
     >
       {isHighRarity && (
         <motion.div
           className="absolute inset-0 rounded-2xl"
-          style={{ background: `conic-gradient(from 0deg, ${theme.bg1}30, ${theme.ring}50, ${theme.bg1}30)` }}
+          style={{ background: `conic-gradient(from 0deg, ${theme.bg1}25, ${theme.ring}45, ${theme.bg1}25)` }}
           animate={{ rotate: [0, 360] }}
           transition={{ duration: rarity === "legendary" ? 3 : 5, repeat: Infinity, ease: "linear" }}
         />
@@ -212,23 +212,23 @@ function GiftVisual({ name, emoji, rarity, animationType, size = 64 }: {
       {isRare && (
         <motion.div
           className="absolute rounded-2xl border"
-          style={{ inset: 2, borderColor: `${theme.ring}60` }}
-          animate={{ opacity: [0.4, 1, 0.4] }}
+          style={{ inset: 2, borderColor: `${theme.ring}50` }}
+          animate={{ opacity: [0.3, 0.9, 0.3] }}
           transition={{ duration: 2, repeat: Infinity }}
         />
       )}
-      <motion.span
-        className="relative z-10 select-none"
-        style={{ fontSize: emojiSize, lineHeight: 1 }}
-        {...(emojiAnim as any)}
+      <motion.div
+        className="relative z-10 select-none flex items-center justify-center"
+        style={{ width: size, height: size }}
+        {...(artAnim as any)}
       >
-        {emoji}
-      </motion.span>
+        <GiftArt name={name} size={size} />
+      </motion.div>
       {rarity === "legendary" && (
         <motion.div
-          className="absolute inset-0 rounded-2xl"
-          style={{ background: `radial-gradient(circle at 50% 50%, ${theme.bg1}25, transparent 70%)` }}
-          animate={{ scale: [1, 1.15, 1], opacity: [0.5, 1, 0.5] }}
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${theme.bg1}20, transparent 70%)` }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.9, 0.4] }}
           transition={{ duration: 2, repeat: Infinity }}
         />
       )}
@@ -330,8 +330,10 @@ function CelebrationOverlay({ animationType, giftName, emoji, onDone }: { animat
         exit={{ scale: 0, opacity: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <div className="bg-black/60 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
-          <div className="text-7xl mb-3">{emoji}</div>
+        <div className="bg-black/60 backdrop-blur-xl rounded-3xl p-8 border border-white/10 flex flex-col items-center">
+          <div className="mb-4">
+            <GiftArt name={giftName} size={96} />
+          </div>
           <div className="text-2xl font-black text-white">Подарок отправлен!</div>
           <div className="text-sm text-white/60 mt-1">{giftName} улетел к получателю ✨</div>
         </div>
