@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Eye, EyeOff, Zap, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Zap, ShieldCheck } from "lucide-react";
+import PulseLogo from "@/components/PulseLogo";
 
 interface LoginProps {
   onLogin: (userId: number) => void;
@@ -103,12 +104,12 @@ export default function Login({ onLogin }: LoginProps) {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-            className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-[0_0_40px_rgba(0,188,212,0.5)] mb-4"
+            className="w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-[0_0_40px_rgba(6,182,212,0.5)] mb-4"
           >
             {step === "2fa" ? (
               <ShieldCheck className="text-white" size={40} />
             ) : (
-              <MessageCircle className="text-white" size={40} />
+              <PulseLogo size={44} />
             )}
           </motion.div>
           <h1 className="text-3xl font-black text-white">Pulse</h1>

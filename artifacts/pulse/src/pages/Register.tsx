@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, Eye, EyeOff, Zap, ShieldAlert, ShieldCheck, AlertTriangle, ArrowLeft, Calendar } from "lucide-react";
+import { Eye, EyeOff, Zap, ShieldAlert, ShieldCheck, AlertTriangle, ArrowLeft, Calendar } from "lucide-react";
+import PulseLogo from "@/components/PulseLogo";
 
 interface RegisterProps {
   onLogin: (userId: number) => void;
@@ -48,6 +49,9 @@ export default function Register({ onLogin }: RegisterProps) {
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
 
+  const [ageConfirmChecked, setAgeConfirmChecked] = useState(false);
+  const [ageConfirmTerms, setAgeConfirmTerms] = useState(false);
+
   const handleDobSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setDobError("");
@@ -62,13 +66,14 @@ export default function Register({ onLogin }: RegisterProps) {
     }
     setCalculatedAge(age);
     setAgeGroup(ageToGroup(age));
+    setAgeConfirmChecked(false);
+    setAgeConfirmTerms(false);
     if (age < 13) {
       setStep("age-blocked");
     } else if (age < 18) {
       setStep("age-warning");
     } else {
       setStep("age-confirmed");
-      setTimeout(() => setStep("register"), 1400);
     }
   };
 
@@ -140,9 +145,9 @@ export default function Register({ onLogin }: RegisterProps) {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-            className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-[0_0_40px_rgba(0,188,212,0.5)] mb-4"
+            className="w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500 to-violet-600 flex items-center justify-center shadow-[0_0_40px_rgba(6,182,212,0.5)] mb-4"
           >
-            <MessageCircle className="text-white" size={40} />
+            <PulseLogo size={44} />
           </motion.div>
           <h1 className="text-3xl font-black text-white">Pulse</h1>
           <p className="text-muted-foreground text-sm mt-1">Создайте аккаунт</p>
@@ -360,25 +365,72 @@ export default function Register({ onLogin }: RegisterProps) {
             </motion.div>
           )}
 
-          {/* STEP: Age confirmed (18+) — brief success flash */}
+          {/* STEP: Age confirmed (18+) — requires active user confirmation */}
           {step === "age-confirmed" && (
             <motion.div
               key="age-confirmed"
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.05 }}
-              className="bg-card border border-green-500/30 rounded-3xl p-8 shadow-2xl text-center"
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card border border-green-500/30 rounded-3xl p-6 shadow-2xl"
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 400, delay: 0.1 }}
-                className="w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-4"
-              >
-                <ShieldCheck size={36} className="text-green-400" />
-              </motion.div>
-              <h2 className="font-black text-xl text-foreground mb-1">Возраст подтверждён</h2>
-              <p className="text-sm text-muted-foreground">Вам {calculatedAge} лет — всё в порядке!</p>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center shrink-0">
+                  <ShieldCheck size={26} className="text-green-400" />
+                </div>
+                <div>
+                  <h2 className="font-black text-base text-foreground">Подтверждение совершеннолетия</h2>
+                  <p className="text-xs text-green-400 font-semibold">Вам {calculatedAge} лет</p>
+                </div>
+              </div>
+
+              <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4 mb-5 text-sm text-muted-foreground leading-relaxed">
+                Перед созданием аккаунта необходимо подтвердить, что вы являетесь совершеннолетним пользователем и соглашаетесь с правилами сервиса.
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={ageConfirmChecked}
+                    onChange={(e) => setAgeConfirmChecked(e.target.checked)}
+                    className="mt-0.5 w-5 h-5 rounded accent-green-500 cursor-pointer shrink-0"
+                  />
+                  <span className="text-sm text-foreground leading-snug">
+                    Я подтверждаю, что мне исполнилось <span className="font-bold text-green-400">18 лет</span>, и указанная дата рождения верна
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={ageConfirmTerms}
+                    onChange={(e) => setAgeConfirmTerms(e.target.checked)}
+                    className="mt-0.5 w-5 h-5 rounded accent-green-500 cursor-pointer shrink-0"
+                  />
+                  <span className="text-sm text-foreground leading-snug">
+                    Я принимаю <span className="font-semibold text-primary">Условия использования</span> и <span className="font-semibold text-primary">Политику конфиденциальности</span> Pulse
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setDobDay(""); setDobMonth(""); setDobYear(""); setStep("age-gate"); }}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
+                >
+                  <ArrowLeft size={15} /> Назад
+                </button>
+                <motion.button
+                  whileHover={{ scale: ageConfirmChecked && ageConfirmTerms ? 1.02 : 1 }}
+                  whileTap={{ scale: ageConfirmChecked && ageConfirmTerms ? 0.98 : 1 }}
+                  disabled={!ageConfirmChecked || !ageConfirmTerms}
+                  onClick={() => setStep("register")}
+                  className="flex-[2] py-3 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(34,197,94,0.3)]"
+                >
+                  Подтверждаю → Далее
+                </motion.button>
+              </div>
             </motion.div>
           )}
 
