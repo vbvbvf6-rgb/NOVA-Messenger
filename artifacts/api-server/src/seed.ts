@@ -5,44 +5,44 @@ import { createHash } from "node:crypto";
 const hash = (pass: string) => createHash("sha256").update(pass).digest("hex");
 
 const GIFT_CATALOG = [
-  // ── COMMON (10–50 ⚡) ──────────────────────────────────────────────────
-  { name: "Сердечко",        emoji: "❤️",  animationType: "hearts",    rarity: "common",    stars: 1,  price: 10,    description: "Тёплое сердечко для близкого человека" },
-  { name: "Звёздочка",       emoji: "⭐",  animationType: "stars",     rarity: "common",    stars: 1,  price: 10,    description: "Маленькая, но яркая звезда" },
-  { name: "Цветок сакуры",   emoji: "🌸",  animationType: "confetti",  rarity: "common",    stars: 1,  price: 15,    description: "Нежный цветок весны" },
-  { name: "Пончик",          emoji: "🍩",  animationType: "bounce",    rarity: "common",    stars: 1,  price: 15,    description: "Сладкий пончик на удачу" },
-  { name: "Котёнок",         emoji: "🐱",  animationType: "hearts",    rarity: "common",    stars: 2,  price: 25,    description: "Самый милый котёнок" },
-  { name: "Воздушный шар",   emoji: "🎈",  animationType: "balloons",  rarity: "common",    stars: 2,  price: 25,    description: "Праздничный воздушный шарик" },
-  { name: "Четырёхлистник",  emoji: "🍀",  animationType: "confetti",  rarity: "common",    stars: 2,  price: 20,    description: "Клевер — символ удачи" },
-  { name: "Пицца",           emoji: "🍕",  animationType: "bounce",    rarity: "common",    stars: 2,  price: 30,    description: "Кусочек дружбы и тепла" },
-  { name: "Торт",            emoji: "🎂",  animationType: "confetti",  rarity: "common",    stars: 2,  price: 35,    description: "Праздничный торт" },
-  { name: "Луна",            emoji: "🌙",  animationType: "sparkle",   rarity: "common",    stars: 2,  price: 20,    description: "Ночная луна светит только тебе" },
+  // ── COMMON (50–175 ⚡) ─────────────────────────────────────────────────
+  { name: "Сердечко",        emoji: "❤️",  animationType: "hearts",    rarity: "common",    stars: 1,  price: 50,    description: "Тёплое сердечко для близкого человека" },
+  { name: "Звёздочка",       emoji: "⭐",  animationType: "stars",     rarity: "common",    stars: 1,  price: 50,    description: "Маленькая, но яркая звезда" },
+  { name: "Цветок сакуры",   emoji: "🌸",  animationType: "confetti",  rarity: "common",    stars: 1,  price: 75,    description: "Нежный цветок весны" },
+  { name: "Пончик",          emoji: "🍩",  animationType: "bounce",    rarity: "common",    stars: 1,  price: 75,    description: "Сладкий пончик на удачу" },
+  { name: "Котёнок",         emoji: "🐱",  animationType: "hearts",    rarity: "common",    stars: 2,  price: 125,   description: "Самый милый котёнок" },
+  { name: "Воздушный шар",   emoji: "🎈",  animationType: "balloons",  rarity: "common",    stars: 2,  price: 125,   description: "Праздничный воздушный шарик" },
+  { name: "Четырёхлистник",  emoji: "🍀",  animationType: "confetti",  rarity: "common",    stars: 2,  price: 100,   description: "Клевер — символ удачи" },
+  { name: "Пицца",           emoji: "🍕",  animationType: "bounce",    rarity: "common",    stars: 2,  price: 150,   description: "Кусочек дружбы и тепла" },
+  { name: "Торт",            emoji: "🎂",  animationType: "confetti",  rarity: "common",    stars: 2,  price: 175,   description: "Праздничный торт" },
+  { name: "Луна",            emoji: "🌙",  animationType: "sparkle",   rarity: "common",    stars: 2,  price: 100,   description: "Ночная луна светит только тебе" },
 
-  // ── RARE (100–500 ⚡) ──────────────────────────────────────────────────
-  { name: "Корона",          emoji: "👑",  animationType: "sparkle",   rarity: "rare",      stars: 3,  price: 100,   description: "Почувствуй себя королём" },
-  { name: "Красная роза",    emoji: "🌹",  animationType: "hearts",    rarity: "rare",      stars: 3,  price: 150,   description: "Алая роза — символ страсти" },
-  { name: "Лиса",            emoji: "🦊",  animationType: "bounce",    rarity: "rare",      stars: 3,  price: 125,   description: "Хитрая и обаятельная лиса" },
-  { name: "Бриллиант",       emoji: "💎",  animationType: "diamonds",  rarity: "rare",      stars: 4,  price: 200,   description: "Сверкающий бриллиант" },
-  { name: "Ракета",          emoji: "🚀",  animationType: "lightning", rarity: "rare",      stars: 4,  price: 250,   description: "В небо и выше!" },
-  { name: "Гитара",          emoji: "🎸",  animationType: "sparkle",   rarity: "rare",      stars: 4,  price: 200,   description: "Рок-н-ролл навсегда" },
-  { name: "Кубок",           emoji: "🏆",  animationType: "fireworks", rarity: "rare",      stars: 5,  price: 350,   description: "Ты настоящий победитель" },
-  { name: "Радуга",          emoji: "🌈",  animationType: "confetti",  rarity: "rare",      stars: 4,  price: 175,   description: "Яркая радуга после дождя" },
-  { name: "Молния",          emoji: "⚡",  animationType: "lightning", rarity: "rare",      stars: 5,  price: 300,   description: "Электрическая энергия" },
-  { name: "Самоцвет",        emoji: "🏅",  animationType: "sparkle",   rarity: "rare",      stars: 5,  price: 400,   description: "Редкий самоцвет" },
+  // ── RARE (500–2000 ⚡) ─────────────────────────────────────────────────
+  { name: "Корона",          emoji: "👑",  animationType: "sparkle",   rarity: "rare",      stars: 3,  price: 500,   description: "Почувствуй себя королём" },
+  { name: "Красная роза",    emoji: "🌹",  animationType: "hearts",    rarity: "rare",      stars: 3,  price: 750,   description: "Алая роза — символ страсти" },
+  { name: "Лиса",            emoji: "🦊",  animationType: "bounce",    rarity: "rare",      stars: 3,  price: 625,   description: "Хитрая и обаятельная лиса" },
+  { name: "Бриллиант",       emoji: "💎",  animationType: "diamonds",  rarity: "rare",      stars: 4,  price: 1000,  description: "Сверкающий бриллиант" },
+  { name: "Ракета",          emoji: "🚀",  animationType: "lightning", rarity: "rare",      stars: 4,  price: 1250,  description: "В небо и выше!" },
+  { name: "Гитара",          emoji: "🎸",  animationType: "sparkle",   rarity: "rare",      stars: 4,  price: 1000,  description: "Рок-н-ролл навсегда" },
+  { name: "Кубок",           emoji: "🏆",  animationType: "fireworks", rarity: "rare",      stars: 5,  price: 1750,  description: "Ты настоящий победитель" },
+  { name: "Радуга",          emoji: "🌈",  animationType: "confetti",  rarity: "rare",      stars: 4,  price: 875,   description: "Яркая радуга после дождя" },
+  { name: "Молния",          emoji: "⚡",  animationType: "lightning", rarity: "rare",      stars: 5,  price: 1500,  description: "Электрическая энергия" },
+  { name: "Самоцвет",        emoji: "🏅",  animationType: "sparkle",   rarity: "rare",      stars: 5,  price: 2000,  description: "Редкий самоцвет" },
 
-  // ── EPIC (500–2500 ⚡) ─────────────────────────────────────────────────
-  { name: "Дракон",          emoji: "🐉",  animationType: "flame",     rarity: "epic",      stars: 6,  price: 750,   description: "Могущественный огнедышащий дракон" },
-  { name: "Единорог",        emoji: "🦄",  animationType: "magic",     rarity: "epic",      stars: 7,  price: 1000,  description: "Магический единорог из легенд" },
-  { name: "Феникс",          emoji: "🦅",  animationType: "flame",     rarity: "epic",      stars: 7,  price: 1200,  description: "Птица феникс — возрождение" },
-  { name: "Планета",         emoji: "🪐",  animationType: "galaxy",    rarity: "epic",      stars: 8,  price: 1500,  description: "Далёкая загадочная планета" },
-  { name: "Волшебство",      emoji: "🪄",  animationType: "magic",     rarity: "epic",      stars: 8,  price: 1800,  description: "Исполни любое желание" },
-  { name: "Кристалл",        emoji: "🔮",  animationType: "galaxy",    rarity: "epic",      stars: 9,  price: 2500,  description: "Магический предсказательный шар" },
+  // ── EPIC (3000–12000 ⚡) ───────────────────────────────────────────────
+  { name: "Дракон",          emoji: "🐉",  animationType: "flame",     rarity: "epic",      stars: 6,  price: 3000,  description: "Могущественный огнедышащий дракон" },
+  { name: "Единорог",        emoji: "🦄",  animationType: "magic",     rarity: "epic",      stars: 7,  price: 5000,  description: "Магический единорог из легенд" },
+  { name: "Феникс",          emoji: "🦅",  animationType: "flame",     rarity: "epic",      stars: 7,  price: 6000,  description: "Птица феникс — возрождение" },
+  { name: "Планета",         emoji: "🪐",  animationType: "galaxy",    rarity: "epic",      stars: 8,  price: 7500,  description: "Далёкая загадочная планета" },
+  { name: "Волшебство",      emoji: "🪄",  animationType: "magic",     rarity: "epic",      stars: 8,  price: 9000,  description: "Исполни любое желание" },
+  { name: "Кристалл",        emoji: "🔮",  animationType: "galaxy",    rarity: "epic",      stars: 9,  price: 12000, description: "Магический предсказательный шар" },
 
-  // ── LEGENDARY (5000–50000 ⚡) ──────────────────────────────────────────
-  { name: "Галактика",       emoji: "🌌",  animationType: "galaxy",    rarity: "legendary", stars: 12, price: 5000,  description: "Целая галактика в твоих руках" },
-  { name: "Ангел",           emoji: "👼",  animationType: "magic",     rarity: "legendary", stars: 15, price: 10000, description: "Небесный ангел-хранитель" },
-  { name: "Пульс",           emoji: "💜",  animationType: "fireworks", rarity: "legendary", stars: 20, price: 20000, description: "Символ мессенджера Pulse" },
-  { name: "Звезда",          emoji: "🌟",  animationType: "stars",     rarity: "legendary", stars: 25, price: 25000, description: "Легендарная путеводная звезда" },
-  { name: "Бесконечность",   emoji: "♾️",  animationType: "galaxy",    rarity: "legendary", stars: 50, price: 50000, description: "Бесконечность и далее — высший подарок" },
+  // ── LEGENDARY (25000–250000 ⚡) ────────────────────────────────────────
+  { name: "Галактика",       emoji: "🌌",  animationType: "galaxy",    rarity: "legendary", stars: 12, price: 25000,  description: "Целая галактика в твоих руках" },
+  { name: "Ангел",           emoji: "👼",  animationType: "magic",     rarity: "legendary", stars: 15, price: 50000,  description: "Небесный ангел-хранитель" },
+  { name: "Пульс",           emoji: "💜",  animationType: "fireworks", rarity: "legendary", stars: 20, price: 100000, description: "Символ мессенджера Pulse" },
+  { name: "Звезда",          emoji: "🌟",  animationType: "stars",     rarity: "legendary", stars: 25, price: 150000, description: "Легендарная путеводная звезда" },
+  { name: "Бесконечность",   emoji: "♾️",  animationType: "galaxy",    rarity: "legendary", stars: 50, price: 250000, description: "Бесконечность и далее — высший подарок" },
 ];
 
 const SYSTEM_USERS = [
