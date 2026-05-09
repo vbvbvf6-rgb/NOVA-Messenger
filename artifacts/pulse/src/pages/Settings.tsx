@@ -1385,6 +1385,25 @@ export default function Settings() {
           </div>
         </Section>
 
+        {/* ── DEVELOPER ── */}
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <a
+            href="/bots"
+            className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 8V4H8"/><rect x="4" y="8" width="4" height="4" rx="1"/><rect x="4" y="16" width="4" height="4" rx="1"/><rect x="16" y="16" width="4" height="4" rx="1"/><path d="M12 20v-4"/><path d="M12 12v-1"/><path d="M20 12H4"/><path d="M20 12a8 8 0 0 0-8-8"/><circle cx="12" cy="12" r="1" fill="white"/>
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-foreground text-sm">Разработчику</p>
+              <p className="text-xs text-muted-foreground">Создание ботов, токены, Python SDK</p>
+            </div>
+            <ChevronRight size={15} className="text-muted-foreground" />
+          </a>
+        </div>
+
         {/* ── LOGOUT ── */}
         <div className="flex justify-center pt-2 pb-12">
           <button

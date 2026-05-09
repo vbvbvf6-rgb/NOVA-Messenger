@@ -6,6 +6,7 @@ import path from "node:path";
 import rateLimit from "express-rate-limit";
 import jwt from "jsonwebtoken";
 import router from "./routes";
+import botApiRouter from "./routes/botapi";
 import { logger } from "./lib/logger";
 
 declare global {
@@ -70,6 +71,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 app.use("/api", router);
+app.use("/bot", botApiRouter);
 
 if (process.env.NODE_ENV === "production") {
   const staticDir = path.join(process.cwd(), "artifacts/pulse/dist/public");

@@ -172,6 +172,43 @@ router.post("/messages", async (req, res) => {
           const bot = (members.rows as any[]).find(m => m.is_bot);
           if (!bot) return;
 
+          // Route to user-created bot via update queue
+          const tokenRow = await db.execute(sql`SELECT id FROM bot_tokens WHERE bot_user_id = ${bot.id}`);
+          if ((tokenRow.rows as any[]).length > 0) {
+            const countRow = await db.execute(sql`SELECT COALESCE(MAX(update_id),0) as mx FROM bot_updates WHERE bot_user_id = ${bot.id}`);
+            const nextId = Number((countRow.rows[0] as any)?.mx ?? 0) + 1;
+            const senderRow = await db.execute(sql`SELECT id, username, display_name FROM users WHERE id = ${uid}`);
+            const sender = senderRow.rows[0] as any;
+            const chatRow = await db.execute(sql`SELECT id, type, name FROM chats WHERE id = ${body.chatId}`);
+            const chat = chatRow.rows[0] as any;
+            const payload = {
+              message: {
+                message_id: msg.id,
+                from: { id: sender?.id, is_bot: false, first_name: sender?.display_name || sender?.username, username: sender?.username },
+                chat: { id: chat?.id, type: chat?.type === "direct" ? "private" : (chat?.type || "private"), title: chat?.name },
+                date: Math.floor(Date.now() / 1000),
+                text: body.text,
+              }
+            };
+            await db.execute(sql`INSERT INTO bot_updates (bot_user_id, update_id, payload) VALUES (${bot.id}, ${nextId}, ${JSON.stringify(payload)})`);
+            // Deliver to webhook if configured
+            const wh = await db.execute(sql`SELECT url, secret_token FROM bot_webhooks WHERE bot_user_id = ${bot.id}`);
+            if ((wh.rows as any[]).length > 0) {
+              const { url, secret_token } = wh.rows[0] as any;
+              const headers: Record<string, string> = { "Content-Type": "application/json" };
+              if (secret_token) headers["X-Telegram-Bot-Api-Secret-Token"] = secret_token;
+              fetch(url, { method: "POST", headers, body: JSON.stringify({ update_id: nextId, ...payload }) })
+                .then(async r => {
+                  if (!r.ok) {
+                    await db.execute(sql`UPDATE bot_webhooks SET last_error = ${await r.text()}, last_error_at = NOW() WHERE bot_user_id = ${bot.id}`);
+                  }
+                }).catch(async (e: Error) => {
+                  await db.execute(sql`UPDATE bot_webhooks SET last_error = ${e.message}, last_error_at = NOW() WHERE bot_user_id = ${bot.id}`);
+                });
+            }
+            return;
+          }
+
           const history = await db.select().from(messagesTable)
             .where(eq(messagesTable.chatId, body.chatId))
             .orderBy(desc(messagesTable.createdAt))
