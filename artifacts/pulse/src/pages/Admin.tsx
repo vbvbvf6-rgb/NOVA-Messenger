@@ -7,8 +7,6 @@ import {
   Edit3, Save, ChevronDown, ChevronRight, Minus, Ban, FileText, Trophy, Image, Package
 } from "lucide-react";
 
-const ADMIN_USER_IDS = [4];
-
 interface AdminUser {
   id: number;
   username: string;
@@ -100,7 +98,7 @@ export default function Admin() {
     fetch("/api/admin/check", { headers: getHeader() })
       .then(r => r.json())
       .then(d => { setHasAccess(d.isAdmin === true); setAccessChecked(true); })
-      .catch(() => { setHasAccess(ADMIN_USER_IDS.includes(userId)); setAccessChecked(true); });
+      .catch(() => { setHasAccess(false); setAccessChecked(true); });
   }, [userId]);
 
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -1167,7 +1165,7 @@ export default function Admin() {
                       </div>
 
                       {/* Admin rights */}
-                      {!ADMIN_USER_IDS.includes(selectedUser.id) && (
+                      {!selectedUser.is_admin && (
                         <button
                           onClick={() => handleToggleAdmin(selectedUser)}
                           className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-sm font-medium ${
@@ -1182,7 +1180,7 @@ export default function Admin() {
                       )}
 
                       {/* Ban / Unban */}
-                      {!ADMIN_USER_IDS.includes(selectedUser.id) && (
+                      {!selectedUser.is_admin && (
                         <button
                           onClick={() => handleBanToggle(selectedUser)}
                           disabled={banLoading}

@@ -42,8 +42,6 @@ import {
 } from "@/components/ui/tooltip";
 import { SavedAccount } from "@/lib/accounts";
 
-const ADMIN_USER_IDS = [4];
-
 function VerifiedBadge() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="shrink-0">
@@ -116,16 +114,8 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    setIsAdmin(false);
-    if (!currentUserId) return;
-    if (ADMIN_USER_IDS.includes(currentUserId)) { setIsAdmin(true); return; }
-    const _token = localStorage.getItem("pulse-token");
-    const _adminHeader = _token ? { "Authorization": `Bearer ${_token}` } : { "x-user-id": String(currentUserId) };
-    fetch("/api/admin/check", { headers: _adminHeader })
-      .then(r => r.json())
-      .then(d => { setIsAdmin(d.isAdmin === true); })
-      .catch(() => { setIsAdmin(false); });
-  }, [currentUserId]);
+    setIsAdmin((me as any)?.isAdmin === true);
+  }, [me]);
 
   const totalUnread = chats?.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) ?? 0;
   const initial = me?.displayName?.[0]?.toUpperCase() || "U";

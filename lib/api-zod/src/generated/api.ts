@@ -30,6 +30,7 @@ export const GetMeResponse = zod.object({
   phoneNumber: zod.string().nullish(),
   isBot: zod.boolean(),
   isVerified: zod.boolean(),
+  isAdmin: zod.boolean(),
   createdAt: zod.string(),
 });
 
@@ -43,7 +44,6 @@ export const UpdateMeBody = zod.object({
   avatarColor: zod.string().optional(),
   statusText: zod.string().optional(),
   status: zod.enum(["online", "offline", "away"]).optional(),
-  phoneNumber: zod.string().optional(),
 });
 
 export const UpdateMeResponse = zod.object({
@@ -59,6 +59,7 @@ export const UpdateMeResponse = zod.object({
   phoneNumber: zod.string().nullish(),
   isBot: zod.boolean(),
   isVerified: zod.boolean(),
+  isAdmin: zod.boolean(),
   createdAt: zod.string(),
 });
 
@@ -82,6 +83,7 @@ export const SearchUsersResponseItem = zod.object({
   phoneNumber: zod.string().nullish(),
   isBot: zod.boolean(),
   isVerified: zod.boolean(),
+  isAdmin: zod.boolean(),
   createdAt: zod.string(),
 });
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem);
@@ -103,6 +105,7 @@ export const GetUserByIdResponse = zod.object({
   phoneNumber: zod.string().nullish(),
   isBot: zod.boolean(),
   isVerified: zod.boolean(),
+  isAdmin: zod.boolean(),
   createdAt: zod.string(),
 });
 
@@ -122,6 +125,7 @@ export const GetContactsResponseItem = zod.object({
   phoneNumber: zod.string().nullish(),
   isBot: zod.boolean(),
   isVerified: zod.boolean(),
+  isAdmin: zod.boolean(),
   createdAt: zod.string(),
 });
 export const GetContactsResponse = zod.array(GetContactsResponseItem);
@@ -191,6 +195,7 @@ export const GetChatsResponseItem = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -211,6 +216,7 @@ export const GetChatsResponseItem = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -257,6 +263,7 @@ export const GetChatsResponseItem = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -274,6 +281,7 @@ export const GetChatsResponseItem = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -306,6 +314,7 @@ export const GetChatsResponseItem = zod.object({
             phoneNumber: zod.string().nullish(),
             isBot: zod.boolean(),
             isVerified: zod.boolean(),
+            isAdmin: zod.boolean(),
             createdAt: zod.string(),
           })
           .optional(),
@@ -326,6 +335,7 @@ export const GetChatsResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -399,6 +409,7 @@ export const GetChatByIdResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -419,6 +430,7 @@ export const GetChatByIdResponse = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -465,6 +477,7 @@ export const GetChatByIdResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -482,6 +495,7 @@ export const GetChatByIdResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -514,6 +528,7 @@ export const GetChatByIdResponse = zod.object({
             phoneNumber: zod.string().nullish(),
             isBot: zod.boolean(),
             isVerified: zod.boolean(),
+            isAdmin: zod.boolean(),
             createdAt: zod.string(),
           })
           .optional(),
@@ -534,6 +549,7 @@ export const GetChatByIdResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -603,6 +619,7 @@ export const UpdateChatResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -623,6 +640,7 @@ export const UpdateChatResponse = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -669,6 +687,7 @@ export const UpdateChatResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -686,6 +705,7 @@ export const UpdateChatResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -718,6 +738,7 @@ export const UpdateChatResponse = zod.object({
             phoneNumber: zod.string().nullish(),
             isBot: zod.boolean(),
             isVerified: zod.boolean(),
+            isAdmin: zod.boolean(),
             createdAt: zod.string(),
           })
           .optional(),
@@ -738,6 +759,7 @@ export const UpdateChatResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -773,6 +795,7 @@ export const GetChatMembersResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .optional(),
@@ -850,6 +873,7 @@ export const PinChatResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -870,6 +894,7 @@ export const PinChatResponse = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -916,6 +941,7 @@ export const PinChatResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -933,6 +959,7 @@ export const PinChatResponse = zod.object({
               phoneNumber: zod.string().nullish(),
               isBot: zod.boolean(),
               isVerified: zod.boolean(),
+              isAdmin: zod.boolean(),
               createdAt: zod.string(),
             })
             .nullish(),
@@ -965,6 +992,7 @@ export const PinChatResponse = zod.object({
             phoneNumber: zod.string().nullish(),
             isBot: zod.boolean(),
             isVerified: zod.boolean(),
+            isAdmin: zod.boolean(),
             createdAt: zod.string(),
           })
           .optional(),
@@ -985,6 +1013,7 @@ export const PinChatResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1043,6 +1072,7 @@ export const GetMessagesResponseItem = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -1063,6 +1093,7 @@ export const GetMessagesResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1109,6 +1140,7 @@ export const GetMessagesResponseItem = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -1126,6 +1158,7 @@ export const GetMessagesResponseItem = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -1200,6 +1233,7 @@ export const EditMessageResponse = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -1220,6 +1254,7 @@ export const EditMessageResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1266,6 +1301,7 @@ export const EditMessageResponse = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -1283,6 +1319,7 @@ export const EditMessageResponse = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -1340,6 +1377,7 @@ export const GetCallHistoryResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1357,6 +1395,7 @@ export const GetCallHistoryResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1401,6 +1440,7 @@ export const GetCallByIdResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1418,6 +1458,7 @@ export const GetCallByIdResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1456,6 +1497,7 @@ export const UpdateCallStatusResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1473,6 +1515,7 @@ export const UpdateCallStatusResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1546,6 +1589,7 @@ export const GetSentGiftsResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1563,6 +1607,7 @@ export const GetSentGiftsResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1614,6 +1659,7 @@ export const GetReceivedGiftsResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1631,6 +1677,7 @@ export const GetReceivedGiftsResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1668,6 +1715,7 @@ export const GetStoriesResponseItem = zod.object({
     phoneNumber: zod.string().nullish(),
     isBot: zod.boolean(),
     isVerified: zod.boolean(),
+    isAdmin: zod.boolean(),
     createdAt: zod.string(),
   }),
   stories: zod.array(
@@ -1695,6 +1743,7 @@ export const GetStoriesResponseItem = zod.object({
           phoneNumber: zod.string().nullish(),
           isBot: zod.boolean(),
           isVerified: zod.boolean(),
+          isAdmin: zod.boolean(),
           createdAt: zod.string(),
         })
         .nullish(),
@@ -1751,6 +1800,7 @@ export const GetPostsResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1796,6 +1846,7 @@ export const LikePostResponse = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),
@@ -1825,6 +1876,7 @@ export const GetPostCommentsResponseItem = zod.object({
       phoneNumber: zod.string().nullish(),
       isBot: zod.boolean(),
       isVerified: zod.boolean(),
+      isAdmin: zod.boolean(),
       createdAt: zod.string(),
     })
     .nullish(),

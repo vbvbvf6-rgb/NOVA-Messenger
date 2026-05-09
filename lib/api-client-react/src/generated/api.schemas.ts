@@ -30,6 +30,7 @@ export interface User {
   phoneNumber?: string | null;
   isBot: boolean;
   isVerified: boolean;
+  isAdmin: boolean;
   createdAt: string;
 }
 
@@ -49,7 +50,6 @@ export interface UpdateUserBody {
   avatarColor?: string;
   statusText?: string;
   status?: UpdateUserBodyStatus;
-  phoneNumber?: string;
 }
 
 export interface AddContactBody {

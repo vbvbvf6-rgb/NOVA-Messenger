@@ -6,6 +6,7 @@ import {
   AlertTriangle, CheckCircle2, TrendingUp, X, Send
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useGetMe } from "@workspace/api-client-react";
 
 const TASK_CONFIGS: Record<string, { color: string; icon: React.ReactNode }> = {
   daily_login:    { color: "from-yellow-500 to-amber-500",   icon: <Zap size={20} className="text-white" /> },
@@ -94,6 +95,7 @@ async function verifyTask(taskId: string): Promise<{ ok: boolean; reason?: strin
 
 export default function Wallet() {
   const { toast } = useToast();
+  const { data: me } = useGetMe();
   const [balance, setBalance] = useState(0);
   const [walletAddress, setWalletAddress] = useState("");
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
@@ -112,7 +114,7 @@ export default function Wallet() {
   const [isSending, setIsSending] = useState(false);
 
   const uid = Number(localStorage.getItem("pulse-user-id") || "0");
-  const isAdmin = [4].includes(uid);
+  const isAdmin = (me as any)?.isAdmin === true;
 
   const tasksKey = `pulse-completed-tasks-${uid}`;
   const txKey = `pulse-tx-history-${uid}`;

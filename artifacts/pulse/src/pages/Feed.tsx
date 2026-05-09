@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const ADMIN_USER_IDS = [4];
 const getCurrentUserId = () => Number(localStorage.getItem("pulse-user-id") || "0");
 
 function VerifiedBadge() {
@@ -69,9 +68,10 @@ function PostCard({ post }: { post: Post }) {
   const queryClient = useQueryClient();
   const likePost = useLikePost();
   const createComment = useCreatePostComment();
+  const { data: me } = useGetMe();
   const currentUserId = getCurrentUserId();
 
-  const canDelete = post.author?.id === currentUserId || ADMIN_USER_IDS.includes(currentUserId);
+  const canDelete = post.author?.id === currentUserId || (me as any)?.isAdmin === true;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -120,7 +120,7 @@ function PostCard({ post }: { post: Post }) {
   };
 
   const isVerified = (post.author as any)?.isVerified;
-  const isAdmin = ADMIN_USER_IDS.includes((post.author as any)?.id);
+  const isAdmin = (post.author as any)?.isAdmin === true;
 
   return (
     <>
@@ -243,7 +243,7 @@ function PostCard({ post }: { post: Post }) {
                       <div className="flex items-center gap-1 mb-0.5">
                         <span className="text-xs font-semibold truncate max-w-[120px]">{(comment.author as any)?.displayName}</span>
                         {(comment.author as any)?.isVerified && <VerifiedBadge />}
-                        {ADMIN_USER_IDS.includes((comment.author as any)?.id) && <AdminBadge />}
+                        {(comment.author as any)?.isAdmin === true && <AdminBadge />}
                       </div>
                       <p className="text-xs text-foreground">{comment.text}</p>
                     </div>
