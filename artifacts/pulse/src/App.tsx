@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -39,6 +39,47 @@ interface MainAppProps {
 }
 
 function MainApp({ onLogout, onSwitchAccount, onRemoveAccount, onOpenAddAccount }: MainAppProps) {
+  useEffect(() => {
+    const checkScheduled = async () => {
+      const token = localStorage.getItem("pulse-token");
+      const uid = localStorage.getItem("pulse-user-id");
+      if (!token && !uid) return;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      else if (uid) headers["x-user-id"] = uid;
+
+      const now = Date.now();
+      const keysToProcess: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith("pulse-scheduled-")) keysToProcess.push(key);
+      }
+
+      for (const key of keysToProcess) {
+        const chatId = Number(key.replace("pulse-scheduled-", ""));
+        if (!chatId) continue;
+        try {
+          const items: { id: string; text: string; at: number }[] = JSON.parse(localStorage.getItem(key) || "[]");
+          const due = items.filter(m => m.at <= now);
+          if (!due.length) continue;
+          const remaining = items.filter(m => m.at > now);
+          localStorage.setItem(key, JSON.stringify(remaining));
+          for (const m of due) {
+            await fetch("/api/messages", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({ chatId, text: m.text, type: "text" }),
+            }).catch(() => {});
+          }
+        } catch {}
+      }
+    };
+
+    checkScheduled();
+    const id = setInterval(checkScheduled, 15_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <LanguageProvider>
     <AppProvider

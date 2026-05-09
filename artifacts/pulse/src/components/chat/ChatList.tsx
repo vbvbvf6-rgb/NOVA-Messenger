@@ -25,9 +25,28 @@ const FOLDERS: { key: FolderKey; label: string }[] = [
 
 function VerifiedBadge() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="shrink-0 inline-block">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="shrink-0 inline-block" title="Верифицирован">
       <circle cx="12" cy="12" r="12" fill="#00BCD4"/>
       <path d="M7 12l3.5 3.5L17 8" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function PrimeBadge() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="shrink-0 inline-block" title="Prime">
+      <circle cx="12" cy="12" r="12" fill="#F59E0B"/>
+      <path d="M5 15l3-5 4 3 4-3 3 5H5z" fill="white"/>
+      <path d="M12 7l1.2 2.5L16 9.8l-1.9 1.9.5 2.8L12 13.2l-2.6 1.3.5-2.8L8 9.8l2.8-.3L12 7z" fill="white"/>
+    </svg>
+  );
+}
+
+function AdminBadge() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="shrink-0 inline-block" title="Администратор">
+      <circle cx="12" cy="12" r="12" fill="#EF4444"/>
+      <path d="M12 5.5l4 2v5c0 2.5-1.8 4.7-4 5.3-2.2-.6-4-2.8-4-5.3v-5l4-2z" fill="white"/>
     </svg>
   );
 }
@@ -362,6 +381,8 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
             const lastMessage = chat.lastMessage;
             const isBot = (chat.otherUser as any)?.isBot;
             const isVerified = chat.type === "direct" && (chat.otherUser as any)?.isVerified;
+            const hasPrime = chat.type === "direct" && (chat.otherUser as any)?.hasPrime;
+            const isAdmin = chat.type === "direct" && (chat.otherUser as any)?.isAdmin;
 
             const displayName =
               chat.type === "direct"
@@ -406,7 +427,9 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
                     <div className="flex items-center gap-1 min-w-0">
                       <h3 className="font-semibold truncate text-sm text-foreground">{displayName}</h3>
                       {isVerified && <VerifiedBadge />}
-                      {isBot && !isVerified && (
+                      {hasPrime && <PrimeBadge />}
+                      {isAdmin && <AdminBadge />}
+                      {isBot && (
                         <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 rounded shrink-0">BOT</span>
                       )}
                       {chat.type === "channel" && (

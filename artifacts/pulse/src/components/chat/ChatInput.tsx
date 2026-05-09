@@ -284,28 +284,6 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
     if (!editMessage) localStorage.setItem(draftKey, e.target.value);
   };
 
-  // Scheduled messages: check every 30s and send due ones
-  useEffect(() => {
-    const schedKey = `pulse-scheduled-${chatId}`;
-    const check = async () => {
-      const raw = localStorage.getItem(schedKey);
-      if (!raw) return;
-      const items: { id: string; text: string; at: number }[] = JSON.parse(raw);
-      const now = Date.now();
-      const due = items.filter(m => m.at <= now);
-      if (!due.length) return;
-      const remaining = items.filter(m => m.at > now);
-      localStorage.setItem(schedKey, JSON.stringify(remaining));
-      for (const m of due) {
-        await sendMessage.mutateAsync({ data: { chatId, text: m.text, type: "text" } }).catch(() => {});
-      }
-      queryClient.invalidateQueries({ queryKey: getGetMessagesQueryKey({ chatId }) });
-      queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
-    };
-    check();
-    const id = setInterval(check, 30_000);
-    return () => clearInterval(id);
-  }, [chatId]);
 
   const handleScheduledSend = () => {
     if (!text.trim() || !scheduledAt) return;
@@ -319,7 +297,9 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
     if (textareaRef.current) textareaRef.current.style.height = "40px";
   };
 
-  const minDatetime = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
+  const _minDate = new Date(Date.now() + 60_000);
+  const _pad = (n: number) => n.toString().padStart(2, "0");
+  const minDatetime = `${_minDate.getFullYear()}-${_pad(_minDate.getMonth()+1)}-${_pad(_minDate.getDate())}T${_pad(_minDate.getHours())}:${_pad(_minDate.getMinutes())}`;
 
   const hasContent = text.trim().length > 0 || imagePreviews.length > 0;
 
