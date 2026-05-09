@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Zap, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Zap, ShieldCheck, MessageCircle } from "lucide-react";
 import PulseLogo from "@/components/PulseLogo";
 
 interface LoginProps {

@@ -1,9 +1,14 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Crown, Zap, Check, Star, Shield, MessageCircle, Gift, Image, Infinity } from "lucide-react";
+import {
+  Crown, Zap, Check, Star, Shield, MessageCircle, Gift, Image,
+  Infinity, X, AlertTriangle, Palette, RefreshCw, TrendingUp,
+  ShoppingCart, Bell, Clock, Lock
+} from "lucide-react";
 import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 const PLANS = [
   {
@@ -34,37 +39,122 @@ const PLANS = [
 ];
 
 const FEATURES = [
-  { icon: Crown, text: "Значок Pulse Prime у имени" },
-  { icon: MessageCircle, text: "Неограниченные сообщения без задержек" },
-  { icon: Image, text: "Загрузка медиафайлов без ограничений" },
-  { icon: Gift, text: "Эксклюзивные подарки только для Prime" },
-  { icon: Zap, text: "50 Spark ⚡ каждый месяц в подарок" },
-  { icon: Star, text: "Приоритетная поддержка 24/7" },
-  { icon: Shield, text: "Расширенная приватность и защита" },
-  { icon: Infinity, text: "Хранение истории сообщений навсегда" },
+  {
+    icon: Crown,
+    text: "Значок Prime ⭐ у вашего имени в чатах и профиле",
+    tag: "Визуально",
+    color: "text-yellow-400",
+    bg: "bg-yellow-500/10",
+  },
+  {
+    icon: TrendingUp,
+    text: "2× Spark за выполнение ежедневных заданий",
+    tag: "Работает",
+    color: "text-green-400",
+    bg: "bg-green-500/10",
+  },
+  {
+    icon: Zap,
+    text: "Ежедневный бонус 25 ⚡ вместо 10 ⚡",
+    tag: "Работает",
+    color: "text-green-400",
+    bg: "bg-green-500/10",
+  },
+  {
+    icon: RefreshCw,
+    text: "Смена никнейма каждые 24ч (вместо 7 дней)",
+    tag: "Работает",
+    color: "text-green-400",
+    bg: "bg-green-500/10",
+  },
+  {
+    icon: Gift,
+    text: "50 ⚡ Spark в подарок при оформлении подписки",
+    tag: "Работает",
+    color: "text-green-400",
+    bg: "bg-green-500/10",
+  },
+  {
+    icon: Gift,
+    text: "Эксклюзивные подарки только для Prime-участников",
+    tag: "Скоро",
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
+  },
+  {
+    icon: Palette,
+    text: "Кастомные темы и цвета интерфейса",
+    tag: "Скоро",
+    color: "text-purple-400",
+    bg: "bg-purple-500/10",
+  },
+  {
+    icon: Image,
+    text: "Загрузка медиафайлов без ограничений размера",
+    tag: "Визуально",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+  },
+  {
+    icon: Bell,
+    text: "Приоритетные уведомления и поддержка 24/7",
+    tag: "Скоро",
+    color: "text-orange-400",
+    bg: "bg-orange-500/10",
+  },
+  {
+    icon: Infinity,
+    text: "Хранение истории сообщений навсегда",
+    tag: "Визуально",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+  },
+  {
+    icon: Lock,
+    text: "Расширенная приватность: скрытый онлайн-статус",
+    tag: "Скоро",
+    color: "text-slate-400",
+    bg: "bg-slate-500/10",
+  },
+  {
+    icon: Clock,
+    text: "Отложенная отправка сообщений по расписанию",
+    tag: "Скоро",
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+  },
 ];
+
+const TAG_COLORS: Record<string, string> = {
+  "Работает": "bg-green-500/20 text-green-400 border-green-500/30",
+  "Визуально": "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  "Скоро": "bg-blue-500/20 text-blue-400 border-blue-500/30",
+};
 
 export default function Prime() {
   const { data: me } = useGetMe();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [selected, setSelected] = useState("halfyear");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState((me as any)?.hasPrime ?? false);
+  const [showModal, setShowModal] = useState(false);
 
   const plan = PLANS.find(p => p.id === selected)!;
   const wallet = (me as any)?.balance ?? 0;
   const hasPrime = (me as any)?.hasPrime ?? false;
+  const canAfford = wallet >= plan.spark;
 
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      const _primeToken = localStorage.getItem("pulse-token");
-      const _primeUid = localStorage.getItem("pulse-user-id");
-      const _primeAuth = _primeToken ? { "Authorization": `Bearer ${_primeToken}` } : _primeUid ? { "x-user-id": _primeUid } : {};
+      const _token = localStorage.getItem("pulse-token");
+      const _uid = localStorage.getItem("pulse-user-id");
+      const _auth = _token ? { "Authorization": `Bearer ${_token}` } : _uid ? { "x-user-id": _uid } : {};
       const res = await fetch("/api/prime/subscribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ..._primeAuth },
+        headers: { "Content-Type": "application/json", ..._auth },
         body: JSON.stringify({ planId: selected }),
       });
       const data = await res.json();
@@ -78,6 +168,7 @@ export default function Prime() {
       }
       queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       setSuccess(true);
+      setShowModal(false);
       toast({
         title: "Pulse Prime активирован! ⭐",
         description: `Остаток: ${data.balance} ⚡ Spark`,
@@ -123,7 +214,7 @@ export default function Prime() {
           </p>
           <div className="mt-3 inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-full px-4 py-1.5">
             <Zap size={14} className="text-yellow-400" />
-            <span className="text-xs font-semibold text-yellow-400">Оплата Spark</span>
+            <span className="text-xs font-semibold text-yellow-400">Оплата Spark ⚡</span>
           </div>
         </motion.div>
 
@@ -132,17 +223,30 @@ export default function Prime() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-card border border-border rounded-2xl p-4 space-y-2.5"
+          className="bg-card border border-border rounded-2xl p-4 space-y-2"
         >
-          <h3 className="text-sm font-bold text-foreground mb-3">Что включено</h3>
-          {FEATURES.map((f, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
-                <f.icon size={14} className="text-yellow-400" />
-              </div>
-              <span className="text-sm text-foreground">{f.text}</span>
-              <Check size={14} className="text-green-400 ml-auto shrink-0" />
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-foreground">Что включено</h3>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> Работает сейчас
             </div>
+          </div>
+          {FEATURES.map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.05 + i * 0.03 }}
+              className="flex items-center gap-3"
+            >
+              <div className={`w-7 h-7 rounded-lg ${f.bg} flex items-center justify-center shrink-0`}>
+                <f.icon size={14} className={f.color} />
+              </div>
+              <span className="text-sm text-foreground flex-1">{f.text}</span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${TAG_COLORS[f.tag]}`}>
+                {f.tag}
+              </span>
+            </motion.div>
           ))}
         </motion.div>
 
@@ -198,32 +302,34 @@ export default function Prime() {
         {/* Balance */}
         <div className="flex items-center justify-between text-sm px-1">
           <span className="text-muted-foreground">Ваш баланс:</span>
-          <span className="font-bold text-foreground">{wallet} ⚡ Spark</span>
+          <span className={`font-bold ${canAfford ? "text-foreground" : "text-destructive"}`}>
+            {wallet} ⚡ Spark
+            {!canAfford && <span className="text-xs font-normal text-muted-foreground ml-1">(нужно {plan.spark - wallet} ⚡ больше)</span>}
+          </span>
         </div>
 
         {/* Subscribe button */}
         <AnimatePresence mode="wait">
-          {success ? (
+          {success || hasPrime ? (
             <motion.div
               key="success"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="bg-green-500/10 border border-green-500/30 rounded-2xl p-6 text-center"
             >
-              <Check size={40} className="mx-auto mb-3 text-green-400" />
-              <h3 className="text-lg font-bold text-foreground mb-1">Добро пожаловать в Prime!</h3>
-              <p className="text-sm text-muted-foreground">Все привилегии активированы</p>
+              <Crown size={40} className="mx-auto mb-3 text-yellow-400" />
+              <h3 className="text-lg font-bold text-foreground mb-1">Prime активирован! ⭐</h3>
+              <p className="text-sm text-muted-foreground">Все привилегии уже работают</p>
             </motion.div>
           ) : (
             <motion.button
               key="button"
-              onClick={handleSubscribe}
-              disabled={loading}
+              onClick={() => setShowModal(true)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl text-black font-black text-base shadow-[0_0_30px_rgba(234,179,8,0.3)] disabled:opacity-60"
+              className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl text-black font-black text-base shadow-[0_0_30px_rgba(234,179,8,0.3)]"
             >
-              {loading ? "Обработка..." : `Подписаться — ${plan.spark} ⚡ Spark`}
+              Оформить Prime — {plan.spark} ⚡ Spark
             </motion.button>
           )}
         </AnimatePresence>
@@ -232,6 +338,136 @@ export default function Prime() {
           Подписка продлевается автоматически каждый период. Отменить можно в настройках.
         </p>
       </div>
+
+      {/* Purchase Confirmation Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+            onClick={() => !loading && setShowModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.93, opacity: 0, y: 40 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.93, opacity: 0, y: 40 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-card border border-border rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+            >
+              {/* Modal header gradient */}
+              <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border-b border-yellow-500/20 p-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center">
+                      <Crown size={24} className="text-yellow-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-base text-foreground">Pulse Prime</h3>
+                      <p className="text-xs text-yellow-400 font-semibold">{plan.name} — {plan.spark} ⚡ Spark</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => !loading && setShowModal(false)}
+                    className="text-muted-foreground hover:text-foreground transition-colors mt-0.5"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Plan summary */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Выбранный план</span>
+                    <span className="font-bold text-foreground">{plan.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Стоимость</span>
+                    <span className="font-bold text-foreground">{plan.spark} ⚡ Spark</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Ваш баланс</span>
+                    <span className={`font-bold ${canAfford ? "text-green-400" : "text-destructive"}`}>
+                      {wallet} ⚡ Spark
+                    </span>
+                  </div>
+                  {canAfford && (
+                    <div className="flex items-center justify-between text-sm pt-1 border-t border-border">
+                      <span className="text-muted-foreground">Остаток после</span>
+                      <span className="font-bold text-foreground">{wallet - plan.spark} ⚡ Spark</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* What you get */}
+                <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-2xl p-3.5 space-y-2">
+                  <p className="text-xs font-bold text-yellow-400 uppercase tracking-wider">Вы получите сразу</p>
+                  {[
+                    "Значок Prime ⭐ у вашего имени",
+                    "2× Spark за ежедневные задания",
+                    "Ежедневный бонус 25 ⚡ (вместо 10 ⚡)",
+                    "Смена ника каждые 24ч",
+                    "+50 ⚡ Spark бонус к балансу",
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-foreground">
+                      <Check size={12} className="text-green-400 shrink-0" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Insufficient balance warning */}
+                {!canAfford && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-destructive/10 border border-destructive/20 rounded-2xl p-3.5 flex items-start gap-3"
+                  >
+                    <AlertTriangle size={16} className="text-destructive shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold text-destructive">Недостаточно Spark</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Нужно ещё {plan.spark - wallet} ⚡. Пополните баланс в Кошельке.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Action buttons */}
+                {canAfford ? (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleSubscribe}
+                    disabled={loading}
+                    className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl text-black font-black text-base shadow-[0_0_20px_rgba(234,179,8,0.3)] disabled:opacity-60"
+                  >
+                    {loading ? "Оформляем..." : `Подтвердить — ${plan.spark} ⚡`}
+                  </motion.button>
+                ) : (
+                  <button
+                    onClick={() => { setShowModal(false); navigate("/wallet"); }}
+                    className="w-full py-3.5 bg-primary rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2"
+                  >
+                    <ShoppingCart size={16} /> Купить Spark в Кошельке
+                  </button>
+                )}
+
+                <button
+                  onClick={() => !loading && setShowModal(false)}
+                  className="w-full py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

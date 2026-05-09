@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Zap, Copy, Check, Trophy, Star, MessageSquare, Phone, Gift,
   History, Shield, ChevronRight, ArrowUpRight, ArrowDownLeft,
-  AlertTriangle, CheckCircle2, TrendingUp, X, Send, ShoppingCart
+  AlertTriangle, CheckCircle2, TrendingUp, X, Send, ShoppingCart, Crown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGetMe } from "@workspace/api-client-react";
@@ -17,7 +17,7 @@ const TASK_CONFIGS: Record<string, { color: string; icon: React.ReactNode }> = {
   update_profile: { color: "from-orange-500 to-amber-500",   icon: <Trophy size={20} className="text-white" /> },
 };
 
-const TASKS = [
+const BASE_TASKS = [
   { id: "daily_login",    title: "Ежедневный вход",    description: "Открой Pulse сегодня",         reward: 5  },
   { id: "send_message",   title: "Отправь сообщение",  description: "Напиши кому-нибудь",           reward: 10 },
   { id: "make_call",      title: "Позвони другу",       description: "Соверши звонок",               reward: 15 },
@@ -118,6 +118,11 @@ export default function Wallet() {
 
   const uid = Number(localStorage.getItem("pulse-user-id") || "0");
   const isAdmin = (me as any)?.isAdmin === true;
+  const hasPrime = (me as any)?.hasPrime === true;
+
+  const effectiveTasks = BASE_TASKS.map(t =>
+    t.id === "daily_login" ? t : { ...t, reward: hasPrime ? t.reward * 2 : t.reward }
+  );
 
   const tasksKey = `pulse-completed-tasks-${uid}`;
   const txKey = `pulse-tx-history-${uid}`;
@@ -171,7 +176,7 @@ export default function Wallet() {
         const newCompleted = [...completed, taskId];
         setCompletedTasks(newCompleted);
         localStorage.setItem(tasksKey, JSON.stringify(newCompleted));
-        const task = TASKS.find(t => t.id === taskId);
+        const task = effectiveTasks.find(t => t.id === taskId);
         const newTx: TxEntry = { id: `${taskId}-${Date.now()}`, type: "earn", amount: reward, label: task?.title || taskId, time: new Date() };
         const updated = [newTx, ...txHistory].slice(0, 50);
         setTxHistory(updated);
@@ -181,7 +186,7 @@ export default function Wallet() {
     setEarningTask(null);
   };
 
-  const handleClickTask = async (task: typeof TASKS[number]) => {
+  const handleClickTask = async (task: typeof BASE_TASKS[number]) => {
     if (completedTasks.includes(task.id)) return;
     setEarningTask(task.id);
     setTaskErrors(prev => ({ ...prev, [task.id]: "" }));
@@ -317,8 +322,8 @@ export default function Wallet() {
     return `${Math.floor(hours / 24)} д. назад`;
   };
 
-  const doneCount = completedTasks.filter(id => TASKS.some(t => t.id === id)).length;
-  const progress = TASKS.length > 0 ? (doneCount / TASKS.length) * 100 : 0;
+  const doneCount = completedTasks.filter(id => effectiveTasks.some(t => t.id === id)).length;
+  const progress = effectiveTasks.length > 0 ? (doneCount / effectiveTasks.length) * 100 : 0;
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
@@ -358,7 +363,7 @@ export default function Wallet() {
             <div className="mb-4 relative z-10">
               <div className="flex justify-between text-xs text-white/50 mb-1.5">
                 <span>Прогресс дня</span>
-                <span>{doneCount}/{TASKS.length} задач</span>
+                <span>{doneCount}/{effectiveTasks.length} задач</span>
               </div>
               <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <motion.div
@@ -448,7 +453,14 @@ export default function Wallet() {
           <AnimatePresence mode="wait">
             {tab === "tasks" && (
               <motion.div key="tasks" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} className="space-y-2">
-                {TASKS.map((task, i) => {
+                {hasPrime && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                    <Crown size={14} className="text-yellow-400 shrink-0" />
+                    <span className="text-xs text-yellow-300 font-semibold">Prime: 2× Spark за каждое задание</span>
+                    <span className="ml-auto text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full px-2 py-0.5 font-bold">×2</span>
+                  </div>
+                )}
+                {effectiveTasks.map((task, i) => {
                   const done = completedTasks.includes(task.id);
                   const earning = earningTask === task.id;
                   const errMsg = taskErrors[task.id];

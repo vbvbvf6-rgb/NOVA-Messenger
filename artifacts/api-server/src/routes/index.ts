@@ -15,6 +15,7 @@ import eventsRouter from "./events";
 import walletRouter from "./wallet";
 import botsRouter from "./bots";
 import supportRouter from "./support";
+import primeRouter from "./prime";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(eventsRouter);
 router.use(walletRouter);
 router.use(botsRouter);
 router.use(supportRouter);
+router.use(primeRouter);
 
 export default router;

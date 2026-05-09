@@ -52,7 +52,7 @@ router.put("/users/me/username", async (req, res) => {
       return res.status(400).json({ error: "Только латинские буквы, цифры и _" });
     }
 
-    const rows = await db.execute(sql`SELECT username, username_changed_at FROM users WHERE id = ${uid}`);
+    const rows = await db.execute(sql`SELECT username, username_changed_at, has_prime FROM users WHERE id = ${uid}`);
     const current = rows.rows[0] as any;
     if (!current) return res.status(404).json({ error: "Пользователь не найден" });
 
@@ -60,15 +60,21 @@ router.put("/users/me/username", async (req, res) => {
       return res.status(400).json({ error: "Это уже ваш никнейм" });
     }
 
+    const hasPrime = current.has_prime === true || current.has_prime === "t";
+    const cooldownDays = hasPrime ? 1 : 7;
+
     if (current.username_changed_at) {
       const lastChange = new Date(current.username_changed_at);
       const diffMs = Date.now() - lastChange.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
-      if (diffDays < 7) {
-        const daysLeft = Math.ceil(7 - diffDays);
-        const nextDate = new Date(lastChange.getTime() + 7 * 24 * 60 * 60 * 1000);
+      if (diffDays < cooldownDays) {
+        const daysLeft = Math.ceil(cooldownDays - diffDays);
+        const nextDate = new Date(lastChange.getTime() + cooldownDays * 24 * 60 * 60 * 1000);
+        const label = hasPrime
+          ? `Prime-привилегия: смена раз в 24ч. Следующая доступна через ${Math.ceil((cooldownDays - diffDays) * 24)} ч.`
+          : `Следующая смена никнейма доступна через ${daysLeft} ${daysLeft === 1 ? "день" : daysLeft < 5 ? "дня" : "дней"}`;
         return res.status(429).json({
-          error: `Следующая смена никнейма доступна через ${daysLeft} ${daysLeft === 1 ? "день" : daysLeft < 5 ? "дня" : "дней"}`,
+          error: label,
           nextAvailableAt: nextDate.toISOString(),
           daysLeft,
         });
