@@ -77,6 +77,32 @@ router.post("/wallet/send", async (req, res) => {
   }
 });
 
+router.post("/wallet/daily-bonus", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const BONUS = 1000;
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `daily_bonus_${today}`;
+    const claimed = await db.execute(
+      sql`SELECT 1 FROM user_daily_bonus WHERE user_id = ${uid} AND bonus_date = ${today} LIMIT 1`
+    );
+    if ((claimed.rows as any[]).length > 0) {
+      return res.status(409).json({ error: "Бонус уже получен сегодня. Возвращайся завтра!" });
+    }
+    await db.execute(sql`INSERT INTO user_daily_bonus (user_id, bonus_date) VALUES (${uid}, ${today}) ON CONFLICT DO NOTHING`);
+    await db.execute(sql`UPDATE users SET balance = balance + ${BONUS} WHERE id = ${uid}`);
+    const rows = await db.execute(sql`SELECT balance FROM users WHERE id = ${uid}`);
+    const balance = Number((rows.rows[0] as any)?.balance ?? 0);
+    res.json({ success: true, balance, bonus: BONUS });
+  } catch (err: any) {
+    if (String(err?.message).includes("user_daily_bonus")) {
+      return res.status(500).json({ error: "Таблица бонусов не создана. Свяжитесь с администратором." });
+    }
+    req.log.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 router.post("/wallet/topup-request", async (req, res) => {
   try {
     const uid = req.currentUserId;
