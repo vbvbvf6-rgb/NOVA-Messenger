@@ -415,72 +415,129 @@ export default function Bots() {
         className="hidden"
         onChange={handleAvatarFileChange}
       />
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-              <Bot size={16} className="text-white" />
+
+      {/* Hero Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-violet-900/40 via-indigo-900/30 to-background border-b border-border">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-violet-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
+        </div>
+        <div className="relative px-6 pt-8 pb-6 max-w-5xl mx-auto">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)]">
+                <Bot size={28} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black text-foreground">Pulse BotFather</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">Платформа для разработчиков ботов</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-foreground text-sm leading-none">Pulse BotFather</h1>
-              <p className="text-[10px] text-muted-foreground">Платформа для разработчиков</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setActiveTab("bots")}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === "bots" ? "bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
+              >
+                Мои боты
+              </button>
+              <button
+                onClick={() => setActiveTab("sdk")}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === "sdk" ? "bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
+              >
+                Python SDK
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setActiveTab("bots")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === "bots" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
-            >
-              Мои боты
-            </button>
-            <button
-              onClick={() => setActiveTab("sdk")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === "sdk" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
-            >
-              Python SDK
-            </button>
+
+          {/* Feature cards */}
+          <div className="grid grid-cols-3 gap-3 mt-6">
+            {[
+              {
+                icon: <MessageSquare size={20} />,
+                label: "Сообщения",
+                desc: "Получай и отправляй сообщения через простой API",
+                color: "from-cyan-500/20 to-blue-500/10 border-cyan-500/20",
+                iconColor: "text-cyan-400",
+                glow: "rgba(6,182,212,0.15)",
+              },
+              {
+                icon: <Webhook size={20} />,
+                label: "Webhook",
+                desc: "Реалтайм события — получай апдейты мгновенно",
+                color: "from-violet-500/20 to-purple-500/10 border-violet-500/20",
+                iconColor: "text-violet-400",
+                glow: "rgba(139,92,246,0.15)",
+              },
+              {
+                icon: <Globe size={20} />,
+                label: "Long Polling",
+                desc: "Классический polling API — совместим с Telegram SDK",
+                color: "from-emerald-500/20 to-green-500/10 border-emerald-500/20",
+                iconColor: "text-emerald-400",
+                glow: "rgba(16,185,129,0.15)",
+              },
+            ].map(item => (
+              <div
+                key={item.label}
+                className={`bg-gradient-to-br ${item.color} border rounded-2xl p-4`}
+                style={{ boxShadow: `0 0 20px ${item.glow}` }}
+              >
+                <div className={`${item.iconColor} mb-3`}>{item.icon}</div>
+                <p className="font-bold text-foreground text-sm mb-1">{item.label}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto p-4 space-y-4">
+      <div className="max-w-5xl mx-auto p-6 space-y-5">
         <AnimatePresence mode="wait">
           {/* ── MY BOTS TAB ── */}
           {activeTab === "bots" && (
-            <motion.div key="bots" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3">
+            <motion.div key="bots" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
               {/* Create Bot Button */}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
                 onClick={() => setShowCreate(true)}
-                className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/20 rounded-2xl hover:from-violet-500/15 hover:to-indigo-500/15 transition-all"
+                className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/30 rounded-2xl hover:from-violet-500/15 hover:to-indigo-500/15 transition-all shadow-[0_0_20px_rgba(139,92,246,0.08)]"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-                    <Plus size={16} className="text-white" />
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.3)]">
+                    <Plus size={22} className="text-white" />
                   </div>
                   <div className="text-left">
-                    <p className="font-bold text-foreground text-sm">Создать нового бота</p>
-                    <p className="text-xs text-muted-foreground">Получить токен и начать разработку</p>
+                    <p className="font-bold text-foreground text-base">Создать нового бота</p>
+                    <p className="text-sm text-muted-foreground">Получить токен и начать разработку</p>
                   </div>
                 </div>
-                <ChevronRight size={16} className="text-muted-foreground" />
-              </button>
+                <ChevronRight size={20} className="text-muted-foreground" />
+              </motion.button>
 
               {/* Bots list */}
               {loading ? (
-                <div className="flex items-center justify-center py-12">
+                <div className="flex items-center justify-center py-16">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                    <RefreshCw size={20} className="text-muted-foreground" />
+                    <RefreshCw size={24} className="text-muted-foreground" />
                   </motion.div>
                 </div>
               ) : bots.length === 0 ? (
-                <div className="text-center py-12">
-                  <Bot size={40} className="text-muted-foreground mx-auto mb-3 opacity-50" />
-                  <p className="font-medium text-foreground">Ботов пока нет</p>
-                  <p className="text-sm text-muted-foreground mt-1">Создай своего первого бота и начни автоматизировать</p>
+                <div className="text-center py-16 bg-card border border-border rounded-2xl">
+                  <div className="w-16 h-16 rounded-2xl bg-muted mx-auto flex items-center justify-center mb-4">
+                    <Bot size={32} className="text-muted-foreground opacity-50" />
+                  </div>
+                  <p className="font-bold text-foreground text-lg">Ботов пока нет</p>
+                  <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">Создай своего первого бота и начни автоматизировать чаты в Pulse</p>
+                  <button
+                    onClick={() => setShowCreate(true)}
+                    className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-400 text-white rounded-xl font-semibold text-sm transition-colors shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+                  >
+                    <Plus size={16} /> Создать бота
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {bots.map(bot => (
                     <motion.div
                       key={bot.bot_user_id}
@@ -488,11 +545,11 @@ export default function Bots() {
                       className="bg-card rounded-2xl border border-border overflow-hidden"
                     >
                       <button
-                        className="w-full flex items-center gap-3 p-4 hover:bg-secondary/50 transition-colors text-left"
+                        className="w-full flex items-center gap-4 p-5 hover:bg-secondary/40 transition-colors text-left"
                         onClick={() => setSelectedBot(prev => prev?.bot_user_id === bot.bot_user_id ? null : bot)}
                       >
                         <div
-                          className="relative w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-base shrink-0 overflow-hidden group/av cursor-pointer"
+                          className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl shrink-0 overflow-hidden group/av cursor-pointer"
                           style={{ background: bot.avatar_color }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -503,23 +560,25 @@ export default function Bots() {
                           {bot.avatar_url
                             ? <img src={bot.avatar_url} alt="" className="w-full h-full object-cover" />
                             : bot.display_name[0]?.toUpperCase()}
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/av:opacity-100 transition-opacity rounded-xl">
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/av:opacity-100 transition-opacity rounded-2xl">
                             {uploadingAvatar === bot.bot_user_id
-                              ? <RefreshCw size={12} className="text-white animate-spin" />
-                              : <Camera size={12} className="text-white" />}
+                              ? <RefreshCw size={16} className="text-white animate-spin" />
+                              : <Camera size={16} className="text-white" />}
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-bold text-foreground text-sm truncate">{bot.display_name}</p>
-                            <span className="text-[9px] font-bold bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded-full shrink-0">BOT</span>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="font-bold text-foreground text-base truncate">{bot.display_name}</p>
+                            <span className="text-[10px] font-bold bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full shrink-0">BOT</span>
                           </div>
-                          <p className="text-xs text-muted-foreground">@{bot.username}</p>
+                          <p className="text-sm text-muted-foreground">@{bot.username}</p>
+                          {bot.bio && <p className="text-xs text-muted-foreground mt-1 truncate">{bot.bio}</p>}
                         </div>
-                        {selectedBot?.bot_user_id === bot.bot_user_id
-                          ? <ChevronUp size={15} className="text-muted-foreground shrink-0" />
-                          : <ChevronDown size={15} className="text-muted-foreground shrink-0" />
-                        }
+                        <div className="shrink-0 text-muted-foreground">
+                          {selectedBot?.bot_user_id === bot.bot_user_id
+                            ? <ChevronUp size={18} />
+                            : <ChevronDown size={18} />}
+                        </div>
                       </button>
 
                       <AnimatePresence>
@@ -530,20 +589,20 @@ export default function Bots() {
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+                            <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
                               {/* Token */}
                               <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Токен</p>
-                                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2">
-                                  <code className="flex-1 text-xs text-foreground font-mono break-all select-all">
-                                    {showToken[bot.bot_user_id] ? botSelected.token : "•".repeat(24)}
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Токен API</p>
+                                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">
+                                  <code className="flex-1 text-sm text-foreground font-mono break-all select-all">
+                                    {showToken[bot.bot_user_id] ? botSelected.token : "•".repeat(32)}
                                   </code>
                                   <div className="flex gap-1 shrink-0">
-                                    <button onClick={() => setShowToken(p => ({ ...p, [bot.bot_user_id]: !p[bot.bot_user_id] }))} className="p-1.5 hover:bg-secondary rounded-lg transition-colors">
-                                      {showToken[bot.bot_user_id] ? <EyeOff size={13} className="text-muted-foreground" /> : <Eye size={13} className="text-muted-foreground" />}
+                                    <button onClick={() => setShowToken(p => ({ ...p, [bot.bot_user_id]: !p[bot.bot_user_id] }))} className="p-2 hover:bg-secondary rounded-lg transition-colors">
+                                      {showToken[bot.bot_user_id] ? <EyeOff size={15} className="text-muted-foreground" /> : <Eye size={15} className="text-muted-foreground" />}
                                     </button>
-                                    <button onClick={() => copyText(botSelected.token, `token-${bot.bot_user_id}`)} className="p-1.5 hover:bg-secondary rounded-lg transition-colors">
-                                      {copied === `token-${bot.bot_user_id}` ? <Check size={13} className="text-green-400" /> : <Copy size={13} className="text-muted-foreground" />}
+                                    <button onClick={() => copyText(botSelected.token, `token-${bot.bot_user_id}`)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
+                                      {copied === `token-${bot.bot_user_id}` ? <Check size={15} className="text-green-400" /> : <Copy size={15} className="text-muted-foreground" />}
                                     </button>
                                   </div>
                                 </div>
@@ -551,32 +610,32 @@ export default function Bots() {
 
                               {/* API URL */}
                               <div>
-                                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Base URL</p>
-                                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2">
-                                  <code className="flex-1 text-xs text-foreground font-mono truncate">{host}/bot/{botSelected.token.substring(0, 12)}...</code>
-                                  <button onClick={() => copyText(`${host}/bot/${botSelected.token}`, `url-${bot.bot_user_id}`)} className="p-1.5 hover:bg-secondary rounded-lg transition-colors shrink-0">
-                                    {copied === `url-${bot.bot_user_id}` ? <Check size={13} className="text-green-400" /> : <Copy size={13} className="text-muted-foreground" />}
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Base URL</p>
+                                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">
+                                  <code className="flex-1 text-sm text-foreground font-mono truncate">{host}/bot/{botSelected.token.substring(0, 14)}...</code>
+                                  <button onClick={() => copyText(`${host}/bot/${botSelected.token}`, `url-${bot.bot_user_id}`)} className="p-2 hover:bg-secondary rounded-lg transition-colors shrink-0">
+                                    {copied === `url-${bot.bot_user_id}` ? <Check size={15} className="text-green-400" /> : <Copy size={15} className="text-muted-foreground" />}
                                   </button>
                                 </div>
                               </div>
 
                               {/* Quick example */}
                               <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Python пример</p>
-                                  <button onClick={() => setExpandedExample(p => !p)} className="text-[10px] text-primary">
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Python пример</p>
+                                  <button onClick={() => setExpandedExample(p => !p)} className="text-xs text-primary hover:underline">
                                     {expandedExample ? "Скрыть" : "Показать"}
                                   </button>
                                 </div>
                                 {expandedExample && (
-                                  <div className="relative bg-[#0d1117] rounded-xl p-3 overflow-auto max-h-52">
+                                  <div className="relative bg-[#0d1117] rounded-xl p-4 overflow-auto max-h-64">
                                     <button
                                       onClick={() => copyText(PYTHON_EXAMPLE(botSelected.token, botSelected.display_name), `ex-${bot.bot_user_id}`)}
-                                      className="absolute top-2 right-2 p-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                                      className="absolute top-3 right-3 p-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
                                     >
-                                      {copied === `ex-${bot.bot_user_id}` ? <Check size={11} className="text-green-400" /> : <Copy size={11} className="text-white/60" />}
+                                      {copied === `ex-${bot.bot_user_id}` ? <Check size={13} className="text-green-400" /> : <Copy size={13} className="text-white/60" />}
                                     </button>
-                                    <pre className="text-[10px] text-green-300 font-mono whitespace-pre-wrap leading-relaxed">
+                                    <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap leading-relaxed">
                                       {PYTHON_EXAMPLE(botSelected.token, botSelected.display_name)}
                                     </pre>
                                   </div>
@@ -587,30 +646,30 @@ export default function Bots() {
                               <div className="flex flex-wrap gap-2 pt-1">
                                 <button
                                   onClick={() => handleStartChat(bot)}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 hover:bg-primary/15 border border-primary/20 rounded-xl text-xs font-medium text-primary transition-colors"
+                                  className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/15 border border-primary/20 rounded-xl text-sm font-medium text-primary transition-colors"
                                 >
-                                  <MessageCircle size={12} /> Написать
+                                  <MessageCircle size={14} /> Написать
                                 </button>
                                 <button
                                   onClick={() => { setEditBot(bot); setEditName(bot.display_name); setEditDesc(bot.bio || ""); }}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/70 rounded-xl text-xs font-medium text-foreground transition-colors"
+                                  className="flex items-center gap-2 px-4 py-2.5 bg-secondary hover:bg-secondary/70 rounded-xl text-sm font-medium text-foreground transition-colors"
                                 >
-                                  <Pencil size={12} /> Изменить
+                                  <Pencil size={14} /> Изменить
                                 </button>
                                 <button
                                   onClick={() => handleRegenerate(bot)}
                                   disabled={regenerating === bot.bot_user_id}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 rounded-xl text-xs font-medium text-amber-400 transition-colors disabled:opacity-50"
+                                  className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 rounded-xl text-sm font-medium text-amber-400 transition-colors disabled:opacity-50"
                                 >
-                                  <RefreshCw size={12} className={regenerating === bot.bot_user_id ? "animate-spin" : ""} />
+                                  <RefreshCw size={14} className={regenerating === bot.bot_user_id ? "animate-spin" : ""} />
                                   Новый токен
                                 </button>
                                 <button
                                   onClick={() => handleDelete(bot)}
                                   disabled={deletingId === bot.bot_user_id}
-                                  className="flex items-center gap-1.5 px-3 py-2 bg-destructive/10 hover:bg-destructive/15 border border-destructive/20 rounded-xl text-xs font-medium text-destructive transition-colors disabled:opacity-50 ml-auto"
+                                  className="flex items-center gap-2 px-4 py-2.5 bg-destructive/10 hover:bg-destructive/15 border border-destructive/20 rounded-xl text-sm font-medium text-destructive transition-colors disabled:opacity-50 ml-auto"
                                 >
-                                  <Trash2 size={12} /> Удалить
+                                  <Trash2 size={14} /> Удалить
                                 </button>
                               </div>
                             </div>
@@ -621,84 +680,116 @@ export default function Bots() {
                   ))}
                 </div>
               )}
-
-              {/* Info cards */}
-              <div className="grid grid-cols-3 gap-2 pt-2">
-                {[
-                  { icon: <MessageSquare size={14} />, label: "Сообщения", desc: "Получай и отправляй" },
-                  { icon: <Webhook size={14} />, label: "Webhook", desc: "Реалтайм события" },
-                  { icon: <Globe size={14} />, label: "Polling", desc: "Long-polling API" },
-                ].map(item => (
-                  <div key={item.label} className="bg-card rounded-xl p-3 border border-border text-center">
-                    <div className="text-primary mb-1 flex justify-center">{item.icon}</div>
-                    <p className="text-[11px] font-bold text-foreground">{item.label}</p>
-                    <p className="text-[9px] text-muted-foreground">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
             </motion.div>
           )}
 
           {/* ── PYTHON SDK TAB ── */}
           {activeTab === "sdk" && (
-            <motion.div key="sdk" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/20 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Terminal size={16} className="text-violet-400" />
-                  <span className="font-bold text-foreground">pulse_bot.py</span>
-                  <span className="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full">Python SDK</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Telegram-совместимый Python SDK для Pulse ботов. Поддерживает polling, webhook и все основные методы API.</p>
-              </div>
+            <motion.div key="sdk" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
 
-              {/* API Reference */}
-              <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
-                <p className="font-bold text-sm text-foreground flex items-center gap-2">
-                  <Code2 size={14} className="text-primary" /> API Методы
-                </p>
-                {[
-                  { method: "getMe", desc: "Информация о боте", type: "GET" },
-                  { method: "getUpdates", desc: "Получить обновления (polling)", type: "GET" },
-                  { method: "sendMessage", desc: "Отправить сообщение", type: "POST" },
-                  { method: "sendPhoto", desc: "Отправить фото по URL", type: "POST" },
-                  { method: "setWebhook", desc: "Установить webhook", type: "POST" },
-                  { method: "deleteWebhook", desc: "Удалить webhook", type: "POST" },
-                  { method: "getWebhookInfo", desc: "Статус webhook", type: "GET" },
-                  { method: "getChat", desc: "Информация о чате", type: "GET" },
-                  { method: "leaveChat", desc: "Покинуть чат", type: "POST" },
-                ].map(m => (
-                  <div key={m.method} className="flex items-center gap-3 py-1.5 border-b border-border last:border-0">
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 ${m.type === "GET" ? "bg-green-500/15 text-green-400" : "bg-blue-500/15 text-blue-400"}`}>
-                      {m.type}
-                    </span>
-                    <code className="text-xs font-mono text-primary w-36 shrink-0">{m.method}</code>
-                    <span className="text-xs text-muted-foreground">{m.desc}</span>
+              {/* SDK Banner */}
+              <div className="bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/20 rounded-2xl p-5 flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/20 to-indigo-500/20 border border-violet-500/30 flex items-center justify-center shrink-0">
+                  <Terminal size={26} className="text-violet-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-foreground text-lg">pulse_bot.py</span>
+                    <span className="text-xs bg-violet-500/20 text-violet-300 px-2.5 py-0.5 rounded-full font-medium">Python SDK</span>
                   </div>
-                ))}
+                  <p className="text-sm text-muted-foreground">Telegram-совместимый Python SDK для Pulse ботов. Поддерживает polling, webhook и все основные методы API.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([PULSE_BOT_PY.replace("https://YOUR_PULSE_DOMAIN", host)], { type: "text/plain" });
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = "pulse_bot.py";
+                    a.click();
+                    toast({ title: "Скачивание начато", description: "pulse_bot.py сохранён" });
+                  }}
+                  className="shrink-0 flex items-center gap-2 px-4 py-2.5 bg-violet-500 hover:bg-violet-400 text-white rounded-xl text-sm font-semibold transition-colors shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                >
+                  <ExternalLink size={14} /> Скачать SDK
+                </button>
               </div>
 
-              {/* Base URL */}
-              <div className="bg-card rounded-2xl border border-border p-4">
-                <p className="font-bold text-sm text-foreground mb-2">Base URL</p>
-                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2">
-                  <code className="flex-1 text-xs font-mono text-foreground break-all">{host}/bot/{"<TOKEN>"}/<span className="text-primary">METHOD</span></code>
-                  <button onClick={() => copyText(`${host}/bot/`, "baseurl")} className="p-1.5 hover:bg-secondary rounded-lg transition-colors shrink-0">
-                    {copied === "baseurl" ? <Check size={13} className="text-green-400" /> : <Copy size={13} className="text-muted-foreground" />}
-                  </button>
+              {/* Two-column layout */}
+              <div className="grid grid-cols-2 gap-5">
+                {/* Left: API Reference */}
+                <div className="bg-card rounded-2xl border border-border p-5 space-y-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Code2 size={16} className="text-primary" />
+                    <p className="font-bold text-base text-foreground">API Методы</p>
+                  </div>
+                  {[
+                    { method: "getMe", desc: "Информация о боте", type: "GET" },
+                    { method: "getUpdates", desc: "Получить обновления (polling)", type: "GET" },
+                    { method: "sendMessage", desc: "Отправить сообщение", type: "POST" },
+                    { method: "sendPhoto", desc: "Отправить фото по URL", type: "POST" },
+                    { method: "setWebhook", desc: "Установить webhook", type: "POST" },
+                    { method: "deleteWebhook", desc: "Удалить webhook", type: "POST" },
+                    { method: "getWebhookInfo", desc: "Статус webhook", type: "GET" },
+                    { method: "getChat", desc: "Информация о чате", type: "GET" },
+                    { method: "leaveChat", desc: "Покинуть чат", type: "POST" },
+                  ].map(m => (
+                    <div key={m.method} className="flex items-center gap-3 py-2 border-b border-border/60 last:border-0">
+                      <span className={`text-[10px] font-black px-2 py-0.5 rounded shrink-0 ${m.type === "GET" ? "bg-green-500/15 text-green-400" : "bg-blue-500/15 text-blue-400"}`}>
+                        {m.type}
+                      </span>
+                      <code className="text-sm font-mono text-primary w-36 shrink-0">{m.method}</code>
+                      <span className="text-xs text-muted-foreground">{m.desc}</span>
+                    </div>
+                  ))}
+
+                  <div className="pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Base URL</p>
+                    <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2.5">
+                      <code className="flex-1 text-xs font-mono text-foreground break-all">{host}/bot/{"<TOKEN>"}/<span className="text-primary">METHOD</span></code>
+                      <button onClick={() => copyText(`${host}/bot/`, "baseurl")} className="p-1.5 hover:bg-secondary rounded-lg transition-colors shrink-0">
+                        {copied === "baseurl" ? <Check size={13} className="text-green-400" /> : <Copy size={13} className="text-muted-foreground" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Quick-start example */}
+                <div className="bg-card rounded-2xl border border-border overflow-hidden flex flex-col">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-[#0d1117]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                        <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                      </div>
+                      <span className="text-sm text-white/50 font-mono">my_bot.py</span>
+                    </div>
+                    <button
+                      onClick={() => copyText(PYTHON_EXAMPLE(bots[0]?.token || "ВАШ_ТОКЕН_БОТА", bots[0]?.display_name || "PulseBot"), "quickex")}
+                      className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 transition-colors"
+                    >
+                      {copied === "quickex" ? <><Check size={12} className="text-green-400" /> Скопировано</> : <><Copy size={12} /> Скопировать</>}
+                    </button>
+                  </div>
+                  <div className="bg-[#0d1117] p-5 flex-1 overflow-auto">
+                    <pre className="text-sm text-green-300 font-mono whitespace-pre-wrap leading-relaxed">
+                      {PYTHON_EXAMPLE(bots[0]?.token || "ВАШ_ТОКЕН_БОТА", bots[0]?.display_name || "PulseBot")}
+                    </pre>
+                  </div>
                 </div>
               </div>
 
-              {/* pulse_bot.py download */}
+              {/* pulse_bot.py source preview */}
               <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-[#0d1117]">
+                <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-[#0d1117]">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-green-500/80" />
                     </div>
-                    <span className="text-xs text-white/50 font-mono">pulse_bot.py</span>
+                    <span className="text-sm text-white/50 font-mono">pulse_bot.py</span>
+                    <span className="text-xs text-white/30 font-mono ml-2">— Pulse Bot SDK</span>
                   </div>
                   <button
                     onClick={() => {
@@ -709,40 +800,15 @@ export default function Bots() {
                       a.click();
                       toast({ title: "Скачивание начато", description: "pulse_bot.py сохранён" });
                     }}
-                    className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white/90 transition-colors"
+                    className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 transition-colors"
                   >
-                    <ExternalLink size={11} /> Скачать
+                    <ExternalLink size={12} /> Скачать полный файл
                   </button>
                 </div>
-                <div className="bg-[#0d1117] p-4 overflow-auto max-h-96">
-                  <pre className="text-[10px] text-green-300 font-mono whitespace-pre leading-relaxed">
+                <div className="bg-[#0d1117] p-5 overflow-auto max-h-80">
+                  <pre className="text-xs text-green-300 font-mono whitespace-pre leading-relaxed">
                     {PULSE_BOT_PY.replace("https://YOUR_PULSE_DOMAIN", host).substring(0, 1200)}
-                    <span className="text-white/30">... (скачай файл для полного кода)</span>
-                  </pre>
-                </div>
-              </div>
-
-              {/* Quick start example */}
-              <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-[#0d1117]">
-                  <div className="flex items-center gap-2">
-                    <div className="flex gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
-                    </div>
-                    <span className="text-xs text-white/50 font-mono">my_bot.py</span>
-                  </div>
-                  <button
-                    onClick={() => copyText(PYTHON_EXAMPLE(bots[0]?.token || "ВАШ_ТОКЕН_БОТА", bots[0]?.display_name || "PulseBot"), "quickex")}
-                    className="flex items-center gap-1.5 text-[11px] text-white/60 hover:text-white/90 transition-colors"
-                  >
-                    {copied === "quickex" ? <><Check size={11} className="text-green-400" /> Скопировано</> : <><Copy size={11} /> Скопировать</>}
-                  </button>
-                </div>
-                <div className="bg-[#0d1117] p-4">
-                  <pre className="text-[11px] text-green-300 font-mono whitespace-pre-wrap leading-relaxed">
-                    {PYTHON_EXAMPLE(bots[0]?.token || "ВАШ_ТОКЕН_БОТА", bots[0]?.display_name || "PulseBot")}
+                    <span className="text-white/30">{"\n"}... (скачай файл для полного кода)</span>
                   </pre>
                 </div>
               </div>
