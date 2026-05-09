@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { useGetChatById, useGetMessages, getGetMessagesQueryKey, useInitiateCall, useMarkChatAsRead, useUpdateChat, getGetChatsQueryKey } from "@workspace/api-client-react";
+import { useGetChatById, useGetMessages, getGetMessagesQueryKey, useInitiateCall, useMarkChatAsRead, useUpdateChat, getGetChatsQueryKey, Message } from "@workspace/api-client-react";
 import { Phone, Video, MoreVertical, ArrowLeft, Search, BellOff, Bell, Pin, PinOff, User, Trash2, X, Timer, Flame, ChevronRight } from "lucide-react";
 import { useAppContext } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -68,6 +68,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const [typingUsers, setTypingUsers] = useState<{ userId: number; displayName: string }[]>([]);
   const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
   const [autoDeleteLoading, setAutoDeleteLoading] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [editMessage, setEditMessage] = useState<Message | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastMessageCountRef = useRef<number>(0);
   const sseRef = useRef<EventSource | null>(null);
@@ -439,7 +441,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           </div>
         ) : (
           filteredMessages?.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble
+              key={message.id}
+              message={message}
+              onReply={(msg) => { setEditMessage(null); setReplyTo(msg); }}
+              onEdit={(msg) => { setReplyTo(null); setEditMessage(msg); }}
+            />
           ))
         )}
       </div>
@@ -483,8 +490,15 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       )}
 
       {/* Input */}
-      <div className="p-4 bg-card/80 backdrop-blur-md border-t border-border z-10 shrink-0">
-        <ChatInput chatId={chatId} onMessageSent={isBot ? startBotTypingPoll : undefined} />
+      <div className="p-4 bg-card border-t border-border z-10 shrink-0">
+        <ChatInput
+          chatId={chatId}
+          onMessageSent={isBot ? startBotTypingPoll : undefined}
+          replyTo={replyTo}
+          editMessage={editMessage}
+          onCancelReply={() => setReplyTo(null)}
+          onCancelEdit={() => setEditMessage(null)}
+        />
       </div>
 
       {/* Auto-delete picker dialog */}
