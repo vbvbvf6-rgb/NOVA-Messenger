@@ -11,16 +11,25 @@ import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 
 const GIFT_IMAGES: Record<string, string> = {
-  "Красная роза":  "/gifts/rose-in-glass.png",
-  "Торт":          "/gifts/birthday-cake.png",
-  "Кристалл":      "/gifts/magic-crystal.png",
-  "Бриллиант":     "/gifts/diamond-heart.png",
-  "Звезда":        "/gifts/star-42.png",
-  "Котёнок":       "/gifts/teddy-bear.png",
-  "Воздушный шар": "/gifts/confetti-box.png",
-  "Самоцвет":      "/gifts/gold-coin.png",
-  "Ракета":        "/gifts/gaming-console.png",
-  "Луна":          "/gifts/retro-phone.png",
+  // Common
+  "Сердечко":       "/gifts/heart.png",
+  "Звёздочка":      "/gifts/star-small.png",
+  "Цветок сакуры":  "/gifts/sakura.png",
+  "Пончик":         "/gifts/donut.png",
+  "Котёнок":        "/gifts/kitten.png",
+  "Воздушный шар":  "/gifts/balloon.png",
+  "Четырёхлистник": "/gifts/clover.png",
+  "Пицца":          "/gifts/pizza.png",
+  "Торт":           "/gifts/birthday-cake.png",
+  "Луна":           "/gifts/moon.png",
+  // Rare
+  "Корона":         "/gifts/crown.png",
+  "Красная роза":   "/gifts/rose-in-glass.png",
+  "Бриллиант":      "/gifts/diamond-heart.png",
+  // Epic
+  "Кристалл":       "/gifts/magic-crystal.png",
+  // Legendary
+  "Звезда":         "/gifts/star-42.png",
 };
 
 const RARITY_CONFIG: Record<string, { gradient: string; glow: string; badge: string; label: string }> = {
@@ -104,6 +113,16 @@ const GIFT_THEMES: Record<string, GiftTheme> = {
   "Чёрная дыра":       { bg1: "#4c1d95", bg2: "#020617", glow: "#7c3aed", ring: "#6d28d9" },
   "Мультивселенная":   { bg1: "#e879f9", bg2: "#0f0521", glow: "#d946ef", ring: "#a21caf" },
   "Абсолют":           { bg1: "#ffffff", bg2: "#030712", glow: "#f0f9ff", ring: "#bae6fd" },
+
+  // Prime exclusives
+  "Корона Prime":      { bg1: "#fde68a", bg2: "#1c0533", glow: "#a78bfa", ring: "#7c3aed" },
+  "Пульс Сердца":      { bg1: "#e879f9", bg2: "#2e1065", glow: "#d946ef", ring: "#a21caf" },
+  "Звезда Prime":      { bg1: "#fbbf24", bg2: "#1c0533", glow: "#f59e0b", ring: "#7c3aed" },
+  "Вселенский Огонь":  { bg1: "#fb923c", bg2: "#0d0005", glow: "#f97316", ring: "#7c3aed" },
+
+  // Ultra tier
+  "Сингулярность":     { bg1: "#ffffff", bg2: "#000000", glow: "#ffffff", ring: "#e0e7ff" },
+  "Создатель":         { bg1: "#fde047", bg2: "#030712", glow: "#ffffff", ring: "#fbbf24" },
 };
 
 const DEFAULT_THEME: GiftTheme = { bg1: "#94a3b8", bg2: "#1e293b", glow: "#64748b", ring: "#475569" };
@@ -336,7 +355,7 @@ function GiftCard({ item, onClick, hasPrime }: { item: GiftItem; onClick: () => 
           <h3 className="font-bold text-sm mb-1 leading-tight relative z-10">{item.name}</h3>
           <div className="flex items-center gap-1 text-primary font-medium text-xs relative z-10">
             <Zap size={11} className="text-primary" />
-            <span>{item.stars} Spark</span>
+            <span>{item.stars} Монета</span>
           </div>
           <span className={`absolute top-2 left-2 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${isPrimeOnly ? "bg-amber-500/30 text-amber-300 border-amber-400/50" : cfg.badge}`}>
             {isPrimeOnly ? "PRIME" : cfg.label}
@@ -585,7 +604,7 @@ export default function Gifts() {
           <GiftIcon className="text-primary" size={20} /> Подарки
         </h1>
         <div className="flex items-center gap-1.5 text-sm font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-          <Zap size={14} /> {balance} Spark
+          <Zap size={14} /> {balance} Монета
         </div>
       </header>
 
@@ -870,13 +889,13 @@ export default function Gifts() {
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Стоимость</p>
                         <div className="flex items-center gap-1.5 text-primary font-black text-lg">
-                          <Zap size={16} className="text-primary" /> {selectedGift.stars} Spark
+                          <Zap size={16} className="text-primary" /> {selectedGift.stars} Монета
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mb-0.5">Ваш баланс</p>
                         <div className={`flex items-center gap-1 font-bold text-sm ${canAfford ? "text-green-400" : "text-red-400"}`}>
-                          <Zap size={14} /> {balance} Spark
+                          <Zap size={14} /> {balance} Монета
                         </div>
                       </div>
                     </div>
@@ -888,7 +907,7 @@ export default function Gifts() {
                         className="w-full flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl px-4 py-2.5 text-sm font-semibold mb-3"
                       >
                         <AlertTriangle size={16} className="shrink-0" />
-                        Недостаточно ⚡ Spark. Пополните баланс в Кошельке.
+                        Недостаточно ⚡ Монета. Пополните баланс в Кошельке.
                       </motion.div>
                     )}
 

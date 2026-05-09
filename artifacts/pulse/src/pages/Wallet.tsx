@@ -216,7 +216,7 @@ export default function Wallet() {
         const updated = [newTx, ...txHistory].slice(0, 50);
         setTxHistory(updated);
         localStorage.setItem(txKey, JSON.stringify(updated));
-        toast({ title: `+${data.bonus} ⚡ Spark!`, description: "Ежедневный бонус зачислен. Возвращайся завтра!" });
+        toast({ title: `+${data.bonus} ⚡ Монета!`, description: "Ежедневный бонус зачислен. Возвращайся завтра!" });
         setShowBonusModal(false);
       } else {
         toast({ title: "Бонус недоступен", description: data.error || "Попробуйте позже", variant: "destructive" });
@@ -258,7 +258,7 @@ export default function Wallet() {
         const updated = [newTx, ...txHistory].slice(0, 50);
         setTxHistory(updated);
         localStorage.setItem(txKey, JSON.stringify(updated));
-        toast({ title: `+${pkg.spark.toLocaleString("ru")} ⚡ Spark!`, description: `Пакет «${pkg.label}» успешно зачислен` });
+        toast({ title: `+${pkg.spark.toLocaleString("ru")} ⚡ Монета!`, description: `Пакет «${pkg.label}» успешно зачислен` });
         setTimeout(() => { setShowBuyModal(false); setBoughtPackage(null); }, 1800);
       } else {
         toast({ title: "Ошибка покупки", description: data.error || "Попробуйте позже", variant: "destructive" });
@@ -282,7 +282,7 @@ export default function Wallet() {
       return;
     }
     if (amount > balance) {
-      toast({ title: "Недостаточно Spark", description: `Ваш баланс: ${balance} ⚡`, variant: "destructive" });
+      toast({ title: "Недостаточно Монета", description: `Ваш баланс: ${balance} ⚡`, variant: "destructive" });
       return;
     }
     setIsSending(true);
@@ -333,7 +333,7 @@ export default function Wallet() {
           <Zap className="text-primary" size={20} /> Кошелёк
         </h1>
         <div className="flex items-center gap-1.5 text-sm font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full border border-primary/20">
-          <Zap size={14} fill="currentColor" /> {Number(balance).toLocaleString()} SPARK
+          <Zap size={14} fill="currentColor" /> {Number(balance).toLocaleString()} МОНЕТА
         </div>
       </header>
 
@@ -353,7 +353,7 @@ export default function Wallet() {
             <div className="absolute bottom-0 left-0 w-28 h-28 rounded-full opacity-20 pointer-events-none"
               style={{ background: "radial-gradient(circle, #0891b2, transparent)", transform: "translate(-35%, 35%)" }} />
 
-            <p className="text-xs text-white/50 uppercase tracking-widest mb-1 relative z-10">Баланс Spark</p>
+            <p className="text-xs text-white/50 uppercase tracking-widest mb-1 relative z-10">Баланс Монета</p>
             <div className="flex items-end gap-2 mb-4 relative z-10">
               <span className="text-5xl font-black tracking-tight">{Number(balance).toLocaleString("ru")}</span>
               <Zap size={32} className="text-yellow-400 mb-1 fill-yellow-400" />
@@ -456,7 +456,7 @@ export default function Wallet() {
                 {hasPrime && (
                   <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
                     <Crown size={14} className="text-yellow-400 shrink-0" />
-                    <span className="text-xs text-yellow-300 font-semibold">Prime: 2× Spark за каждое задание</span>
+                    <span className="text-xs text-yellow-300 font-semibold">Prime: 2× Монета за каждое задание</span>
                     <span className="ml-auto text-[10px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full px-2 py-0.5 font-bold">×2</span>
                   </div>
                 )}
@@ -535,7 +535,7 @@ export default function Wallet() {
                   <div className="text-center text-muted-foreground py-16">
                     <History size={44} className="mx-auto mb-3 opacity-20" />
                     <p className="font-semibold">Нет транзакций</p>
-                    <p className="text-sm opacity-60 mt-1">Выполни задания чтобы заработать ⚡ Spark</p>
+                    <p className="text-sm opacity-60 mt-1">Выполни задания чтобы заработать ⚡ Монета</p>
                   </div>
                 ) : (
                   txHistory.map((tx, i) => {
@@ -589,7 +589,7 @@ export default function Wallet() {
               className="bg-card border border-border rounded-3xl p-6 w-full max-w-sm shadow-2xl"
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-foreground">Получить Spark</h3>
+                <h3 className="text-lg font-bold text-foreground">Получить Монета</h3>
                 <button onClick={() => setShowReceiveModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -604,7 +604,7 @@ export default function Wallet() {
                     {walletAddress || `PULSE-${uid ? uid.toString().padStart(6, "0") : "000000"}`}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">Передайте этот адрес отправителю для получения Spark</p>
+                <p className="text-xs text-muted-foreground text-center">Передайте этот адрес отправителю для получения Монета</p>
                 <button
                   onClick={() => {
                     const addr = walletAddress || `PULSE-${uid ? uid.toString().padStart(6, "0") : "000000"}`;
@@ -641,7 +641,7 @@ export default function Wallet() {
               className="bg-card border border-border rounded-3xl p-6 w-full max-w-sm shadow-2xl"
             >
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-foreground">Отправить Spark</h3>
+                <h3 className="text-lg font-bold text-foreground">Отправить Монета</h3>
                 <button onClick={() => setShowSendModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                   <X size={20} />
                 </button>
@@ -704,7 +704,7 @@ export default function Wallet() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Купить Spark ⚡</h3>
+                  <h3 className="text-lg font-bold text-foreground">Купить Монета ⚡</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Выберите пакет пополнения</p>
                 </div>
                 <button onClick={() => setShowBuyModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -729,7 +729,7 @@ export default function Wallet() {
                       <Check size={28} className="text-green-400" />
                     </motion.div>
                     <div className="text-center">
-                      <p className="font-bold text-foreground">Spark зачислен!</p>
+                      <p className="font-bold text-foreground">Монета зачислена!</p>
                       <p className="text-sm text-muted-foreground mt-1">Пакет «{boughtPackage}» успешно куплен</p>
                     </div>
                   </motion.div>
@@ -756,7 +756,7 @@ export default function Wallet() {
                             : <Zap size={15} className="text-white fill-white" />}
                         </div>
                         <p className="font-black text-base text-foreground leading-none mb-0.5">{pkg.spark.toLocaleString("ru")}</p>
-                        <p className="text-[10px] text-muted-foreground mb-2">⚡ Spark</p>
+                        <p className="text-[10px] text-muted-foreground mb-2">⚡ Монета</p>
                         <div className={`w-full py-1.5 rounded-lg bg-gradient-to-r ${pkg.color} text-white text-xs font-bold text-center`}>
                           {buyingPackage === pkg.id ? "Покупка..." : pkg.price}
                         </div>
@@ -767,7 +767,7 @@ export default function Wallet() {
               </AnimatePresence>
 
               <p className="text-[10px] text-muted-foreground text-center mt-3">
-                Spark зачисляется мгновенно после нажатия кнопки
+                Монета зачисляется мгновенно после нажатия кнопки
               </p>
             </motion.div>
           </motion.div>
@@ -807,7 +807,7 @@ export default function Wallet() {
                   <span className="text-5xl">⚡</span>
                 </motion.div>
                 <div className="text-center">
-                  <p className="text-3xl font-black text-foreground">+10 Spark</p>
+                  <p className="text-3xl font-black text-foreground">+10 Монета</p>
                   <p className="text-sm text-muted-foreground mt-1">Бесплатно каждый день, без покупок</p>
                 </div>
                 {bonusClaimed ? (

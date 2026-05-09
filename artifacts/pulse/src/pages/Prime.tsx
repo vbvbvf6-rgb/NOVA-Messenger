@@ -270,7 +270,7 @@ function PrimeCountdown({ expiresAt, onRenew, planMonths }: { expiresAt: string;
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <RotateCcw size={11} />
-              <span>Автопродление через Spark ⚡</span>
+              <span>Автопродление через Монета ⚡</span>
             </div>
           </div>
         </div>
@@ -382,7 +382,7 @@ export default function Prime() {
       setShowModal(false);
       toast({
         title: "Pulse Prime активирован! ⭐",
-        description: `Остаток: ${data.balance} ⚡ Spark`,
+        description: `Остаток: ${data.balance} ⚡ Монета`,
       });
     } catch {
       toast({ variant: "destructive", title: "Ошибка соединения" });
@@ -425,7 +425,7 @@ export default function Prime() {
           </p>
           <div className="mt-3 inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-full px-4 py-1.5">
             <Zap size={14} className="text-yellow-400" />
-            <span className="text-xs font-semibold text-yellow-400">Оплата Spark ⚡</span>
+            <span className="text-xs font-semibold text-yellow-400">Оплата Монета ⚡</span>
           </div>
         </motion.div>
 
@@ -508,7 +508,7 @@ export default function Prime() {
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground">{p.spark} ⚡ Spark всего</div>
+                  <div className="text-xs text-muted-foreground">{p.spark} ⚡ Монета всего</div>
                 </div>
               </div>
               <div className="text-right">
@@ -523,7 +523,7 @@ export default function Prime() {
         <div className="flex items-center justify-between text-sm px-1">
           <span className="text-muted-foreground">Ваш баланс:</span>
           <span className={`font-bold ${canAfford ? "text-foreground" : "text-destructive"}`}>
-            {wallet} ⚡ Spark
+            {wallet} ⚡ Монета
             {!canAfford && <span className="text-xs font-normal text-muted-foreground ml-1">(нужно {plan.spark - wallet} ⚡ больше)</span>}
           </span>
         </div>
@@ -559,7 +559,7 @@ export default function Prime() {
               whileTap={{ scale: 0.98 }}
               className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl text-black font-black text-base shadow-[0_0_30px_rgba(234,179,8,0.3)]"
             >
-              Оформить Prime — {plan.spark} ⚡ Spark
+              Оформить Prime — {plan.spark} ⚡ Монета
             </motion.button>
           )}
         </AnimatePresence>

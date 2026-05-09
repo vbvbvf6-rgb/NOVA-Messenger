@@ -60,6 +60,66 @@ uri = "file://artifacts/pulse/public/gifts/diamond-heart.png"
 type = "image"
 title = "diamond heart gem"
 
+[[generated]]
+id = "yATPiAVQQZwXDW7bonUFE"
+uri = "file://artifacts/pulse/public/gifts/heart.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "ecCvKVEZxVJ5fYyU1qTL5"
+uri = "file://artifacts/pulse/public/gifts/star-small.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "NPqep5rlhzK6cA7D3ym9e"
+uri = "file://artifacts/pulse/public/gifts/sakura.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "svUSK1PCk3yQ4ojl0Qtjv"
+uri = "file://artifacts/pulse/public/gifts/donut.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "rSPGWDoaMG95Kso6__LgY"
+uri = "file://artifacts/pulse/public/gifts/kitten.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "uF4--oHA_cgdDdRahpxpD"
+uri = "file://artifacts/pulse/public/gifts/balloon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YilNsbnkm-zipoQWO6e6R"
+uri = "file://artifacts/pulse/public/gifts/clover.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "hiBG3IIctnhColDF2TqEl"
+uri = "file://artifacts/pulse/public/gifts/pizza.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "QwFMJOpOaZmrOMGPxSDiY"
+uri = "file://artifacts/pulse/public/gifts/moon.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "s_G6cFV0hNWq8UgJglQzn"
+uri = "file://artifacts/pulse/public/gifts/crown.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "lhkcHx0fkaD2JKBZ0j9yt"
 uri = "file://artifacts/pulse/public/gifts/rose-in-glass.png"

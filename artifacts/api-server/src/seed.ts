@@ -56,6 +56,10 @@ const GIFT_CATALOG = [
   { name: "Пульс Сердца",       emoji: "💜", animationType: "hearts",    rarity: "legendary", stars: 18, price: 30000, description: "Бьющийся пульс — символ вечной связи Prime", primeOnly: true },
   { name: "Звезда Prime",       emoji: "⭐", animationType: "stars",     rarity: "legendary", stars: 22, price: 55000, description: "Эксклюзивная звезда — только для Prime-участников", primeOnly: true },
   { name: "Вселенский Огонь",   emoji: "🔥", animationType: "flame",     rarity: "cosmic",    stars: 80, price: 300000, description: "Огонь, что горит вечно — особый дар Prime", primeOnly: true },
+
+  // ── ULTRA (750000–1000000 ⚡) ──────────────────────────────────────────
+  { name: "Сингулярность",      emoji: "💠", animationType: "vortex",    rarity: "cosmic",    stars: 150, price: 750000,  description: "Точка начала всего — бесконечная плотность бытия" },
+  { name: "Создатель",          emoji: "🌐", animationType: "supernova", rarity: "cosmic",    stars: 200, price: 1000000, description: "Высший подарок вселенной — тот, кто создал всё сущее" },
 ];
 
 const SYSTEM_USERS = [
