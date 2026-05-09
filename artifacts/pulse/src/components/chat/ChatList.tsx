@@ -264,6 +264,10 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
                 ? "📷 Фото"
                 : lastMessage.type === "gift"
                 ? "🎁 Подарок"
+                : lastMessage.type === "audio"
+                ? "🎤 Голосовое"
+                : lastMessage.type === "call"
+                ? "📞 Звонок"
                 : `[${lastMessage.type}]`
               : "Нет сообщений";
 

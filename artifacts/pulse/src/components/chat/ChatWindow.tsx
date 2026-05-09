@@ -143,9 +143,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
   }, [chatId]);
 
+  const botDisplayName = (chat?.otherUser as any)?.displayName || "Bot";
+
   const startBotTypingPoll = () => {
     lastMessageCountRef.current = messages?.length ?? 0;
     setBotTyping(true);
+    setTypingForChat(chatId, [botDisplayName]);
     let attempts = 0;
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
@@ -153,6 +156,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       await queryClient.refetchQueries({ queryKey: getGetMessagesQueryKey({ chatId }) });
       if (attempts >= 30) {
         setBotTyping(false);
+        setTypingForChat(chatId, []);
         if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
       }
     }, 1500);
@@ -163,6 +167,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     const current = messages?.length ?? 0;
     if (current > lastMessageCountRef.current) {
       setBotTyping(false);
+      setTypingForChat(chatId, []);
       if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     }
   }, [messages, botTyping]);
@@ -280,8 +285,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold overflow-hidden shrink-0 ${chat.type === "direct" ? "cursor-pointer hover:opacity-85 transition-opacity" : "cursor-default"}`}
             style={{ backgroundColor: avatarColor }}
           >
-            {chat.avatarUrl ? (
-              <img src={chat.avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+            {(chat.type === "direct" ? (chat.otherUser as any)?.avatarUrl : chat.avatarUrl) ? (
+              <img src={(chat.type === "direct" ? (chat.otherUser as any)?.avatarUrl : chat.avatarUrl)} alt={displayName} className="w-full h-full object-cover" />
             ) : (
               displayName[0].toUpperCase()
             )}
