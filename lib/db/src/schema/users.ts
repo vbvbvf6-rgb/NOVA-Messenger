@@ -20,6 +20,7 @@ export const usersTable = pgTable("users", {
   passwordHash: text("password_hash"),
   balance: numeric("balance").notNull().default("0"),
   hasPrime: boolean("has_prime").notNull().default(false),
+  primeTier: text("prime_tier"),
   primeExpiresAt: timestamp("prime_expires_at", { withTimezone: true }),
   usernameChangedAt: timestamp("username_changed_at", { withTimezone: true }),
   birthDate: date("birth_date"),

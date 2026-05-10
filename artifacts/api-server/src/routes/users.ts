@@ -10,14 +10,15 @@ router.get("/users/me", async (req, res) => {
     const uid = req.currentUserId;
     const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
     if (!user) return res.status(404).json({ error: "User not found" });
-    const rows = await db.execute(sql`SELECT balance, username_changed_at, has_prime, prime_expires_at, age_verified, is_admin, is_bot FROM users WHERE id = ${uid}`);
+    const rows = await db.execute(sql`SELECT balance, username_changed_at, has_prime, prime_tier, prime_expires_at, age_verified, is_admin, is_bot FROM users WHERE id = ${uid}`);
     const row = rows.rows[0] as any;
     const balance = row ? Number(row.balance) : 0;
     const hasPrime = row?.has_prime === true || row?.has_prime === "t" || row?.has_prime === 1;
+    const primeTier: string | null = row?.prime_tier ?? null;
     const ageVerified = row?.age_verified === true || row?.age_verified === "t" || row?.age_verified === 1;
     const isAdmin = row?.is_admin === true || row?.is_admin === "t" || row?.is_admin === 1;
     const isBot = row?.is_bot === true || row?.is_bot === "t" || row?.is_bot === 1;
-    res.json({ ...user, balance, hasPrime, primeExpiresAt: row?.prime_expires_at ?? null, usernameChangedAt: row?.username_changed_at ?? null, ageVerified, isAdmin, isBot });
+    res.json({ ...user, balance, hasPrime, primeTier, primeExpiresAt: row?.prime_expires_at ?? null, usernameChangedAt: row?.username_changed_at ?? null, ageVerified, isAdmin, isBot });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
@@ -182,16 +183,26 @@ router.post("/wallet/spend", async (req, res) => {
 router.post("/prime/subscribe", async (req, res) => {
   try {
     const uid = req.currentUserId;
-    const { planId } = req.body;
-    const PLAN_COSTS: Record<string, { cost: number; months: number }> = {
-      monthly: { cost: 299, months: 1 },
-      halfyear: { cost: 1494, months: 6 },
-      yearly: { cost: 2388, months: 12 },
+    const { planId, tier } = req.body;
+    const primeTier: string = tier === "prime_plus" ? "prime_plus" : "prime";
+
+    const PLAN_COSTS: Record<string, Record<string, { cost: number; months: number }>> = {
+      prime: {
+        monthly:  { cost: 499,  months: 1  },
+        halfyear: { cost: 1974, months: 6  },
+        yearly:   { cost: 2988, months: 12 },
+      },
+      prime_plus: {
+        monthly:  { cost: 899,  months: 1  },
+        halfyear: { cost: 3594, months: 6  },
+        yearly:   { cost: 5388, months: 12 },
+      },
     };
-    const plan = PLAN_COSTS[planId];
+
+    const plan = PLAN_COSTS[primeTier]?.[planId];
     if (!plan) return res.status(400).json({ error: "Неверный план" });
 
-    const rows = await db.execute(sql`SELECT balance, has_prime, prime_expires_at FROM users WHERE id = ${uid}`);
+    const rows = await db.execute(sql`SELECT balance, has_prime, prime_tier, prime_expires_at FROM users WHERE id = ${uid}`);
     const user = rows.rows[0] as any;
     if (!user) return res.status(404).json({ error: "Пользователь не найден" });
 
@@ -200,7 +211,6 @@ router.post("/prime/subscribe", async (req, res) => {
       return res.status(400).json({ error: `Недостаточно Spark. Нужно ${plan.cost} ⚡, у вас ${balance} ⚡.`, balance });
     }
 
-    // Calculate expiry
     const now = new Date();
     let expiresAt: Date;
     if (user.has_prime && user.prime_expires_at && new Date(user.prime_expires_at) > now) {
@@ -210,14 +220,16 @@ router.post("/prime/subscribe", async (req, res) => {
     }
     expiresAt.setMonth(expiresAt.getMonth() + plan.months);
 
+    const bonusSpark = primeTier === "prime_plus" ? 100 : 50;
+
     await db.execute(
-      sql`UPDATE users SET balance = balance - ${plan.cost}, has_prime = true, prime_expires_at = ${expiresAt.toISOString()} WHERE id = ${uid}`
+      sql`UPDATE users SET balance = balance - ${plan.cost} + ${bonusSpark}, has_prime = true, prime_tier = ${primeTier}, prime_expires_at = ${expiresAt.toISOString()} WHERE id = ${uid}`
     );
 
     const updated = await db.execute(sql`SELECT balance FROM users WHERE id = ${uid}`);
     const newBalance = Number((updated.rows[0] as any).balance ?? 0);
 
-    res.json({ success: true, hasPrime: true, primeExpiresAt: expiresAt.toISOString(), balance: newBalance });
+    res.json({ success: true, hasPrime: true, primeTier, primeExpiresAt: expiresAt.toISOString(), balance: newBalance });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
