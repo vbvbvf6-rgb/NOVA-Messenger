@@ -912,20 +912,18 @@ export default function Bots() {
           {activeTab === "bots" && (
             <motion.div key="bots" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
               <motion.button
-                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
+                whileHover={{ scale: 1.005, y: -1 }} whileTap={{ scale: 0.995 }}
                 onClick={() => setShowCreate(true)}
-                className="w-full flex items-center justify-between p-5 bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/30 rounded-2xl hover:from-violet-500/15 hover:to-indigo-500/15 transition-all shadow-[0_0_20px_rgba(139,92,246,0.08)]"
+                className="w-full flex items-center gap-4 p-4 bg-card border border-dashed border-violet-500/40 rounded-2xl hover:border-violet-500/70 hover:bg-violet-500/5 transition-all group"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.3)]">
-                    <Plus size={22} className="text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-bold text-foreground text-base">Создать нового бота</p>
-                    <p className="text-sm text-muted-foreground">Получить токен и начать разработку</p>
-                  </div>
+                <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center group-hover:bg-violet-500/20 transition-colors shrink-0">
+                  <Plus size={20} className="text-violet-400" />
                 </div>
-                <ChevronRight size={20} className="text-muted-foreground" />
+                <div className="text-left flex-1">
+                  <p className="font-semibold text-foreground text-sm">Создать нового бота</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Получить токен и начать разработку</p>
+                </div>
+                <ChevronRight size={16} className="text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
               </motion.button>
 
               {loading ? (
@@ -958,124 +956,145 @@ export default function Bots() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {bots.map(bot => (
-                    <motion.div key={bot.bot_user_id} layout className="bg-card rounded-2xl border border-border overflow-hidden">
+                  {bots.map(bot => {
+                    const isOpen = selectedBot?.bot_user_id === bot.bot_user_id;
+                    return (
+                    <motion.div
+                      key={bot.bot_user_id}
+                      layout
+                      className={`rounded-2xl border overflow-hidden transition-all duration-200 ${isOpen ? "bg-card border-violet-500/30 shadow-[0_0_0_1px_rgba(139,92,246,0.15),0_8px_32px_rgba(0,0,0,0.2)]" : "bg-card border-border hover:border-border/80"}`}
+                    >
+                      {/* ── Collapsed header ── */}
                       <button
-                        className="w-full flex items-center gap-4 p-5 hover:bg-secondary/40 transition-colors text-left"
+                        className="w-full flex items-center gap-4 px-5 py-4 text-left group"
                         onClick={() => setSelectedBot(prev => prev?.bot_user_id === bot.bot_user_id ? null : bot)}
                       >
+                        {/* Avatar */}
                         <div
-                          className="relative w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl shrink-0 overflow-hidden group/av cursor-pointer"
+                          className="relative w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg shrink-0 overflow-hidden cursor-pointer"
                           style={{ background: bot.avatar_color }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            avatarUploadBotRef.current = bot.bot_user_id;
-                            avatarInputRef.current?.click();
-                          }}
+                          onClick={(e) => { e.stopPropagation(); avatarUploadBotRef.current = bot.bot_user_id; avatarInputRef.current?.click(); }}
                         >
-                          {bot.avatar_url
-                            ? <img src={bot.avatar_url} alt="" className="w-full h-full object-cover" />
-                            : bot.display_name[0]?.toUpperCase()}
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/av:opacity-100 transition-opacity rounded-2xl">
-                            {uploadingAvatar === bot.bot_user_id
-                              ? <RefreshCw size={16} className="text-white animate-spin" />
-                              : <Camera size={16} className="text-white" />}
+                          {bot.avatar_url ? <img src={bot.avatar_url} alt="" className="w-full h-full object-cover" /> : bot.display_name[0]?.toUpperCase()}
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            {uploadingAvatar === bot.bot_user_id ? <RefreshCw size={14} className="text-white animate-spin" /> : <Camera size={14} className="text-white" />}
                           </div>
                         </div>
+
+                        {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <p className="font-bold text-foreground text-base truncate">{bot.display_name}</p>
-                            <span className="text-[10px] font-bold bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full shrink-0">BOT</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground text-sm truncate">{bot.display_name}</span>
+                            <span className="shrink-0 text-[9px] font-black tracking-widest uppercase px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-400 border border-violet-500/20">BOT</span>
+                            {bot.inline_code && (
+                              <span className="shrink-0 flex items-center gap-1 text-[9px] font-bold text-emerald-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                LIVE
+                              </span>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">@{bot.username}</p>
-                          {bot.bio && <p className="text-xs text-muted-foreground mt-1 truncate">{bot.bio}</p>}
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">@{bot.username}{bot.bio ? ` · ${bot.bio}` : ""}</p>
                         </div>
-                        <div className="shrink-0 text-muted-foreground">
-                          {selectedBot?.bot_user_id === bot.bot_user_id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+
+                        {/* Actions hint + chevron */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronDown size={16} className="text-muted-foreground/60" />
+                          </motion.div>
                         </div>
                       </button>
 
+                      {/* ── Expanded details ── */}
                       <AnimatePresence>
-                        {selectedBot?.bot_user_id === bot.bot_user_id && botSelected && (
+                        {isOpen && botSelected && (
                           <motion.div
-                            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.22, ease: "easeInOut" }}
                             className="overflow-hidden"
                           >
-                            <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Токен API</p>
-                                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">
-                                  <code className="flex-1 text-sm text-foreground font-mono break-all select-all">
-                                    {showToken[bot.bot_user_id] ? botSelected.token : "•".repeat(32)}
+                            <div className="border-t border-border/60 mx-5" />
+                            <div className="p-5 space-y-4">
+
+                              {/* Inline code status banner */}
+                              {bot.inline_code ? (
+                                <div className="flex items-center justify-between gap-3 px-4 py-3 bg-emerald-500/8 border border-emerald-500/20 rounded-xl">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                                    <div>
+                                      <p className="text-xs font-semibold text-emerald-400">Встроенный Python-код активен</p>
+                                      <p className="text-[11px] text-muted-foreground">Бот обрабатывает сообщения прямо на сервере</p>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => { setCodeBot(bot); setCodeText(bot.inline_code || ""); }}
+                                    className="shrink-0 text-xs font-semibold text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 px-3 py-1.5 rounded-lg transition-colors"
+                                  >
+                                    Изменить
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => { setCodeBot(bot); setCodeText(""); }}
+                                  className="w-full flex items-center gap-3 px-4 py-3 bg-violet-500/6 hover:bg-violet-500/10 border border-violet-500/20 hover:border-violet-500/40 rounded-xl transition-all group/code text-left"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center shrink-0 group-hover/code:bg-violet-500/20 transition-colors">
+                                    <Code2 size={15} className="text-violet-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-foreground">Добавить встроенный Python-код</p>
+                                    <p className="text-[11px] text-muted-foreground mt-0.5">Бот будет отвечать без внешнего сервера</p>
+                                  </div>
+                                  <ArrowRight size={14} className="text-muted-foreground/50 group-hover/code:text-violet-400 transition-colors shrink-0" />
+                                </button>
+                              )}
+
+                              {/* Token row */}
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Токен API</p>
+                                <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-4 py-2.5 border border-border/50">
+                                  <code className="flex-1 text-xs text-foreground font-mono break-all select-all leading-relaxed">
+                                    {showToken[bot.bot_user_id] ? botSelected.token : "•".repeat(40)}
                                   </code>
-                                  <div className="flex gap-1 shrink-0">
-                                    <button onClick={() => setShowToken(p => ({ ...p, [bot.bot_user_id]: !p[bot.bot_user_id] }))} className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                                      {showToken[bot.bot_user_id] ? <EyeOff size={15} className="text-muted-foreground" /> : <Eye size={15} className="text-muted-foreground" />}
+                                  <div className="flex gap-0.5 shrink-0">
+                                    <button onClick={() => setShowToken(p => ({ ...p, [bot.bot_user_id]: !p[bot.bot_user_id] }))} className="p-1.5 hover:bg-secondary rounded-lg transition-colors">
+                                      {showToken[bot.bot_user_id] ? <EyeOff size={13} className="text-muted-foreground" /> : <Eye size={13} className="text-muted-foreground" />}
                                     </button>
-                                    <button onClick={() => copyText(botSelected.token, `token-${bot.bot_user_id}`)} className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                                      {copied === `token-${bot.bot_user_id}` ? <Check size={15} className="text-green-400" /> : <Copy size={15} className="text-muted-foreground" />}
+                                    <button onClick={() => copyText(botSelected.token, `token-${bot.bot_user_id}`)} className="p-1.5 hover:bg-secondary rounded-lg transition-colors">
+                                      {copied === `token-${bot.bot_user_id}` ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} className="text-muted-foreground" />}
                                     </button>
                                   </div>
                                 </div>
                               </div>
 
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Base URL</p>
-                                <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">
-                                  <code className="flex-1 text-sm text-foreground font-mono truncate">{host}/bot/{botSelected.token.substring(0, 14)}...</code>
-                                  <button onClick={() => copyText(`${host}/bot/${botSelected.token}`, `url-${bot.bot_user_id}`)} className="p-2 hover:bg-secondary rounded-lg transition-colors shrink-0">
-                                    {copied === `url-${bot.bot_user_id}` ? <Check size={15} className="text-green-400" /> : <Copy size={15} className="text-muted-foreground" />}
-                                  </button>
-                                </div>
-                              </div>
-
-                              <div>
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Быстрый старт (Python)</p>
-                                <div className="relative bg-[#0d1117] rounded-xl p-4 overflow-auto max-h-52">
-                                  <button
-                                    onClick={() => copyText(EXAMPLES.echo.code(botSelected.token, host), `ex-${bot.bot_user_id}`)}
-                                    className="absolute top-3 right-3 p-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
-                                  >
-                                    {copied === `ex-${bot.bot_user_id}` ? <Check size={13} className="text-green-400" /> : <Copy size={13} className="text-white/60" />}
-                                  </button>
-                                  <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap leading-relaxed pr-8">
-                                    {EXAMPLES.echo.code(botSelected.token, host)}
-                                  </pre>
-                                </div>
+                              {/* Action buttons */}
+                              <div className="grid grid-cols-2 gap-2 pt-1">
                                 <button
-                                  onClick={() => setActiveTab("sdk")}
-                                  className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
+                                  onClick={() => handleStartChat(bot)}
+                                  className="flex items-center justify-center gap-2 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-xs font-bold transition-colors shadow-[0_4px_12px_rgba(255,80,0,0.2)]"
                                 >
-                                  Больше примеров в Python SDK <ArrowRight size={11} />
-                                </button>
-                              </div>
-
-                              {/* Inline code status */}
-                              {bot.inline_code && (
-                                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                                  <span className="text-xs text-emerald-400 font-medium">Встроенный Python-код активен — бот отвечает на сервере</span>
-                                </div>
-                              )}
-
-                              <div className="flex flex-wrap gap-2 pt-1">
-                                <button onClick={() => handleStartChat(bot)} className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/15 border border-primary/20 rounded-xl text-sm font-medium text-primary transition-colors">
-                                  <MessageCircle size={14} /> Написать
-                                </button>
-                                <button onClick={() => { setEditBot(bot); setEditName(bot.display_name); setEditDesc(bot.bio || ""); }} className="flex items-center gap-2 px-4 py-2.5 bg-secondary hover:bg-secondary/70 rounded-xl text-sm font-medium text-foreground transition-colors">
-                                  <Pencil size={14} /> Изменить
+                                  <MessageCircle size={13} /> Написать боту
                                 </button>
                                 <button
-                                  onClick={() => { setCodeBot(bot); setCodeText(bot.inline_code || ""); }}
-                                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${bot.inline_code ? "bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 text-emerald-400" : "bg-violet-500/10 hover:bg-violet-500/15 border border-violet-500/20 text-violet-400"}`}
+                                  onClick={() => { setEditBot(bot); setEditName(bot.display_name); setEditDesc(bot.bio || ""); }}
+                                  className="flex items-center justify-center gap-2 py-2.5 bg-secondary hover:bg-secondary/70 rounded-xl text-xs font-semibold text-foreground transition-colors"
                                 >
-                                  <Code2 size={14} /> {bot.inline_code ? "Изменить код" : "Встроенный код"}
+                                  <Pencil size={13} /> Редактировать
                                 </button>
-                                <button onClick={() => handleRegenerate(bot)} disabled={regenerating === bot.bot_user_id} className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 rounded-xl text-sm font-medium text-amber-400 transition-colors disabled:opacity-50">
-                                  <RefreshCw size={14} className={regenerating === bot.bot_user_id ? "animate-spin" : ""} /> Новый токен
+                                <button
+                                  onClick={() => handleRegenerate(bot)}
+                                  disabled={regenerating === bot.bot_user_id}
+                                  className="flex items-center justify-center gap-2 py-2.5 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 rounded-xl text-xs font-semibold text-amber-400 transition-colors disabled:opacity-50"
+                                >
+                                  <RefreshCw size={13} className={regenerating === bot.bot_user_id ? "animate-spin" : ""} /> Новый токен
                                 </button>
-                                <button onClick={() => handleDelete(bot)} disabled={deletingId === bot.bot_user_id} className="flex items-center gap-2 px-4 py-2.5 bg-destructive/10 hover:bg-destructive/15 border border-destructive/20 rounded-xl text-sm font-medium text-destructive transition-colors disabled:opacity-50 ml-auto">
-                                  <Trash2 size={14} /> Удалить
+                                <button
+                                  onClick={() => handleDelete(bot)}
+                                  disabled={deletingId === bot.bot_user_id}
+                                  className="flex items-center justify-center gap-2 py-2.5 bg-destructive/8 hover:bg-destructive/15 border border-destructive/20 rounded-xl text-xs font-semibold text-destructive transition-colors disabled:opacity-50"
+                                >
+                                  <Trash2 size={13} /> Удалить бота
                                 </button>
                               </div>
                             </div>
@@ -1083,7 +1102,8 @@ export default function Bots() {
                         )}
                       </AnimatePresence>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
@@ -1340,51 +1360,69 @@ if __name__ == "__main__":
       <AnimatePresence>
         {showCreate && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
             onClick={e => { if (e.target === e.currentTarget) setShowCreate(false); }}
           >
-            <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0 }}
-              className="bg-card rounded-2xl border border-border p-5 w-full max-w-md space-y-4"
+            <motion.div initial={{ y: 48, opacity: 0, scale: 0.96 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 24, opacity: 0, scale: 0.97 }}
+              transition={{ type: "spring", damping: 26, stiffness: 320 }}
+              className="bg-card rounded-2xl border border-violet-500/20 shadow-[0_24px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(139,92,246,0.1)] w-full max-w-md overflow-hidden"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-foreground">Создать бота</h2>
-                <button onClick={() => setShowCreate(false)} className="p-2 hover:bg-secondary rounded-xl transition-colors"><X size={16} /></button>
+              {/* Modal header */}
+              <div className="relative px-6 pt-6 pb-5 border-b border-border/60">
+                <div className="flex items-center gap-3 mb-0.5">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_16px_rgba(139,92,246,0.35)]">
+                    <Bot size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-foreground text-base leading-tight">Создать бота</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">Новый бот для автоматизации чатов</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowCreate(false)} className="absolute top-5 right-5 p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+                  <X size={16} />
+                </button>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Имя бота</label>
+
+              {/* Fields */}
+              <div className="px-6 py-5 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wider block">Имя бота</label>
                   <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Мой Бот"
-                    className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/20 transition-all"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                    Username <span className="text-muted-foreground/60">(должен заканчиваться на «bot»)</span>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wider block">
+                    Username <span className="normal-case font-normal text-muted-foreground/50 tracking-normal">· должен заканчиваться на «bot»</span>
                   </label>
-                  <div className="flex items-center gap-2 bg-muted/40 border border-border rounded-xl px-3 py-2.5 focus-within:border-primary transition-colors">
-                    <span className="text-muted-foreground text-sm">@</span>
+                  <div className="flex items-center gap-0 bg-background border border-border rounded-xl overflow-hidden focus-within:border-violet-500/60 focus-within:ring-1 focus-within:ring-violet-500/20 transition-all">
+                    <span className="text-muted-foreground text-sm px-4 border-r border-border py-2.5 bg-muted/30 shrink-0">@</span>
                     <input value={newUsername} onChange={e => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
                       placeholder="myawesomebot"
-                      className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                      className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none px-3 py-2.5"
                     />
                   </div>
                   {newUsername && !/bot$/i.test(newUsername) && (
-                    <p className="text-[10px] text-amber-400 mt-1">Username должен заканчиваться на «bot»</p>
+                    <p className="text-[11px] text-amber-400 flex items-center gap-1"><span>⚠</span> Username должен заканчиваться на «bot»</p>
                   )}
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Описание <span className="text-muted-foreground/60">(необязательно)</span></label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wider block">
+                    Описание <span className="normal-case font-normal text-muted-foreground/50 tracking-normal">· необязательно</span>
+                  </label>
                   <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Что умеет ваш бот..." rows={2}
-                    className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/20 transition-all resize-none"
                   />
                 </div>
               </div>
-              <div className="flex gap-2 pt-1">
-                <button onClick={() => setShowCreate(false)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">
+
+              {/* Footer */}
+              <div className="flex gap-2 px-6 pb-6">
+                <button onClick={() => setShowCreate(false)} className="flex-1 py-2.5 rounded-xl bg-secondary hover:bg-secondary/70 text-sm font-medium text-muted-foreground transition-colors">
                   Отмена
                 </button>
                 <button onClick={handleCreate} disabled={creating || !newName.trim() || !/bot$/i.test(newUsername)}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-40 shadow-[0_4px_14px_rgba(139,92,246,0.3)]"
                 >
                   {creating ? "Создаём..." : "Создать бота"}
                 </button>
@@ -1398,58 +1436,82 @@ if __name__ == "__main__":
       <AnimatePresence>
         {codeBot && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
             onClick={e => { if (e.target === e.currentTarget) setCodeBot(null); }}
           >
-            <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0 }}
-              className="bg-card rounded-2xl border border-border w-full max-w-2xl flex flex-col max-h-[90vh]"
+            <motion.div initial={{ y: 48, opacity: 0, scale: 0.96 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 24, opacity: 0, scale: 0.97 }}
+              transition={{ type: "spring", damping: 26, stiffness: 320 }}
+              className="bg-card rounded-2xl border border-emerald-500/20 shadow-[0_24px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(52,211,153,0.08)] w-full max-w-2xl flex flex-col max-h-[92vh] overflow-hidden"
             >
-              <div className="flex items-center justify-between p-5 border-b border-border shrink-0">
-                <div>
-                  <h2 className="font-bold text-foreground flex items-center gap-2">
-                    <Code2 size={17} className="text-violet-400" /> Встроенный Python-код — @{codeBot.username}
-                  </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Код выполняется на сервере при каждом входящем сообщении. Используйте <code className="font-mono text-emerald-400">print()</code> для отправки ответа.</p>
+              {/* Header */}
+              <div className="relative flex items-center gap-3 px-5 py-4 border-b border-border/60 shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <Code2 size={16} className="text-emerald-400" />
                 </div>
-                <button onClick={() => setCodeBot(null)} className="p-2 hover:bg-secondary rounded-xl transition-colors shrink-0"><X size={16} /></button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-bold text-foreground text-sm">Встроенный Python-код</h2>
+                    <span className="text-xs text-muted-foreground font-mono bg-muted/40 px-2 py-0.5 rounded-lg">@{codeBot.username}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Выполняется на сервере · используйте <code className="font-mono text-emerald-400 text-[11px]">print()</code> для отправки ответа</p>
+                </div>
+                <button onClick={() => setCodeBot(null)} className="p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground shrink-0"><X size={15} /></button>
               </div>
 
-              <div className="p-4 bg-[#0d1117] border-b border-border/50 shrink-0">
-                <p className="text-xs text-white/40 font-mono mb-1"># Доступные переменные:</p>
-                <p className="text-xs font-mono"><span className="text-blue-400">text</span> <span className="text-white/40">=</span> <span className="text-amber-300">"текст сообщения"</span> <span className="text-white/30">  # str</span></p>
-                <p className="text-xs font-mono"><span className="text-blue-400">chat_id</span> <span className="text-white/40">=</span> <span className="text-green-300">42</span> <span className="text-white/30">  # int — id чата</span></p>
-                <p className="text-xs font-mono"><span className="text-blue-400">sender</span> <span className="text-white/40">=</span> <span className="text-white/60">{"{"}"id": 1, "username": "user"{"}"}</span> <span className="text-white/30">  # dict</span></p>
-                <p className="text-xs font-mono mt-1"><span className="text-purple-400">print</span><span className="text-white/60">(</span><span className="text-amber-300">"ответ"</span><span className="text-white/60">)</span> <span className="text-white/30">  # отправит это как ответ бота</span></p>
+              {/* Variables reference */}
+              <div className="px-5 py-3 bg-[#0d1117]/80 border-b border-white/5 shrink-0">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span className="text-[10px] text-white/30 font-semibold uppercase tracking-wider shrink-0">Переменные:</span>
+                  {[
+                    { name: "text", type: "str", desc: "текст сообщения" },
+                    { name: "chat_id", type: "int", desc: "id чата" },
+                    { name: "sender", type: "dict", desc: "{id, username}" },
+                  ].map(v => (
+                    <span key={v.name} className="flex items-center gap-1.5 text-[11px] font-mono">
+                      <span className="text-sky-400">{v.name}</span>
+                      <span className="text-white/20">:</span>
+                      <span className="text-amber-300/70">{v.type}</span>
+                      <span className="text-white/25 font-sans text-[10px]">— {v.desc}</span>
+                    </span>
+                  ))}
+                  <span className="flex items-center gap-1 text-[11px] font-mono ml-auto">
+                    <span className="text-purple-400">print</span>
+                    <span className="text-white/40">(…)</span>
+                    <span className="text-white/25 font-sans text-[10px]">→ ответ бота</span>
+                  </span>
+                </div>
               </div>
 
-              <div className="flex-1 overflow-hidden">
+              {/* Editor */}
+              <div className="flex-1 overflow-hidden bg-[#0d1117] relative">
+                <div className="absolute top-0 left-0 w-10 h-full border-r border-white/5 flex flex-col pt-4 select-none" aria-hidden>
+                  {Array.from({ length: Math.max(12, (codeText.split("\n").length + 2)) }).map((_, i) => (
+                    <span key={i} className="text-[11px] text-white/15 font-mono text-right pr-3 leading-[1.625rem]">{i + 1}</span>
+                  ))}
+                </div>
                 <textarea
                   value={codeText}
                   onChange={e => setCodeText(e.target.value)}
                   spellCheck={false}
                   placeholder={`# Пример: эхо-бот\nif text:\n    print(f"Вы написали: {text}")\nelse:\n    print("Привет! Напишите что-нибудь.")`}
-                  className="w-full h-64 bg-[#0d1117] text-green-300 font-mono text-sm p-4 focus:outline-none resize-none leading-relaxed placeholder:text-white/20"
+                  className="w-full h-full min-h-[260px] bg-transparent text-emerald-300 font-mono text-sm pl-12 pr-5 pt-4 pb-4 focus:outline-none resize-none leading-[1.625rem] placeholder:text-white/15"
                 />
               </div>
 
-              <div className="flex gap-2 p-4 border-t border-border shrink-0">
+              {/* Footer */}
+              <div className="flex items-center gap-2 px-5 py-4 border-t border-border/60 bg-card shrink-0">
                 {codeText.trim() && (
-                  <button
-                    onClick={() => setCodeText("")}
-                    className="px-4 py-2.5 rounded-xl border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors"
-                  >
-                    Удалить код
+                  <button onClick={() => setCodeText("")} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-destructive/25 text-destructive text-xs font-semibold hover:bg-destructive/8 transition-colors">
+                    <Trash2 size={12} /> Очистить
                   </button>
                 )}
-                <button onClick={() => setCodeBot(null)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">
+                <button onClick={() => setCodeBot(null)} className="flex-1 py-2 rounded-xl bg-secondary hover:bg-secondary/70 text-sm font-medium text-muted-foreground transition-colors">
                   Отмена
                 </button>
-                <button
-                  onClick={handleSaveCode}
-                  disabled={savingCode}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50"
+                <button onClick={handleSaveCode} disabled={savingCode}
+                  className="flex-1 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-bold hover:opacity-90 transition-all disabled:opacity-50 shadow-[0_4px_14px_rgba(52,211,153,0.25)]"
                 >
-                  {savingCode ? "Сохраняем..." : "Сохранить и активировать"}
+                  {savingCode ? "Сохраняем..." : "Активировать код"}
                 </button>
               </div>
             </motion.div>
@@ -1461,35 +1523,42 @@ if __name__ == "__main__":
       <AnimatePresence>
         {editBot && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
             onClick={e => { if (e.target === e.currentTarget) setEditBot(null); }}
           >
-            <motion.div initial={{ y: 40, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0 }}
-              className="bg-card rounded-2xl border border-border p-5 w-full max-w-md space-y-4"
+            <motion.div initial={{ y: 48, opacity: 0, scale: 0.96 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 24, opacity: 0, scale: 0.97 }}
+              transition={{ type: "spring", damping: 26, stiffness: 320 }}
+              className="bg-card rounded-2xl border border-border shadow-[0_24px_80px_rgba(0,0,0,0.5)] w-full max-w-md overflow-hidden"
             >
-              <div className="flex items-center justify-between">
-                <h2 className="font-bold text-foreground">Изменить @{editBot.username}</h2>
-                <button onClick={() => setEditBot(null)} className="p-2 hover:bg-secondary rounded-xl transition-colors"><X size={16} /></button>
-              </div>
-              <div className="space-y-3">
+              <div className="relative flex items-center gap-3 px-6 py-5 border-b border-border/60">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-base shrink-0" style={{ background: editBot.avatar_color }}>
+                  {editBot.avatar_url ? <img src={editBot.avatar_url} alt="" className="w-full h-full object-cover rounded-xl" /> : editBot.display_name[0]?.toUpperCase()}
+                </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Имя бота</label>
+                  <h2 className="font-bold text-foreground text-sm leading-tight">Редактировать бота</h2>
+                  <p className="text-xs text-muted-foreground">@{editBot.username}</p>
+                </div>
+                <button onClick={() => setEditBot(null)} className="absolute top-4 right-4 p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground"><X size={16} /></button>
+              </div>
+              <div className="px-6 py-5 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wider block">Имя бота</label>
                   <input value={editName} onChange={e => setEditName(e.target.value)}
-                    className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-colors"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"
                   />
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Описание</label>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-muted-foreground/80 uppercase tracking-wider block">Описание</label>
                   <textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={2}
-                    className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary transition-colors resize-none"
+                    className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all resize-none"
                   />
                 </div>
               </div>
-              <div className="flex gap-2 pt-1">
-                <button onClick={() => setEditBot(null)} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors">
+              <div className="flex gap-2 px-6 pb-6">
+                <button onClick={() => setEditBot(null)} className="flex-1 py-2.5 rounded-xl bg-secondary hover:bg-secondary/70 text-sm font-medium text-muted-foreground transition-colors">
                   Отмена
                 </button>
-                <button onClick={handleEdit} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-all">
+                <button onClick={handleEdit} className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-all shadow-[0_4px_12px_rgba(255,80,0,0.2)]">
                   Сохранить
                 </button>
               </div>
