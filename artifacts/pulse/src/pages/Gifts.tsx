@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useGetGiftCatalog, useGetSentGifts, useGetReceivedGifts, useGetMe, GiftItem, Gift } from "@workspace/api-client-react";
 import { Zap, ArrowUpRight, ArrowDownLeft, Gift as GiftIcon, Search, AlertTriangle, X, UserRound, MessageSquare, EyeOff, Crown, Lock } from "lucide-react";
-import { GiftArt } from "./GiftArt";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,126 +9,57 @@ import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 
-const GIFT_IMAGES: Record<string, string> = {
-  // Common
-  "Сердечко":       "/gifts/heart.png",
-  "Звёздочка":      "/gifts/star-small.png",
-  "Цветок сакуры":  "/gifts/sakura.png",
-  "Пончик":         "/gifts/donut.png",
-  "Котёнок":        "/gifts/kitten.png",
-  "Воздушный шар":  "/gifts/balloon.png",
-  "Четырёхлистник": "/gifts/clover.png",
-  "Пицца":          "/gifts/pizza.png",
-  "Торт":           "/gifts/birthday-cake.png",
-  "Луна":           "/gifts/moon.png",
-  // Rare
-  "Корона":         "/gifts/crown.png",
-  "Красная роза":   "/gifts/rose-in-glass.png",
-  "Бриллиант":      "/gifts/diamond-heart.png",
-  // Epic
-  "Кристалл":       "/gifts/magic-crystal.png",
-  // Legendary
-  "Звезда":         "/gifts/star-42.png",
-};
-
-const RARITY_CONFIG: Record<string, { gradient: string; glow: string; badge: string; label: string }> = {
+const RARITY_CONFIG: Record<string, {
+  cardBg: string; border: string; glow: string;
+  badge: string; label: string; shimmer: string; textColor: string;
+}> = {
   cosmic: {
-    gradient: "from-rose-300 via-fuchsia-500 to-red-700",
-    glow: "shadow-[0_0_40px_rgba(244,63,94,0.7)] hover:shadow-[0_0_70px_rgba(244,63,94,0.9)]",
-    badge: "bg-fuchsia-500/30 text-fuchsia-200 border-fuchsia-300/60",
+    cardBg: "from-violet-500/25 via-fuchsia-400/15 to-pink-500/25",
+    border: "border-violet-400/50",
+    glow: "shadow-[0_4px_28px_rgba(139,92,246,0.55)] hover:shadow-[0_6px_40px_rgba(139,92,246,0.75)]",
+    badge: "bg-violet-500/30 text-violet-200 border-violet-400/50",
     label: "COSMIC",
+    shimmer: "rgba(167,139,250,0.25)",
+    textColor: "text-violet-200",
   },
   legendary: {
-    gradient: "from-red-300 via-rose-500 to-red-800",
-    glow: "shadow-[0_0_30px_rgba(220,38,38,0.55)] hover:shadow-[0_0_50px_rgba(220,38,38,0.75)]",
-    badge: "bg-red-500/30 text-red-200 border-red-400/50",
+    cardBg: "from-amber-500/25 via-yellow-400/15 to-orange-400/20",
+    border: "border-amber-400/50",
+    glow: "shadow-[0_4px_24px_rgba(245,158,11,0.5)] hover:shadow-[0_6px_36px_rgba(245,158,11,0.7)]",
+    badge: "bg-amber-500/30 text-amber-200 border-amber-400/50",
     label: "LEGENDARY",
+    shimmer: "rgba(251,191,36,0.25)",
+    textColor: "text-amber-200",
   },
   epic: {
-    gradient: "from-rose-400 via-red-500 to-rose-800",
-    glow: "shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:shadow-[0_0_35px_rgba(244,63,94,0.6)]",
-    badge: "bg-rose-500/30 text-rose-300 border-rose-400/50",
+    cardBg: "from-purple-500/25 via-violet-400/15 to-indigo-500/20",
+    border: "border-purple-400/40",
+    glow: "shadow-[0_4px_18px_rgba(147,51,234,0.45)] hover:shadow-[0_6px_30px_rgba(147,51,234,0.65)]",
+    badge: "bg-purple-500/30 text-purple-200 border-purple-400/50",
     label: "EPIC",
+    shimmer: "rgba(192,132,252,0.25)",
+    textColor: "text-purple-200",
   },
   rare: {
-    gradient: "from-pink-400 via-rose-500 to-red-600",
-    glow: "shadow-[0_0_12px_rgba(244,63,94,0.3)] hover:shadow-[0_0_25px_rgba(244,63,94,0.5)]",
-    badge: "bg-pink-500/30 text-pink-300 border-pink-400/50",
+    cardBg: "from-blue-500/20 via-sky-400/12 to-cyan-500/18",
+    border: "border-blue-400/35",
+    glow: "shadow-[0_4px_14px_rgba(59,130,246,0.4)] hover:shadow-[0_6px_24px_rgba(59,130,246,0.6)]",
+    badge: "bg-blue-500/30 text-blue-200 border-blue-400/40",
     label: "RARE",
+    shimmer: "rgba(96,165,250,0.2)",
+    textColor: "text-blue-200",
   },
   common: {
-    gradient: "from-rose-300 via-red-400 to-rose-600",
-    glow: "shadow-[0_0_6px_rgba(244,63,94,0.2)] hover:shadow-[0_0_15px_rgba(244,63,94,0.35)]",
-    badge: "bg-rose-500/30 text-rose-300 border-rose-400/50",
+    cardBg: "from-slate-500/15 via-slate-400/8 to-slate-500/12",
+    border: "border-slate-400/20",
+    glow: "shadow-[0_2px_8px_rgba(0,0,0,0.25)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.35)]",
+    badge: "bg-slate-500/30 text-slate-300 border-slate-400/30",
     label: "COMMON",
+    shimmer: "rgba(148,163,184,0.15)",
+    textColor: "text-slate-300",
   },
 };
 
-interface GiftTheme {
-  bg1: string;
-  bg2: string;
-  glow: string;
-  ring: string;
-}
-
-const GIFT_THEMES: Record<string, GiftTheme> = {
-  "Сердечко":       { bg1: "#ff6b9d", bg2: "#9b1239", glow: "#ff6b9d", ring: "#ff4d7d" },
-  "Звёздочка":      { bg1: "#fde047", bg2: "#b45309", glow: "#fbbf24", ring: "#f59e0b" },
-  "Цветок сакуры":  { bg1: "#f9a8d4", bg2: "#9d174d", glow: "#f472b6", ring: "#ec4899" },
-  "Пончик":         { bg1: "#fb923c", bg2: "#7c2d12", glow: "#f97316", ring: "#ea580c" },
-  "Котёнок":        { bg1: "#fcd34d", bg2: "#92400e", glow: "#fbbf24", ring: "#d97706" },
-  "Воздушный шар":  { bg1: "#f87171", bg2: "#7f1d1d", glow: "#ef4444", ring: "#dc2626" },
-  "Четырёхлистник": { bg1: "#4ade80", bg2: "#14532d", glow: "#22c55e", ring: "#16a34a" },
-  "Пицца":          { bg1: "#fbbf24", bg2: "#78350f", glow: "#f59e0b", ring: "#d97706" },
-  "Торт":           { bg1: "#f0abfc", bg2: "#6b21a8", glow: "#e879f9", ring: "#d946ef" },
-  "Луна":           { bg1: "#93c5fd", bg2: "#1e1b4b", glow: "#818cf8", ring: "#6366f1" },
-
-  "Корона":         { bg1: "#fde68a", bg2: "#78350f", glow: "#f59e0b", ring: "#d97706" },
-  "Красная роза":   { bg1: "#fca5a5", bg2: "#7f1d1d", glow: "#ef4444", ring: "#b91c1c" },
-  "Лиса":           { bg1: "#fb923c", bg2: "#7c2d12", glow: "#f97316", ring: "#ea580c" },
-  "Бриллиант":      { bg1: "#67e8f9", bg2: "#164e63", glow: "#22d3ee", ring: "#06b6d4" },
-  "Ракета":         { bg1: "#93c5fd", bg2: "#1e3a5f", glow: "#60a5fa", ring: "#3b82f6" },
-  "Гитара":         { bg1: "#c4b5fd", bg2: "#3b0764", glow: "#a78bfa", ring: "#8b5cf6" },
-  "Кубок":          { bg1: "#fde68a", bg2: "#713f12", glow: "#f59e0b", ring: "#d97706" },
-  "Радуга":         { bg1: "#a5f3fc", bg2: "#3730a3", glow: "#38bdf8", ring: "#0ea5e9" },
-  "Молния":         { bg1: "#fef08a", bg2: "#713f12", glow: "#facc15", ring: "#eab308" },
-  "Самоцвет":       { bg1: "#6ee7b7", bg2: "#064e3b", glow: "#34d399", ring: "#10b981" },
-
-  "Дракон":         { bg1: "#fca5a5", bg2: "#450a0a", glow: "#ef4444", ring: "#dc2626" },
-  "Единорог":       { bg1: "#f0abfc", bg2: "#4a044e", glow: "#e879f9", ring: "#a21caf" },
-  "Феникс":         { bg1: "#fdba74", bg2: "#431407", glow: "#fb923c", ring: "#ea580c" },
-  "Планета":        { bg1: "#a5b4fc", bg2: "#1e1b4b", glow: "#818cf8", ring: "#4f46e5" },
-  "Волшебство":     { bg1: "#d8b4fe", bg2: "#3b0764", glow: "#c084fc", ring: "#9333ea" },
-  "Кристалл":       { bg1: "#7dd3fc", bg2: "#082f49", glow: "#38bdf8", ring: "#0284c7" },
-
-  "Галактика":      { bg1: "#818cf8", bg2: "#020617", glow: "#6366f1", ring: "#4338ca" },
-  "Ангел":          { bg1: "#fef9c3", bg2: "#78350f", glow: "#fde047", ring: "#ca8a04" },
-  "Пульс":          { bg1: "#e879f9", bg2: "#2e1065", glow: "#d946ef", ring: "#a21caf" },
-  "Звезда":         { bg1: "#fde68a", bg2: "#7c2d12", glow: "#f59e0b", ring: "#b45309" },
-  "Бесконечность":  { bg1: "#67e8f9", bg2: "#0c4a6e", glow: "#22d3ee", ring: "#0891b2" },
-
-  "Нейтронная звезда": { bg1: "#ffffff", bg2: "#0a0a2e", glow: "#e0e7ff", ring: "#c7d2fe" },
-  "Квазар":            { bg1: "#fef9c3", bg2: "#0c0a3e", glow: "#fde047", ring: "#facc15" },
-  "Чёрная дыра":       { bg1: "#4c1d95", bg2: "#020617", glow: "#7c3aed", ring: "#6d28d9" },
-  "Мультивселенная":   { bg1: "#e879f9", bg2: "#0f0521", glow: "#d946ef", ring: "#a21caf" },
-  "Абсолют":           { bg1: "#ffffff", bg2: "#030712", glow: "#f0f9ff", ring: "#bae6fd" },
-
-  // Prime exclusives
-  "Корона Prime":      { bg1: "#fde68a", bg2: "#1c0533", glow: "#a78bfa", ring: "#7c3aed" },
-  "Пульс Сердца":      { bg1: "#e879f9", bg2: "#2e1065", glow: "#d946ef", ring: "#a21caf" },
-  "Звезда Prime":      { bg1: "#fbbf24", bg2: "#1c0533", glow: "#f59e0b", ring: "#7c3aed" },
-  "Вселенский Огонь":  { bg1: "#fb923c", bg2: "#0d0005", glow: "#f97316", ring: "#7c3aed" },
-
-  // Ultra tier
-  "Сингулярность":     { bg1: "#ffffff", bg2: "#000000", glow: "#ffffff", ring: "#e0e7ff" },
-  "Создатель":         { bg1: "#fde047", bg2: "#030712", glow: "#ffffff", ring: "#fbbf24" },
-};
-
-const DEFAULT_THEME: GiftTheme = { bg1: "#94a3b8", bg2: "#1e293b", glow: "#64748b", ring: "#475569" };
-
-function getGiftTheme(name: string): GiftTheme {
-  return GIFT_THEMES[name] || DEFAULT_THEME;
-}
 
 function getEmojiAnimation(animationType: string) {
   switch (animationType) {
@@ -211,182 +141,95 @@ function getEmojiAnimation(animationType: string) {
   }
 }
 
-function FloatingParticles({ rarity, theme }: { rarity: string; theme: GiftTheme }) {
-  const count = rarity === "cosmic" ? 12 : rarity === "legendary" ? 8 : rarity === "epic" ? 6 : rarity === "rare" ? 4 : 2;
+function FloatingParticles({ shimmer }: { shimmer: string }) {
   return (
     <>
-      {Array.from({ length: count }).map((_, i) => (
+      {Array.from({ length: 6 }).map((_, i) => (
         <motion.div
           key={i}
-          className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
-          style={{ top: "50%", left: "50%", backgroundColor: i % 2 === 0 ? theme.bg1 : theme.ring }}
+          className="absolute w-1 h-1 rounded-full pointer-events-none"
+          style={{ top: "50%", left: "50%", backgroundColor: shimmer.replace("0.25)", "0.8)") }}
           animate={{
-            x: [0, Math.cos(i * (360 / count) * Math.PI / 180) * 42, 0],
-            y: [0, Math.sin(i * (360 / count) * Math.PI / 180) * 42, 0],
+            x: [0, Math.cos(i * 60 * Math.PI / 180) * 38, 0],
+            y: [0, Math.sin(i * 60 * Math.PI / 180) * 38, 0],
             opacity: [0, 1, 0],
-            scale: [0, 1.6, 0],
+            scale: [0, 1.4, 0],
           }}
-          transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.28, ease: "easeInOut" }}
+          transition={{ duration: 2.2, repeat: Infinity, delay: i * 0.3, ease: "easeInOut" }}
         />
       ))}
     </>
   );
 }
 
-function GiftVisual({ name, emoji, rarity, animationType, size = 64 }: {
-  name: string;
+function GiftEmoji({ emoji, animationType, size = 64 }: {
   emoji: string;
-  rarity: string;
   animationType: string;
   size?: number;
 }) {
-  const theme = getGiftTheme(name);
-  const artAnim = getEmojiAnimation(animationType);
-  const isCosmic = rarity === "cosmic";
-  const isHighRarity = rarity === "legendary" || rarity === "epic";
-  const isRare = rarity === "rare";
-
+  const anim = getEmojiAnimation(animationType);
   return (
-    <div
-      className="relative flex items-center justify-center rounded-2xl overflow-hidden shrink-0"
+    <motion.span
+      className="select-none block leading-none"
       style={{
-        width: size,
-        height: size,
-        background: isCosmic
-          ? `radial-gradient(circle at 35% 30%, ${theme.bg1}30 0%, ${theme.bg2}ff 100%)`
-          : `radial-gradient(circle at 35% 30%, ${theme.bg1}22 0%, ${theme.bg2}cc 100%)`,
-        boxShadow: isCosmic
-          ? `0 0 ${size * 0.7}px ${theme.glow}90, 0 0 ${size * 1.2}px ${theme.ring}40, inset 0 1px 0 rgba(255,255,255,0.25)`
-          : `0 0 ${size * 0.4}px ${theme.glow}60, inset 0 1px 0 rgba(255,255,255,0.15)`,
+        fontSize: size * 0.82,
+        fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
+        filter: `drop-shadow(0 ${Math.round(size * 0.06)}px ${Math.round(size * 0.15)}px rgba(0,0,0,0.45))`,
+        lineHeight: 1,
       }}
+      {...(anim as any)}
     >
-      {isCosmic && (
-        <>
-          <motion.div
-            className="absolute inset-0 rounded-2xl"
-            style={{ background: `conic-gradient(from 0deg, ${theme.bg1}40, ${theme.ring}70, transparent, ${theme.bg1}40)` }}
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          />
-          <motion.div
-            className="absolute inset-0 rounded-2xl"
-            style={{ background: `conic-gradient(from 180deg, ${theme.ring}50, transparent, ${theme.bg1}50)` }}
-            animate={{ rotate: [360, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          />
-        </>
-      )}
-      {isHighRarity && !isCosmic && (
-        <motion.div
-          className="absolute inset-0 rounded-2xl"
-          style={{ background: `conic-gradient(from 0deg, ${theme.bg1}25, ${theme.ring}45, ${theme.bg1}25)` }}
-          animate={{ rotate: [0, 360] }}
-          transition={{ duration: rarity === "legendary" ? 3 : 5, repeat: Infinity, ease: "linear" }}
-        />
-      )}
-      {isRare && (
-        <motion.div
-          className="absolute rounded-2xl border"
-          style={{ inset: 2, borderColor: `${theme.ring}50` }}
-          animate={{ opacity: [0.3, 0.9, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
-      )}
-      <motion.div
-        className="relative z-10 select-none flex items-center justify-center"
-        style={{ width: size, height: size }}
-        {...(artAnim as any)}
-      >
-        {GIFT_IMAGES[name] ? (
-          <img
-            src={GIFT_IMAGES[name]}
-            alt={name}
-            width={size}
-            height={size}
-            style={{
-              objectFit: "contain",
-              filter: `drop-shadow(0 4px ${Math.round(size * 0.25)}px rgba(0,0,0,0.5))`,
-            }}
-          />
-        ) : (
-          <GiftArt name={name} size={size} />
-        )}
-      </motion.div>
-      {(rarity === "legendary" || isCosmic) && (
-        <motion.div
-          className="absolute inset-0 rounded-2xl pointer-events-none"
-          style={{ background: `radial-gradient(circle at 50% 50%, ${theme.bg1}${isCosmic ? "35" : "20"}, transparent 70%)` }}
-          animate={{ scale: [1, 1.15, 1], opacity: isCosmic ? [0.6, 1, 0.6] : [0.4, 0.9, 0.4] }}
-          transition={{ duration: isCosmic ? 1.2 : 2, repeat: Infinity }}
-        />
-      )}
-    </div>
-  );
-}
-
-function RosePetalBg() {
-  return (
-    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.07]" viewBox="0 0 160 160" preserveAspectRatio="xMidYMid slice">
-      <ellipse cx="20" cy="30" rx="28" ry="18" fill="#ef4444" transform="rotate(-30 20 30)" />
-      <ellipse cx="140" cy="25" rx="22" ry="14" fill="#f43f5e" transform="rotate(25 140 25)" />
-      <ellipse cx="10" cy="130" rx="20" ry="13" fill="#dc2626" transform="rotate(15 10 130)" />
-      <ellipse cx="150" cy="140" rx="26" ry="16" fill="#e11d48" transform="rotate(-20 150 140)" />
-      <ellipse cx="80" cy="8" rx="18" ry="11" fill="#f43f5e" transform="rotate(5 80 8)" />
-      <ellipse cx="80" cy="152" rx="22" ry="13" fill="#dc2626" transform="rotate(-10 80 152)" />
-    </svg>
+      {emoji}
+    </motion.span>
   );
 }
 
 function GiftCard({ item, onClick, hasPrime }: { item: GiftItem; onClick: () => void; hasPrime: boolean }) {
   const cfg = RARITY_CONFIG[item.rarity] || RARITY_CONFIG.common;
-  const theme = getGiftTheme(item.name);
   const [hovered, setHovered] = useState(false);
   const isPrimeOnly = !!(item as any).primeOnly;
   const isLocked = isPrimeOnly && !hasPrime;
+  const isHighRarity = ["cosmic", "legendary", "epic"].includes(item.rarity);
 
   return (
     <motion.div
-      whileHover={{ y: -6, scale: 1.03 }}
+      whileHover={{ y: -5, scale: 1.02 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      className={`relative cursor-pointer rounded-2xl overflow-hidden transition-shadow duration-300 ${isLocked ? "opacity-75" : cfg.glow}`}
+      className={`relative cursor-pointer rounded-2xl overflow-hidden transition-shadow duration-300 ${isLocked ? "opacity-70" : cfg.glow}`}
     >
-      <div className={`p-[1.5px] rounded-2xl bg-gradient-to-br ${isPrimeOnly ? "from-amber-400 via-yellow-500 to-orange-500" : cfg.gradient}`}>
-        <div
-          className="rounded-2xl p-4 flex flex-col items-center justify-center text-center min-h-[160px] relative overflow-hidden"
-          style={{ background: "linear-gradient(145deg, #1f0610 0%, #2d0916 55%, #1a0409 100%)" }}
-        >
-          <RosePetalBg />
-          {hovered && item.rarity !== "common" && !isLocked && <FloatingParticles rarity={item.rarity} theme={theme} />}
-          {hovered && (
+      <div className={`relative rounded-2xl border ${isPrimeOnly ? "border-amber-400/50" : cfg.border} overflow-hidden`}>
+        <div className={`absolute inset-0 bg-gradient-to-br ${isPrimeOnly ? "from-amber-500/20 via-yellow-400/10 to-orange-500/18" : cfg.cardBg}`} />
+        {hovered && isHighRarity && !isLocked && (
+          <AnimatePresence>
             <motion.div
-              className="absolute inset-0 rounded-2xl pointer-events-none"
+              className="absolute inset-0 pointer-events-none"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              style={{ background: "radial-gradient(circle at 50% 40%, rgba(220,38,38,0.18) 0%, transparent 70%)" }}
+              exit={{ opacity: 0 }}
+              style={{ background: `radial-gradient(circle at 50% 40%, ${cfg.shimmer} 0%, transparent 65%)` }}
             />
-          )}
-          <div className="mb-3 relative z-10">
-            <GiftVisual
-              name={item.name}
-              emoji={item.emoji}
-              rarity={item.rarity}
-              animationType={item.animationType}
-              size={64}
-            />
+          </AnimatePresence>
+        )}
+        <div className="relative p-4 flex flex-col items-center text-center gap-2.5 min-h-[168px] justify-center">
+          {hovered && isHighRarity && !isLocked && <FloatingParticles shimmer={cfg.shimmer} />}
+          <div className="flex items-center justify-center" style={{ width: 72, height: 72 }}>
+            <GiftEmoji emoji={item.emoji} animationType={item.animationType} size={72} />
           </div>
-          <h3 className="font-bold text-sm mb-1 leading-tight relative z-10 text-rose-50">{item.name}</h3>
-          <div className="flex items-center gap-1 font-medium text-xs relative z-10 text-rose-400">
-            <Zap size={11} className="text-rose-400" />
-            <span>{item.stars} Монета</span>
+          <div>
+            <h3 className="font-semibold text-sm leading-tight text-foreground">{item.name}</h3>
+            <div className="flex items-center justify-center gap-1 mt-1 text-xs text-muted-foreground">
+              <span className="text-yellow-400">⭐</span>
+              <span>{item.stars}</span>
+            </div>
           </div>
-          <span className={`absolute top-2 left-2 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full border ${isPrimeOnly ? "bg-amber-500/30 text-amber-300 border-amber-400/50" : cfg.badge}`}>
+          <span className={`absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border ${isPrimeOnly ? "bg-amber-500/30 text-amber-300 border-amber-400/50" : cfg.badge}`}>
             {isPrimeOnly ? "PRIME" : cfg.label}
           </span>
           {isLocked && (
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1 z-20">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex flex-col items-center justify-center gap-1 z-20 rounded-2xl">
               <Lock size={22} className="text-amber-400" />
               <span className="text-[10px] font-bold text-amber-400 flex items-center gap-0.5"><Crown size={9} /> Prime</span>
             </div>
@@ -452,8 +295,8 @@ function CelebrationOverlay({ animationType, giftName, emoji, onDone }: { animat
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         <div className="bg-black/60 backdrop-blur-xl rounded-3xl p-8 border border-white/10 flex flex-col items-center">
-          <div className="mb-4">
-            <GiftArt name={giftName} size={96} />
+          <div className="mb-4 flex items-center justify-center" style={{ width: 96, height: 96 }}>
+            <GiftEmoji emoji={emoji} animationType={animationType} size={96} />
           </div>
           <div className="text-2xl font-black text-white">Подарок отправлен!</div>
           <div className="text-sm text-white/60 mt-1">{giftName} улетел к получателю ✨</div>
@@ -712,13 +555,12 @@ export default function Gifts() {
                 {receivedGifts.map((gift: Gift) => {
                   const cfg = RARITY_CONFIG[gift.giftItem?.rarity || "common"];
                   return (
-                    <motion.div key={gift.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`p-[1.5px] rounded-2xl bg-gradient-to-br ${cfg.gradient}`}>
-                      <div className="bg-card rounded-2xl p-4 flex items-center gap-4">
-                        <div className="shrink-0">
-                          <GiftVisual
-                            name={gift.giftItem?.name || ""}
+                    <motion.div key={gift.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`rounded-2xl border ${cfg.border} overflow-hidden`}>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${cfg.cardBg} pointer-events-none`} />
+                      <div className="relative bg-card/80 rounded-2xl p-4 flex items-center gap-4">
+                        <div className="shrink-0 flex items-center justify-center" style={{ width: 52, height: 52 }}>
+                          <GiftEmoji
                             emoji={gift.giftItem?.emoji || "🎁"}
-                            rarity={gift.giftItem?.rarity || "common"}
                             animationType={gift.giftItem?.animationType || "sparkle"}
                             size={52}
                           />
@@ -729,8 +571,8 @@ export default function Gifts() {
                           {gift.message && <p className="text-sm mt-1 italic opacity-80">&quot;{gift.message}&quot;</p>}
                           <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNow(new Date(gift.createdAt), { addSuffix: true })}</p>
                         </div>
-                        <div className="flex items-center gap-1 text-primary text-sm font-bold shrink-0">
-                          <Zap size={14} />{gift.giftItem?.stars}
+                        <div className="flex items-center gap-1 text-yellow-400 text-sm font-bold shrink-0">
+                          <span>⭐</span>{gift.giftItem?.stars}
                         </div>
                       </div>
                     </motion.div>
@@ -754,13 +596,12 @@ export default function Gifts() {
                 {sentGifts.map((gift: Gift) => {
                   const cfg = RARITY_CONFIG[gift.giftItem?.rarity || "common"];
                   return (
-                    <motion.div key={gift.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`p-[1.5px] rounded-2xl bg-gradient-to-br ${cfg.gradient}`}>
-                      <div className="bg-card rounded-2xl p-4 flex items-center gap-4">
-                        <div className="shrink-0">
-                          <GiftVisual
-                            name={gift.giftItem?.name || ""}
+                    <motion.div key={gift.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`relative rounded-2xl border ${cfg.border} overflow-hidden`}>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${cfg.cardBg} pointer-events-none`} />
+                      <div className="relative bg-card/80 rounded-2xl p-4 flex items-center gap-4">
+                        <div className="shrink-0 flex items-center justify-center" style={{ width: 52, height: 52 }}>
+                          <GiftEmoji
                             emoji={gift.giftItem?.emoji || "🎁"}
-                            rarity={gift.giftItem?.rarity || "common"}
                             animationType={gift.giftItem?.animationType || "sparkle"}
                             size={52}
                           />
@@ -771,8 +612,8 @@ export default function Gifts() {
                           {gift.message && <p className="text-sm mt-1 italic opacity-80">&quot;{gift.message}&quot;</p>}
                           <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNow(new Date(gift.createdAt), { addSuffix: true })}</p>
                         </div>
-                        <div className="flex items-center gap-1 text-primary text-sm font-bold shrink-0">
-                          <Zap size={14} />{gift.giftItem?.stars}
+                        <div className="flex items-center gap-1 text-yellow-400 text-sm font-bold shrink-0">
+                          <span>⭐</span>{gift.giftItem?.stars}
                         </div>
                       </div>
                     </motion.div>
@@ -795,13 +636,12 @@ export default function Gifts() {
                 exit={{ scale: 0.8, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
               >
-                <div className={`p-[2px] rounded-3xl bg-gradient-to-br ${getRarityColor(selectedGift.rarity).gradient}`}>
-                  <div className="bg-[hsl(222,47%,13%)] rounded-3xl p-5 flex flex-col items-center text-center">
-                    <div className="mb-4 drop-shadow-2xl">
-                      <GiftVisual
-                        name={selectedGift.name}
+                <div className={`rounded-3xl border ${getRarityColor(selectedGift.rarity).border} overflow-hidden`}>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${getRarityColor(selectedGift.rarity).cardBg} pointer-events-none rounded-3xl`} />
+                  <div className="relative bg-[hsl(222,47%,13%)] rounded-3xl p-5 flex flex-col items-center text-center">
+                    <div className="mb-4 flex items-center justify-center" style={{ width: 96, height: 96 }}>
+                      <GiftEmoji
                         emoji={selectedGift.emoji}
-                        rarity={selectedGift.rarity}
                         animationType={selectedGift.animationType}
                         size={96}
                       />
