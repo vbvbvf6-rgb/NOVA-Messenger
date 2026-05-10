@@ -10,7 +10,7 @@ import {
   EyeOff, Phone, Globe, Type, Download, Trash2, Copy, Check, ChevronDown,
   ChevronRight, User, Radio, BellOff, Volume2, VolumeX, Clock, MessageSquare,
   Gift, PhoneCall, Monitor, Zap, AlertTriangle, X, Flame, Upload, Camera, Crown,
-  ShieldCheck, QrCode, Fingerprint, LogIn
+  ShieldCheck, QrCode, Fingerprint, LogIn, HelpCircle
 } from "lucide-react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
 import { useAppContext } from "@/contexts/AppContext";
@@ -471,6 +471,142 @@ function ScreenLockSection({ lang, toast }: { lang: string; toast: any }) {
         </div>
       )}
     </div>
+  );
+}
+
+function SecurityQuestionSection({ lang, toast }: { lang: string; toast: any }) {
+  const [status, setStatus] = React.useState<"idle" | "loading" | "loaded">("idle");
+  const [hasQuestion, setHasQuestion] = React.useState(false);
+  const [currentQuestion, setCurrentQuestion] = React.useState<string | null>(null);
+  const [showForm, setShowForm] = React.useState(false);
+  const [question, setQuestion] = React.useState("");
+  const [answer, setAnswer] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [err, setErr] = React.useState("");
+
+  const load = React.useCallback(async () => {
+    if (status === "loading" || status === "loaded") return;
+    setStatus("loading");
+    try {
+      const token = localStorage.getItem("pulse-token");
+      const uid = localStorage.getItem("pulse-user-id");
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      else if (uid) headers["x-user-id"] = uid;
+      const res = await fetch("/api/users/me/security-question/check", { headers });
+      const data = await res.json();
+      setHasQuestion(!!data.hasQuestion);
+      setCurrentQuestion(data.question || null);
+    } catch {}
+    setStatus("loaded");
+  }, [status]);
+
+  const handleOpen = () => {
+    load();
+    setShowForm(v => !v);
+    setQuestion("");
+    setAnswer("");
+    setErr("");
+  };
+
+  const handleSave = async () => {
+    if (!question.trim()) { setErr(lang === "ru" ? "Введите вопрос" : "Enter a question"); return; }
+    if (answer.trim().length < 2) { setErr(lang === "ru" ? "Ответ слишком короткий" : "Answer too short"); return; }
+    setSaving(true);
+    setErr("");
+    try {
+      const token = localStorage.getItem("pulse-token");
+      const uid = localStorage.getItem("pulse-user-id");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      else if (uid) headers["x-user-id"] = uid;
+      const res = await fetch("/api/users/me/security-question", {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ question: question.trim(), answer: answer.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErr(data.error || "Ошибка"); return; }
+      setHasQuestion(true);
+      setCurrentQuestion(question.trim());
+      setShowForm(false);
+      setQuestion("");
+      setAnswer("");
+      toast({ title: lang === "ru" ? "Контрольный вопрос сохранён" : "Security question saved" });
+    } catch {
+      setErr(lang === "ru" ? "Ошибка подключения" : "Connection error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <div
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-secondary transition-colors"
+        onClick={handleOpen}
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+            <HelpCircle size={18} />
+          </div>
+          <div>
+            <p className="text-sm font-medium">{lang === "ru" ? "Контрольный вопрос" : "Security Question"}</p>
+            <p className="text-xs text-muted-foreground">
+              {status === "loaded"
+                ? hasQuestion
+                  ? (lang === "ru" ? "Установлен · Нажмите для изменения" : "Set · Tap to change")
+                  : (lang === "ru" ? "Не установлен · Нужен для сброса пароля" : "Not set · Required for password reset")
+                : (lang === "ru" ? "Для восстановления пароля" : "For password recovery")}
+            </p>
+          </div>
+        </div>
+        {showForm
+          ? <ChevronDown size={18} className="text-muted-foreground" />
+          : <ChevronRight size={18} className="text-muted-foreground" />}
+      </div>
+
+      {showForm && (
+        <div className="p-4 space-y-3 bg-background/50">
+          {hasQuestion && currentQuestion && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 mb-1">
+                {lang === "ru" ? "Текущий вопрос" : "Current question"}
+              </p>
+              <p className="text-sm text-foreground font-medium">{currentQuestion}</p>
+            </div>
+          )}
+          <div>
+            <Label className="text-sm mb-1 block">{lang === "ru" ? "Новый вопрос" : "New question"}</Label>
+            <Input
+              value={question}
+              onChange={e => { setQuestion(e.target.value); setErr(""); }}
+              placeholder={lang === "ru" ? "Например: Имя вашего первого питомца?" : "E.g. Name of your first pet?"}
+              className="bg-background"
+            />
+          </div>
+          <div>
+            <Label className="text-sm mb-1 block">{lang === "ru" ? "Ответ" : "Answer"}</Label>
+            <Input
+              value={answer}
+              onChange={e => { setAnswer(e.target.value); setErr(""); }}
+              placeholder={lang === "ru" ? "Ответ (регистр не важен)" : "Answer (case-insensitive)"}
+              className="bg-background"
+            />
+          </div>
+          {err && <p className="text-xs text-destructive flex items-center gap-1"><AlertTriangle size={11} />{err}</p>}
+          <button
+            onClick={handleSave}
+            disabled={saving || !question.trim() || answer.trim().length < 2}
+            className="w-full py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+          >
+            {saving
+              ? (lang === "ru" ? "Сохраняем..." : "Saving...")
+              : (lang === "ru" ? "Сохранить вопрос" : "Save question")}
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1505,6 +1641,9 @@ export default function Settings() {
 
           {/* Screen Lock PIN */}
           <ScreenLockSection lang={lang} toast={toast} />
+
+          {/* Security Question */}
+          <SecurityQuestionSection lang={lang} toast={toast} />
         </Section>
 
         {/* ── STORAGE ── */}

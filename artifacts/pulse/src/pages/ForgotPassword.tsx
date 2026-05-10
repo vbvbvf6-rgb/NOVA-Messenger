@@ -1,118 +1,429 @@
 import React, { useState } from "react";
-import { Link } from "wouter";
-import { motion } from "framer-motion";
-import { MessageCircle, ArrowLeft, Zap, Mail, Shield } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Zap, Shield, HelpCircle, Eye, EyeOff, CheckCircle2, AlertTriangle } from "lucide-react";
+import PulseLogo from "@/components/PulseLogo";
+
+type Step = "username" | "question" | "success" | "no-question";
 
 export default function ForgotPassword() {
-  const [username, setUsername] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [, navigate] = useLocation();
+  const [step, setStep] = useState<Step>("username");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [username, setUsername] = useState("");
+  const [usernameLoading, setUsernameLoading] = useState(false);
+  const [usernameError, setUsernameError] = useState("");
+
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState("");
+
+  const handleUsernameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) return;
-    setSubmitted(true);
+    const raw = username.trim().replace(/^@/, "");
+    if (!raw) { setUsernameError("Введите никнейм"); return; }
+    setUsernameLoading(true);
+    setUsernameError("");
+    try {
+      const res = await fetch(`/api/auth/security-question?username=${encodeURIComponent(raw)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 404) {
+          setStep("no-question");
+        } else {
+          setUsernameError(data.error || "Пользователь не найден");
+        }
+        return;
+      }
+      setQuestion(data.question);
+      setStep("question");
+    } catch {
+      setUsernameError("Ошибка подключения к серверу");
+    } finally {
+      setUsernameLoading(false);
+    }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!answer.trim()) { setResetError("Введите ответ на контрольный вопрос"); return; }
+    if (newPassword.length < 6) { setResetError("Пароль должен быть не менее 6 символов"); return; }
+    if (newPassword !== confirmPassword) { setResetError("Пароли не совпадают"); return; }
+    setResetLoading(true);
+    setResetError("");
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username.trim().replace(/^@/, ""),
+          answer: answer.trim(),
+          newPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setResetError(data.error || "Ошибка сброса пароля"); return; }
+      if (data.token) localStorage.setItem("pulse-token", data.token);
+      setStep("success");
+    } catch {
+      setResetError("Ошибка подключения к серверу");
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      <div
+        className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] rounded-full blur-[120px] opacity-40 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(16 100% 50% / 0.18), transparent 70%)" }}
+      />
+      <div
+        className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full blur-[120px] opacity-30 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(30 100% 45% / 0.15), transparent 70%)" }}
+      />
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm relative z-10"
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-[380px] relative z-10"
       >
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-10">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-            className="w-20 h-20 rounded-3xl bg-primary flex items-center justify-center shadow-[0_0_40px_rgba(255,80,0,0.4)] mb-4"
+            initial={{ scale: 0.7, opacity: 0, rotate: -10 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.15 }}
+            className="w-24 h-24 rounded-[28px] flex items-center justify-center mb-6 relative"
+            style={{
+              background: "linear-gradient(135deg, hsl(16 100% 50% / 0.15) 0%, hsl(16 100% 50% / 0.05) 100%)",
+              border: "1px solid hsl(16 100% 50% / 0.2)",
+              boxShadow: "0 0 40px hsl(16 100% 50% / 0.15), inset 0 1px 0 rgba(255,255,255,0.06)",
+            }}
           >
-            <MessageCircle className="text-white" size={40} />
+            {step === "success" ? (
+              <CheckCircle2 className="text-green-400 w-10 h-10" />
+            ) : step === "question" ? (
+              <HelpCircle className="text-primary w-10 h-10" />
+            ) : (
+              <PulseLogo size={48} />
+            )}
           </motion.div>
-          <h1 className="text-3xl font-black text-white">Pulse</h1>
-          <p className="text-muted-foreground text-sm mt-1">Восстановление доступа</p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
+            className="text-center"
+          >
+            <h1 className="text-4xl font-black text-foreground tracking-tight leading-none mb-2">
+              {step === "success" ? "Готово!" : step === "question" ? "Проверка" : "Pulse"}
+            </h1>
+            <p className="text-muted-foreground text-[15px] font-medium">
+              {step === "success"
+                ? "Пароль успешно изменён"
+                : step === "question"
+                ? "Ответьте на контрольный вопрос"
+                : "Восстановление доступа"}
+            </p>
+          </motion.div>
         </div>
 
-        <div className="bg-card border border-border rounded-3xl p-6 shadow-2xl">
-          {!submitted ? (
-            <>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0">
-                  <Shield size={20} className="text-orange-400" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-sm">Забыли пароль?</h2>
-                  <p className="text-xs text-muted-foreground">Мы поможем восстановить доступ</p>
-                </div>
-              </div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="rounded-[28px] p-6"
+          style={{
+            background: "hsl(var(--card) / 0.7)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: "1px solid hsl(var(--border) / 0.8)",
+            boxShadow: "0 24px 64px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)",
+          }}
+        >
+          <AnimatePresence mode="wait">
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-1.5">Ваш никнейм</label>
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="ваш_никнейм"
-                    autoComplete="username"
-                    autoFocus
-                    className="w-full bg-background border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors text-sm"
-                  />
+            {/* ── STEP 1: enter username ── */}
+            {step === "username" && (
+              <motion.div
+                key="username"
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div className="flex items-center gap-3 mb-5 p-3 bg-secondary/50 rounded-2xl">
+                  <div className="p-2 bg-orange-500/10 rounded-xl shrink-0">
+                    <Shield size={18} className="text-orange-400" />
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-snug">
+                    Введите никнейм — мы найдём ваш контрольный вопрос для сброса пароля.
+                  </p>
                 </div>
 
-                <motion.button
-                  type="submit"
-                  disabled={!username.trim()}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-60 shadow-[0_0_20px_rgba(255,80,0,0.3)] text-base"
+                <form onSubmit={handleUsernameSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
+                      Никнейм
+                    </label>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="@ваш_никнейм"
+                      autoComplete="username"
+                      autoFocus
+                      className="w-full bg-secondary/60 border border-border rounded-2xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all text-[15px] font-medium"
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {usernameError && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-destructive/10 border border-destructive/20 text-destructive rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
+                      >
+                        <AlertTriangle size={14} className="shrink-0" /> {usernameError}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <motion.button
+                    type="submit"
+                    disabled={usernameLoading || !username.trim()}
+                    whileHover={{ scale: usernameLoading ? 1 : 1.01 }}
+                    whileTap={{ scale: usernameLoading ? 1 : 0.98 }}
+                    className="w-full text-primary-foreground font-black py-4 rounded-2xl transition-all disabled:opacity-50 text-[15px] mt-2"
+                    style={{
+                      background: usernameLoading
+                        ? "hsl(var(--primary) / 0.7)"
+                        : "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(16 100% 42%) 100%)",
+                      boxShadow: usernameLoading ? "none" : "0 8px 28px hsl(var(--primary) / 0.35)",
+                    }}
+                  >
+                    {usernameLoading ? "Ищем аккаунт..." : "Продолжить"}
+                  </motion.button>
+                </form>
+              </motion.div>
+            )}
+
+            {/* ── STEP 2: security question ── */}
+            {step === "question" && (
+              <motion.div
+                key="question"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div className="mb-5 p-3 bg-secondary/50 rounded-2xl">
+                  <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest mb-1">
+                    Контрольный вопрос для @{username.trim().replace(/^@/, "")}
+                  </p>
+                  <p className="text-sm font-semibold text-foreground leading-snug">{question}</p>
+                </div>
+
+                <form onSubmit={handleReset} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
+                      Ваш ответ
+                    </label>
+                    <input
+                      type="text"
+                      value={answer}
+                      onChange={(e) => setAnswer(e.target.value)}
+                      placeholder="Введите ответ"
+                      autoFocus
+                      className="w-full bg-secondary/60 border border-border rounded-2xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all text-[15px] font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
+                      Новый пароль
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showNew ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Минимум 6 символов"
+                        autoComplete="new-password"
+                        className="w-full bg-secondary/60 border border-border rounded-2xl px-4 py-3.5 pr-12 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all text-[15px] font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNew(!showNew)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest pl-1">
+                      Повторите пароль
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirm ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Повторите пароль"
+                        autoComplete="new-password"
+                        className="w-full bg-secondary/60 border border-border rounded-2xl px-4 py-3.5 pr-12 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all text-[15px] font-medium"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                      <p className="text-xs text-destructive flex items-center gap-1 pl-1">
+                        <AlertTriangle size={11} /> Пароли не совпадают
+                      </p>
+                    )}
+                  </div>
+
+                  <AnimatePresence>
+                    {resetError && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-destructive/10 border border-destructive/20 text-destructive rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
+                      >
+                        <AlertTriangle size={14} className="shrink-0" /> {resetError}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <motion.button
+                    type="submit"
+                    disabled={resetLoading}
+                    whileHover={{ scale: resetLoading ? 1 : 1.01 }}
+                    whileTap={{ scale: resetLoading ? 1 : 0.98 }}
+                    className="w-full text-primary-foreground font-black py-4 rounded-2xl transition-all disabled:opacity-50 text-[15px]"
+                    style={{
+                      background: resetLoading
+                        ? "hsl(var(--primary) / 0.7)"
+                        : "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(16 100% 42%) 100%)",
+                      boxShadow: resetLoading ? "none" : "0 8px 28px hsl(var(--primary) / 0.35)",
+                    }}
+                  >
+                    {resetLoading ? "Сбрасываем..." : "Сбросить пароль"}
+                  </motion.button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setStep("username"); setAnswer(""); setNewPassword(""); setConfirmPassword(""); setResetError(""); }}
+                    className="w-full text-sm font-bold text-muted-foreground hover:text-foreground transition-colors py-2"
+                  >
+                    ← Назад
+                  </button>
+                </form>
+              </motion.div>
+            )}
+
+            {/* ── STEP: no security question set ── */}
+            {step === "no-question" && (
+              <motion.div
+                key="no-question"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25 }}
+                className="text-center py-2"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
+                  <Shield size={30} className="text-orange-400" />
+                </div>
+                <h2 className="font-bold text-base mb-2">Контрольный вопрос не настроен</h2>
+                <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+                  Для аккаунта <span className="text-foreground font-semibold">@{username.trim().replace(/^@/, "")}</span> не установлен контрольный вопрос для восстановления пароля.
+                </p>
+                <div className="bg-secondary/50 rounded-2xl p-4 text-left mb-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Как защитить аккаунт?</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    После входа перейдите в <span className="text-foreground font-semibold">Настройки → Безопасность</span> и установите контрольный вопрос, чтобы в будущем вы могли восстановить пароль самостоятельно.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setStep("username"); setUsernameError(""); }}
+                  className="w-full text-sm font-bold text-muted-foreground hover:text-foreground transition-colors py-2"
                 >
-                  Восстановить доступ
+                  ← Попробовать другой никнейм
+                </button>
+              </motion.div>
+            )}
+
+            {/* ── STEP: success ── */}
+            {step === "success" && (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="text-center py-2"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 size={32} className="text-green-400" />
+                </div>
+                <h2 className="font-bold text-base mb-2">Пароль изменён</h2>
+                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                  Пароль для аккаунта <span className="text-foreground font-semibold">@{username.trim().replace(/^@/, "")}</span> успешно сброшен. Теперь вы можете войти с новым паролем.
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate("/")}
+                  className="w-full text-primary-foreground font-black py-4 rounded-2xl transition-all text-[15px]"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(16 100% 42%) 100%)",
+                    boxShadow: "0 8px 28px hsl(var(--primary) / 0.35)",
+                  }}
+                >
+                  Войти в аккаунт
                 </motion.button>
-              </form>
-            </>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-2"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Mail size={32} className="text-primary" />
-              </div>
-              <h2 className="font-bold text-lg mb-2">Обратитесь к администратору</h2>
-              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                Для сброса пароля аккаунта{" "}
-                <span className="text-foreground font-semibold">@{username}</span>{" "}
-                свяжитесь с администратором Pulse. Он сможет установить новый пароль через панель управления.
-              </p>
-              <div className="bg-secondary rounded-2xl p-4 text-left mb-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">Контакт поддержки</p>
-                <p className="text-sm font-semibold text-foreground">@pulse_system</p>
-                <p className="text-xs text-muted-foreground">Администратор Pulse</p>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+
+          {step !== "success" && (
+            <div className="mt-5 pt-5 border-t border-border text-center">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+              >
+                <ArrowLeft size={14} /> Вернуться к входу
+              </Link>
+            </div>
           )}
+        </motion.div>
 
-          <div className="mt-5 text-center">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={14} /> Вернуться к входу
-            </Link>
-          </div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-          <Zap size={12} className="text-primary" />
-          <span>Powered by Pulse</span>
-        </div>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-center text-[11px] text-muted-foreground/40 font-medium mt-6"
+        >
+          Pulse Messenger · Ваши данные надёжно защищены
+        </motion.p>
       </motion.div>
     </div>
   );
