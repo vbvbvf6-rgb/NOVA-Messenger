@@ -364,10 +364,10 @@ export function MessageBubble({ message, onReply, onEdit }: MessageBubbleProps) 
               onTouchEnd={handleTouchEnd}
               onTouchMove={handleTouchMove}
               className={cn(
-                "relative px-5 py-3.5 rounded-[24px] shadow-sm cursor-pointer transition-transform active:scale-[0.98]",
+                "relative px-5 py-3.5 rounded-[24px] cursor-pointer transition-transform active:scale-[0.98]",
                 isMine
-                  ? "bg-primary text-primary-foreground rounded-br-sm shadow-[0_4px_20px_rgba(255,85,0,0.2)]"
-                  : "bg-card text-foreground rounded-bl-sm border border-border"
+                  ? "bubble-mine text-primary-foreground rounded-br-sm"
+                  : "bg-card text-foreground rounded-bl-sm border border-border shadow-sm"
               )}
             >
               {!isMine && message.sender && (

@@ -508,7 +508,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-none"
+        className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-none chat-bg"
       >
         {isMessagesLoading ? (
           <div className="space-y-6 max-w-2xl mx-auto w-full">

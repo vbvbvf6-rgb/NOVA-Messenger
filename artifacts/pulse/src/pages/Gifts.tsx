@@ -119,31 +119,79 @@ function GiftVisual({ name, emoji, animationType, size = 56 }: {
 }
 
 function GiftCard({ item, onClick, hasPrime }: { item: GiftItem; onClick: () => void; hasPrime: boolean }) {
-  const bg = RARITY_BG[item.rarity] || RARITY_BG.common;
+  const cfg = RARITY_CONFIG[item.rarity] || RARITY_CONFIG.common;
   const isPrimeOnly = !!(item as any).primeOnly;
   const isLocked = isPrimeOnly && !hasPrime;
+  const [hovered, setHovered] = useState(false);
 
   return (
     <motion.button
-      whileHover={{ y: -4, scale: 1.05 }}
+      whileHover={{ y: -8, scale: 1.04, rotateX: 4 }}
       whileTap={{ scale: 0.95 }}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
       onClick={onClick}
-      className={`relative flex flex-col items-center gap-1.5 p-3 pt-4 rounded-2xl cursor-pointer border transition-all ${bg}`}
+      style={{ perspective: 800, aspectRatio: "3/4" }}
+      className={`relative flex flex-col items-center rounded-[20px] cursor-pointer border overflow-hidden transition-shadow ${cfg.border} ${cfg.glow}`}
     >
-      <div className="w-16 h-16 flex items-center justify-center">
-        <GiftVisual name={item.name} emoji={item.emoji} animationType={item.animationType} size={56} />
+      {/* Card background */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${cfg.cardBg}`} />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.07) 0%, transparent 70%)" }} />
+
+      {/* Shimmer on hover */}
+      <motion.div
+        animate={{ opacity: hovered ? 1 : 0 }}
+        transition={{ duration: 0.2 }}
+        className="absolute inset-0"
+        style={{ background: `radial-gradient(circle at 50% 35%, ${cfg.shimmer}, transparent 65%)` }}
+      />
+
+      {/* Top rarity badge */}
+      <div className={`relative z-10 mt-2.5 text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${cfg.badge}`}>
+        {cfg.label}
       </div>
-      <p className="text-[11px] font-medium text-center leading-tight text-foreground/85 line-clamp-1 w-full px-0.5">{item.name}</p>
-      <div className="flex items-center gap-0.5 text-[11px] text-yellow-400 font-bold">
-        <span>⭐</span><span>{item.stars}</span>
+
+      {/* Gift visual — central focus */}
+      <div className="relative z-10 flex-1 flex items-center justify-center w-full">
+        <GiftVisual name={item.name} emoji={item.emoji} animationType={item.animationType} size={62} />
       </div>
-      {isPrimeOnly && (
-        <span className="absolute top-1.5 right-1.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-500/30 text-amber-300 border border-amber-400/30">P</span>
-      )}
+
+      {/* Glow ring behind emoji */}
+      <div
+        className="absolute z-[5]"
+        style={{
+          width: 72, height: 72,
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          background: cfg.shimmer,
+          borderRadius: "50%",
+          filter: "blur(18px)",
+          opacity: hovered ? 0.8 : 0.4,
+          transition: "opacity 0.3s",
+        }}
+      />
+
+      {/* Bottom name + stars */}
+      <div className="relative z-10 w-full px-2 pb-2.5 pt-1 text-center">
+        <p className={`text-[11px] font-bold leading-tight truncate ${cfg.textColor}`}>{item.name}</p>
+        <div className="flex items-center justify-center gap-0.5 mt-0.5">
+          <span className="text-[10px]">⭐</span>
+          <span className="text-[10px] text-yellow-400 font-black">{item.stars}</span>
+        </div>
+      </div>
+
+      {/* Prime lock overlay */}
       {isLocked && (
-        <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px] rounded-2xl flex flex-col items-center justify-center gap-1">
-          <Lock size={16} className="text-amber-400" />
-          <span className="text-[9px] font-bold text-amber-400">Prime</span>
+        <div className="absolute inset-0 bg-black/55 backdrop-blur-[3px] rounded-[20px] flex flex-col items-center justify-center gap-2 z-20">
+          <Lock size={18} className="text-amber-400 drop-shadow-lg" />
+          <span className="text-[9px] font-black text-amber-400 uppercase tracking-wider">Prime</span>
+        </div>
+      )}
+
+      {/* Prime badge */}
+      {isPrimeOnly && !isLocked && (
+        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-amber-500/80 border border-amber-400/60 flex items-center justify-center z-20">
+          <Crown size={10} className="text-amber-100" />
         </div>
       )}
     </motion.button>
@@ -462,13 +510,13 @@ export default function Gifts() {
               </div>
 
               {catalogLoading ? (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2">
-                  {Array.from({ length: 24 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-2xl" />)}
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                  {Array.from({ length: 24 }).map((_, i) => <Skeleton key={i} className="rounded-[20px]" style={{ aspectRatio: "3/4" }} />)}
                 </div>
               ) : filtered?.length === 0 ? (
                 <div className="text-center text-muted-foreground py-16">Подарки не найдены</div>
               ) : (
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                   {filtered?.map((item: GiftItem) => (
                     <GiftCard key={item.id} item={item} hasPrime={hasPrime} onClick={() => {
                       if ((item as any).primeOnly && !hasPrime) { window.location.href = "/prime"; return; }
