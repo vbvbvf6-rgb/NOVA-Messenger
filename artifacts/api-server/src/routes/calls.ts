@@ -87,6 +87,8 @@ router.put("/calls/:callId", async (req, res) => {
     } else if (body.status === "ended") {
       const targetId = built.callerId === uid ? built.calleeId : built.callerId;
       if (targetId) broadcastToUser(targetId, "call-ended", built);
+    } else if (body.status === "missed") {
+      if (built.calleeId) broadcastToUser(built.calleeId, "call-ended", built);
     }
 
     res.json(built);

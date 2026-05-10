@@ -92,9 +92,61 @@ export function ActiveCall() {
   const formatDuration = (s: number) =>
     `${Math.floor(s / 3600) > 0 ? Math.floor(s / 3600) + ":" : ""}${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  if (!activeCall || activeCall.status !== "active") return null;
+  if (!activeCall) return null;
 
   const isOutgoing = activeCall.callerId === currentUserId;
+
+  /* ── OUTGOING / RINGING STATE (caller waiting for answer) ── */
+  if (activeCall.status === "ringing" && isOutgoing) {
+    const callee = activeCall.callee;
+    const avatarBgRing = callee?.avatarColor || "#444";
+    return (
+      <AnimatePresence>
+        <motion.div
+          key="outgoing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
+          style={{ background: `radial-gradient(ellipse at 50% 30%, ${avatarBgRing}33 0%, #0a0a0a 70%)` }}
+        >
+          <div className="relative mb-8">
+            <PulseRings color={avatarBgRing} />
+            <motion.div
+              animate={{ scale: [1, 1.03, 1] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="w-36 h-36 rounded-full flex items-center justify-center text-white font-bold text-6xl relative z-10 overflow-hidden shadow-2xl"
+              style={{ backgroundColor: avatarBgRing }}
+            >
+              {callee?.avatarUrl ? (
+                <img src={callee.avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                callee?.displayName?.[0]?.toUpperCase()
+              )}
+            </motion.div>
+          </div>
+          <h2 className="text-white text-3xl font-bold mb-2 drop-shadow-lg">{callee?.displayName}</h2>
+          <motion.p
+            animate={{ opacity: [1, 0.4, 1] }}
+            transition={{ duration: 1.4, repeat: Infinity }}
+            className="text-white/50 text-lg mb-16"
+          >
+            {activeCall.type === "video" ? "Видеозвонок…" : "Звоним…"}
+          </motion.p>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={hangUp}
+            className="w-20 h-20 rounded-full bg-red-500 text-white flex items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.5)] hover:bg-red-600 transition-colors"
+          >
+            <PhoneOff size={30} />
+          </motion.button>
+          <p className="text-white/30 text-sm mt-4">Нажмите чтобы отменить</p>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  if (activeCall.status !== "active") return null;
   const otherUser = isOutgoing ? activeCall.callee : activeCall.caller;
   const isVideo = activeCall.type === "video";
   const avatarBg = otherUser?.avatarColor || "#444";

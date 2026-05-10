@@ -1598,7 +1598,7 @@ export const UpdateCallStatusParams = zod.object({
 });
 
 export const UpdateCallStatusBody = zod.object({
-  status: zod.enum(["active", "ended", "declined"]),
+  status: zod.enum(["active", "ended", "declined", "missed"]),
 });
 
 export const UpdateCallStatusResponse = zod.object({

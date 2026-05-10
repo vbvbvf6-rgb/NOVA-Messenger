@@ -63,6 +63,8 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   activeCallRef.current = activeCall;
   const pendingSignalsRef = useRef<{ type: string; payload: any }[]>([]);
   const localStreamRef = useRef<MediaStream | null>(null);
+  const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
   useEffect(() => {
     if (isDark) {
@@ -85,6 +87,10 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   }, []);
 
   const cleanupCall = useCallback(() => {
+    if (ringTimeoutRef.current) {
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
+    }
     if (peerRef.current) {
       peerRef.current.close();
       peerRef.current = null;
@@ -97,6 +103,14 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     setRemoteStream(null);
     setActiveCall(null);
     pendingSignalsRef.current = [];
+    pendingIceCandidatesRef.current = [];
+  }, []);
+
+  const flushPendingIce = useCallback(async (pc: RTCPeerConnection) => {
+    const candidates = pendingIceCandidatesRef.current.splice(0);
+    for (const c of candidates) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch {}
+    }
   }, []);
 
   const applySignal = useCallback(async (pc: RTCPeerConnection, signal: { type: string; payload: any }) => {
@@ -106,6 +120,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       if (signal.type === "offer") {
         if (pc.signalingState !== "stable") return;
         await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+        await flushPendingIce(pc);
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await fetch(`/api/calls/${callId}/signal`, {
@@ -116,16 +131,19 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       } else if (signal.type === "answer") {
         if (pc.signalingState === "have-local-offer") {
           await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+          await flushPendingIce(pc);
         }
       } else if (signal.type === "ice") {
         if (pc.remoteDescription) {
           await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
+        } else {
+          pendingIceCandidatesRef.current.push(signal.payload);
         }
       }
     } catch (err) {
       console.warn("applySignal error:", err);
     }
-  }, [getUserHeaders]);
+  }, [getUserHeaders, flushPendingIce]);
 
   const createPeer = useCallback((callId: number): RTCPeerConnection => {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
@@ -196,6 +214,19 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
         headers: getUserHeaders(),
         body: JSON.stringify({ type: "offer", payload: offer }),
       });
+
+      ringTimeoutRef.current = setTimeout(async () => {
+        if (activeCallRef.current?.id === call.id && activeCallRef.current?.status === "ringing") {
+          try {
+            await fetch(`/api/calls/${call.id}`, {
+              method: "PUT",
+              headers: getUserHeaders(),
+              body: JSON.stringify({ status: "missed" }),
+            });
+          } catch {}
+          cleanupCall();
+        }
+      }, 60_000);
     } catch (err: any) {
       console.error("startCall error:", err);
       cleanupCall();
@@ -206,6 +237,10 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const acceptCall = useCallback(async () => {
     const call = activeCallRef.current;
     if (!call) return;
+    if (ringTimeoutRef.current) {
+      clearTimeout(ringTimeoutRef.current);
+      ringTimeoutRef.current = null;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: call.type === "video" });
       localStreamRef.current = stream;
@@ -268,7 +303,11 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     const connect = () => {
       if (dead) return;
       const uid = currentUserIdRef.current;
-      es = new EventSource(`/api/users/me/events?_uid=${uid}`);
+      const token = localStorage.getItem("pulse-token");
+      const sseUrl = token
+        ? `/api/users/me/events?_token=${encodeURIComponent(token)}`
+        : `/api/users/me/events?_uid=${uid}`;
+      es = new EventSource(sseUrl);
 
       es.addEventListener("incoming-call", (e: MessageEvent) => {
         try {
@@ -280,6 +319,10 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       es.addEventListener("call-accepted", (e: MessageEvent) => {
         try {
           const data = JSON.parse(e.data);
+          if (ringTimeoutRef.current) {
+            clearTimeout(ringTimeoutRef.current);
+            ringTimeoutRef.current = null;
+          }
           setActiveCall(prev => prev ? { ...prev, status: "active", ...data } : null);
         } catch {}
       });

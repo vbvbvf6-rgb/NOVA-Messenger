@@ -1137,7 +1137,7 @@ components:
       properties:
         status:
           type: string
-          enum: [active, ended, declined]
+          enum: [active, ended, declined, missed]
       required:
         - status
 

@@ -311,6 +311,7 @@ export const UpdateCallBodyStatus = {
   active: "active",
   ended: "ended",
   declined: "declined",
+  missed: "missed",
 } as const;
 
 export interface UpdateCallBody {

@@ -54,6 +54,7 @@ app.use("/api/auth/login", authLimiter);
 app.use("/api/auth/register", authLimiter);
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
+  // 1. JWT from Authorization header (normal API calls)
   const authHeader = req.headers["authorization"];
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
@@ -66,9 +67,30 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
     } catch {}
   }
 
+  // 2. JWT from _token query param (EventSource / SSE — can't send headers)
+  const queryToken = req.query._token as string | undefined;
+  if (queryToken) {
+    try {
+      const payload = jwt.verify(queryToken, JWT_SECRET) as { userId: number };
+      if (Number.isFinite(payload.userId) && payload.userId > 0) {
+        req.currentUserId = payload.userId;
+        return next();
+      }
+    } catch {}
+  }
+
+  // 3. x-user-id header fallback
   const headerVal = req.headers["x-user-id"];
   const parsed = headerVal ? Number(headerVal) : NaN;
-  req.currentUserId = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  if (Number.isFinite(parsed) && parsed > 0) {
+    req.currentUserId = parsed;
+    return next();
+  }
+
+  // 4. _uid query param fallback (legacy)
+  const queryUid = req.query._uid as string | undefined;
+  const parsedUid = queryUid ? Number(queryUid) : NaN;
+  req.currentUserId = Number.isFinite(parsedUid) && parsedUid > 0 ? parsedUid : 1;
   next();
 });
 
