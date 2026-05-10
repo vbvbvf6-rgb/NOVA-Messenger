@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 const getCurrentUserId = () => Number(localStorage.getItem("pulse-user-id") || "0");
 
@@ -471,6 +472,7 @@ export default function Feed() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUserId = getCurrentUserId();
+  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -554,6 +556,7 @@ export default function Feed() {
       queryClient.setQueryData(["/api/posts"], (old: any) =>
         Array.isArray(old) ? old.filter((p: any) => p.id !== optimisticId) : old
       );
+      toast({ title: "Не удалось опубликовать пост", description: "Попробуйте ещё раз", variant: "destructive" });
     } finally {
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     }
@@ -618,20 +621,20 @@ export default function Feed() {
                     </div>
                   )}
                   <input
+                    id="post-image-input"
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="hidden"
+                    className="sr-only"
                   />
                   <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-primary/10"
+                    <label
+                      htmlFor="post-image-input"
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-primary/10 cursor-pointer"
                     >
                       <Image size={16} /> {newPostImage ? "Сменить фото" : "Фото"}
-                    </button>
+                    </label>
                     <button
                       type="submit"
                       disabled={imageLoading || (!newPostText.trim() && !newPostImage)}
