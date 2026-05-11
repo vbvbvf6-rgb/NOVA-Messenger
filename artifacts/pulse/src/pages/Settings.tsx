@@ -4,13 +4,16 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   Settings as SettingsIcon, Bell, Moon, Lock, Shield, Smartphone, Save,
   Sun, Palette, Database, Edit3, CheckCircle, LogOut, Link, Key, Eye,
   EyeOff, Phone, Globe, Type, Download, Trash2, Copy, Check, ChevronDown,
   ChevronRight, User, Radio, BellOff, Volume2, VolumeX, Clock, MessageSquare,
   Gift, PhoneCall, Monitor, Zap, AlertTriangle, X, Flame, Upload, Camera, Crown,
-  ShieldCheck, QrCode, Fingerprint, LogIn, HelpCircle
+  ShieldCheck, QrCode, Fingerprint, LogIn, HelpCircle,
+  Star, Battery, FolderOpen, ArrowLeft, Mic, Headphones, Bot,
+  SlidersHorizontal, Layers, Calendar
 } from "lucide-react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
 import { useAppContext } from "@/contexts/AppContext";
@@ -649,6 +652,45 @@ function NotificationPermissionBanner() {
   );
 }
 
+function NavGroup({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-3 bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border mb-2">
+      {children}
+    </div>
+  );
+}
+
+function NavItem({ id, icon, color, label, badge, badgeAmber, active, onClick, href }: {
+  id: string; icon: React.ReactNode; color: string; label: string;
+  badge?: string; badgeAmber?: boolean; active: string;
+  onClick: (id: string | null) => void; href?: string;
+}) {
+  const isActive = active === id;
+  return (
+    <button
+      onClick={() => href ? (window.location.href = href) : onClick(id)}
+      className={cn(
+        "flex items-center gap-3 px-4 py-3 w-full text-left transition-colors",
+        isActive ? "bg-primary/8" : "hover:bg-secondary/60"
+      )}
+    >
+      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white", color)}>
+        {icon}
+      </div>
+      <span className="text-sm font-medium flex-1 truncate">{label}</span>
+      {badge && (
+        <span className={cn(
+          "text-xs font-medium px-2 py-0.5 rounded-full mr-0.5 shrink-0",
+          badgeAmber ? "bg-amber-500/15 text-amber-500" : "text-muted-foreground"
+        )}>
+          {badge}
+        </span>
+      )}
+      <ChevronRight size={15} className={cn(isActive ? "text-primary" : "text-muted-foreground", "shrink-0")} />
+    </button>
+  );
+}
+
 export default function Settings() {
   const { isDark, toggleTheme, logout } = useAppContext();
   const { t, lang, setLang } = useLanguage();
@@ -811,6 +853,26 @@ export default function Settings() {
   const [storageSize, setStorageSize] = useState("0");
   const [cacheCleared, setCacheCleared] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // Settings navigation — sidebar active section (null = show sidebar on mobile)
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  // Chat Settings
+  const [linkPreview, setLinkPreview] = useState(() => lsb("pulse-link-preview", true));
+  const [sendOnEnter, setSendOnEnter] = useState(() => lsb("pulse-send-on-enter", true));
+  const [animatedEmoji, setAnimatedEmoji] = useState(() => lsb("pulse-animated-emoji", true));
+  const [msgGroupDate, setMsgGroupDate] = useState(() => lsb("pulse-msg-group-date", true));
+  const [emojiSize, setEmojiSize] = useState(() => ls("pulse-emoji-size", "medium"));
+
+  // Advanced
+  const [dataSaver, setDataSaver] = useState(() => lsb("pulse-data-saver", false));
+  const [autoDownload, setAutoDownload] = useState(() => lsb("pulse-auto-download", true));
+
+  // Battery
+  const [powerSaving, setPowerSaving] = useState(() => lsb("pulse-power-saving", false));
+
+  // Stars
+  const starsBalance = 0;
 
   // Apply font size globally
   useEffect(() => {
@@ -1025,9 +1087,10 @@ export default function Settings() {
 
   const avatarPreview = avatarUrl || null;
   const currentStatusOpt = ONLINE_STATUS_OPTIONS.find(o => o.value === onlineStatus)!;
+  const displaySection = activeSection ?? "account";
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background overflow-hidden relative">
+    <div className="flex-1 flex h-full bg-background overflow-hidden">
       {/* Header */}
       <header className="h-16 border-b border-border flex items-center px-6 justify-between bg-card/80 backdrop-blur-md z-10 shrink-0">
         <h1 className="text-xl font-bold flex items-center gap-2">
