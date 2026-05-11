@@ -180,6 +180,66 @@ uri = "file://artifacts/pulse/public/gifts/bubble.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "71bzIVB6z8_W9fe4lZCZ3"
+uri = "file://artifacts/pulse/public/gifts/gen/heart.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "J0_UOSj5JNnYjV2iZL54D"
+uri = "file://artifacts/pulse/public/gifts/gen/star.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "dQrAVNELmVJ2GUszAssOv"
+uri = "file://artifacts/pulse/public/gifts/gen/bubble.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "CxH8YA3TcUM3NOmrggf3g"
+uri = "file://artifacts/pulse/public/gifts/gen/candy.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "OGAh8VYCHW8trt1mv_qiw"
+uri = "file://artifacts/pulse/public/gifts/gen/strawberry.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "g-vEfOqvAbIZQdA2cxBHS"
+uri = "file://artifacts/pulse/public/gifts/gen/lollipop.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "6Re6d88SVab9D9Apm86oA"
+uri = "file://artifacts/pulse/public/gifts/gen/daisy.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "QgogJDb_dOjsag-rpgSM0"
+uri = "file://artifacts/pulse/public/gifts/gen/sakura.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "jIZMWNdOBCZpS9_Q3Wfq3"
+uri = "file://artifacts/pulse/public/gifts/gen/donut.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "RLR-4o0X4xcQafxPuLASW"
+uri = "file://artifacts/pulse/public/gifts/gen/icecream.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "lhkcHx0fkaD2JKBZ0j9yt"
 uri = "file://artifacts/pulse/public/gifts/rose-in-glass.png"
