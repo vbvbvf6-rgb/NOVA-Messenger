@@ -8,12 +8,14 @@ interface ScreenLockProps {
 }
 
 export function ScreenLock({ children }: ScreenLockProps) {
-  const { isEnabled, verifyPin, isSessionUnlocked } = useScreenLock();
+  const { isEnabled, verifyPin, isSessionUnlocked, getPinLength } = useScreenLock();
   const [locked, setLocked] = useState(() => isEnabled() && !isSessionUnlocked());
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [shake, setShake] = useState(false);
+  const pinLength = getPinLength();
+  const pinLengthKnown = !!localStorage.getItem("pulse-screen-lock-pin-length");
 
   useEffect(() => {
     const handler = () => setLocked(true);
@@ -21,12 +23,8 @@ export function ScreenLock({ children }: ScreenLockProps) {
     return () => window.removeEventListener("pulse-lock", handler);
   }, []);
 
-  const handleUnlock = () => {
-    if (pin.length < 4) {
-      setError("Введите минимум 4 цифры");
-      return;
-    }
-    if (verifyPin(pin)) {
+  const doUnlock = (candidate: string) => {
+    if (verifyPin(candidate)) {
       sessionStorage.setItem("pulse-unlocked", "true");
       setLocked(false);
       setPin("");
@@ -39,25 +37,22 @@ export function ScreenLock({ children }: ScreenLockProps) {
     }
   };
 
+  const handleUnlock = () => {
+    if (pin.length < pinLength) {
+      setError(`Введите ${pinLength} цифр`);
+      return;
+    }
+    doUnlock(pin);
+  };
+
   const handleKeypad = (digit: string) => {
-    if (pin.length >= 6) return;
+    if (pin.length >= 8) return;
+    if (pinLengthKnown && pin.length >= pinLength) return;
     const next = pin + digit;
     setPin(next);
     setError("");
-    if (next.length >= 4) {
-      setTimeout(() => {
-        if (verifyPin(next)) {
-          sessionStorage.setItem("pulse-unlocked", "true");
-          setLocked(false);
-          setPin("");
-          setError("");
-        } else {
-          setError("Неверный PIN-код");
-          setShake(true);
-          setPin("");
-          setTimeout(() => setShake(false), 600);
-        }
-      }, 100);
+    if (pinLengthKnown && next.length === pinLength) {
+      setTimeout(() => doUnlock(next), 100);
     }
   };
 
@@ -91,11 +86,11 @@ export function ScreenLock({ children }: ScreenLockProps) {
             </div>
           </motion.div>
 
-          <div className="flex gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="flex gap-2">
+            {Array.from({ length: pinLengthKnown ? pinLength : 8 }).map((_, i) => (
               <div
                 key={i}
-                className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+                className={`w-3.5 h-3.5 rounded-full border-2 transition-all duration-200 ${
                   i < pin.length
                     ? "bg-primary border-primary shadow-[0_0_8px_rgba(255,80,0,0.5)]"
                     : "border-white/30"
@@ -103,6 +98,15 @@ export function ScreenLock({ children }: ScreenLockProps) {
               />
             ))}
           </div>
+
+          {!pinLengthKnown && pin.length >= 4 && (
+            <button
+              onClick={handleUnlock}
+              className="w-full py-3 rounded-2xl bg-primary text-white font-bold text-base hover:bg-primary/90 active:scale-95 transition-all"
+            >
+              Войти
+            </button>
+          )}
 
           {error && (
             <motion.p

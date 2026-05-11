@@ -383,6 +383,7 @@ function ScreenLockSection({ lang, toast }: { lang: string; toast: any }) {
     if (newPin.length < 4) { setErr(lang === "ru" ? "Минимум 4 цифры" : "Minimum 4 digits"); return; }
     if (newPin !== confirmPin) { setErr(lang === "ru" ? "Коды не совпадают" : "PINs do not match"); return; }
     localStorage.setItem("pulse-screen-lock-pin", hashPin(newPin));
+    localStorage.setItem("pulse-screen-lock-pin-length", String(newPin.length));
     localStorage.setItem("pulse-screen-lock-enabled", "true");
     setPinEnabled(true); setShowSetup(false); setNewPin(""); setConfirmPin(""); setErr("");
     toast({ title: lang === "ru" ? "Блокировка включена" : "Screen lock enabled" });
