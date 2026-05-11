@@ -78,46 +78,119 @@ function getEmojiAnimation(animationType: string) {
   }
 }
 
-const GIFT_IMAGE_MAP: Record<string, string> = {
+// Sprite sheet: /gift-sprite.png — 7 cols × 5 rows (1408×768px)
+// Row 0: Rose, Rocket, Diamond, Crown, Robot, MagicWand, Parrot
+// Row 1: TreasureChest, HotAirBalloon, BirthdayCake, Books, Camera, Gamepad, Megaphone
+// Row 2: Lightbulb, Compass, Palette, Balls, MusicNote, PaperPlane, Trophy
+// Row 3: Planet, Lightning, HeartLock, GoldenKey, Car, Champagne, Guitar
+// Row 4: Microscope, Pen, Whistle, GiftBox, Magnifier, Sunflower, Telescope
+const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   // Common
-  "Сердечко":          "/gifts/heart.png",
-  "Звёздочка":         "/gifts/star-42.png",
-  "Мыльный пузырь":    "/gifts/bubble.png",
-  "Конфета":           "/gifts/candy.png",
-  "Клубника":          "/gifts/strawberry.png",
-  "Леденец":           "/gifts/lollipop.png",
-  "Ромашка":           "/gifts/daisy.png",
-  "Цветок сакуры":     "/gifts/sakura.png",
-  "Пончик":            "/gifts/donut.png",
-  "Мороженое":         "/gifts/icecream.png",
-  "Рыбка":             "/gifts/fish.png",
-  "Подсолнух":         "/gifts/sunflower.png",
-  "Чашка кофе":        "/gifts/coffee.png",
-  "Луна":              "/gifts/moon.png",
-  "Четырёхлистник":    "/gifts/clover.png",
-  "Бабочка":           "/gifts/butterfly.png",
-  "Котёнок":           "/gifts/kitten.png",
-  "Воздушный шар":     "/gifts/balloon.png",
-  "Ретро-телефон":     "/gifts/retro-phone.png",
-  "Пицца":             "/gifts/pizza.png",
-  "Медвежонок":        "/gifts/teddy-bear.png",
-  "Торт":              "/gifts/birthday-cake.png",
-  "Игровая приставка": "/gifts/gaming-console.png",
+  "Сердечко":          [2, 3],
+  "Звёздочка":         [6, 2],
+  "Мыльный пузырь":    [3, 2],
+  "Конфета":           [3, 4],
+  "Клубника":          [5, 4],
+  "Леденец":           [3, 4],
+  "Ромашка":           [5, 4],
+  "Цветок сакуры":     [0, 0],
+  "Пончик":            [2, 1],
+  "Мороженое":         [2, 1],
+  "Рыбка":             [4, 4],
+  "Подсолнух":         [5, 4],
+  "Чашка кофе":        [5, 3],
+  "Луна":              [0, 3],
+  "Четырёхлистник":    [1, 2],
+  "Бабочка":           [2, 2],
+  "Котёнок":           [4, 0],
+  "Воздушный шар":     [1, 1],
+  "Ретро-телефон":     [6, 1],
+  "Пицца":             [3, 1],
+  "Медвежонок":        [3, 4],
+  "Торт":              [2, 1],
+  "Игровая приставка": [5, 1],
+  "Снеговик":          [3, 2],
+  "Радужный кит":      [4, 4],
   // Rare
-  "Корона":            "/gifts/crown.png",
-  "Красная роза":      "/gifts/rose-in-glass.png",
-  "Бриллиант":         "/gifts/diamond-heart.png",
-  "Золотая монета":    "/gifts/gold-coin.png",
-  "Морская звезда":    "/gifts/star-small.png",
+  "Корона":            [3, 0],
+  "Красная роза":      [0, 0],
+  "Бриллиант":         [2, 0],
+  "Золотая монета":    [3, 3],
+  "Ракета":            [1, 0],
+  "Гитара":            [6, 3],
+  "Кубок":             [6, 2],
+  "Радуга":            [4, 2],
+  "Молния":            [1, 3],
+  "Дельфин":           [4, 4],
+  "Лиса":              [6, 0],
+  "Сова":              [6, 0],
+  "Акула":             [0, 4],
+  "Парусник":          [5, 2],
+  "Самоцвет":          [2, 0],
+  "Медаль":            [6, 2],
+  "Попугай":           [6, 0],
+  "Волшебная лампа":   [5, 0],
+  "Морская звезда":    [6, 2],
+  "Горящее сердце":    [2, 3],
   // Epic
-  "Волшебство":        "/gifts/magic-crystal.png",
-  "Кристалл":          "/gifts/magic-crystal.png",
+  "Дракон":            [5, 0],
+  "Единорог":          [5, 0],
+  "Феникс":            [1, 0],
+  "Планета":           [0, 3],
+  "Волшебство":        [5, 0],
+  "Кристалл":          [2, 0],
+  "Пегас":             [5, 2],
+  "Нарвал":            [4, 4],
+  "Хрустальное сердце":[2, 3],
+  "Жар-птица":         [1, 3],
+  "Морской конёк":     [4, 4],
+  "Грифон":            [3, 0],
+  "Сапфировый кулон":  [2, 0],
+  "Магический гриб":   [5, 0],
+  "Золотая рыбка":     [4, 4],
+  "Рубиновое кольцо":  [2, 3],
+  "Волшебная скрипка": [6, 3],
+  "Чёрный кот":        [4, 0],
+  "Сфинкс":            [1, 2],
+  "Огненный дракон":   [1, 3],
   // Legendary
-  "Пульс":             "/gifts/confetti-box.png",
+  "Галактика":         [0, 3],
+  "Ангел":             [5, 0],
+  "Пульс":             [3, 4],
+  "Легендарная звезда":[6, 2],
+  "Бесконечность":     [0, 3],
+  "Золотой дракон":    [3, 3],
+  "Небесный кит":      [0, 3],
+  "Северное сияние":   [0, 3],
+  "Джинн":             [5, 0],
+  "Хрустальный дворец":[3, 0],
+  "Единый трон":       [3, 0],
+  "Мировое дерево":    [5, 4],
+  "Небесный феникс":   [1, 0],
+  "Нептун":            [0, 3],
+  "Звёздная колесница":[6, 2],
+  // Cosmic
+  "Нейтронная звезда": [0, 3],
+  "Квазар":            [1, 3],
+  "Чёрная дыра":       [0, 3],
+  "Мультивселенная":   [0, 3],
+  "Абсолют":           [6, 2],
+  "Сингулярность":     [0, 3],
+  "Создатель":         [5, 0],
+  "Вселенский огонь":  [1, 3],
+  "Бог Грома":         [1, 3],
+  "Ось Мира":          [1, 2],
+  "Левиафан":          [4, 4],
+  "Солнечный дракон":  [1, 3],
+  "Вечность":          [0, 3],
+  "Первозданный Хаос": [0, 3],
+  "Высший Разум":      [2, 0],
   // Prime exclusive
-  "Корона Prime":      "/gifts/crown.png",
-  "Пульс Сердца":      "/gifts/confetti-box.png",
-  "Звезда Prime":      "/gifts/star-42.png",
+  "Корона Prime":      [3, 0],
+  "Пульс Сердца":      [2, 3],
+  "Звезда Prime":      [6, 2],
+  "Вселенский Огонь":  [1, 3],
+  "Сапфировый Трон":   [2, 0],
 };
 
 const RARITY_ORBS: Record<string, { inner: string; outer: string; glow: string }> = {
@@ -128,71 +201,78 @@ const RARITY_ORBS: Record<string, { inner: string; outer: string; glow: string }
   common:    { inner: "radial-gradient(circle at 35% 30%, #e2e8f0, #94a3b8 55%, #475569)", outer: "rgba(148,163,184,0.3)", glow: "0 0 12px rgba(148,163,184,0.6), 0 0 24px rgba(148,163,184,0.2)" },
 };
 
+const COLS = 7;
+const ROWS = 5;
+
+function GiftSprite({ col, row, size, glowColor }: { col: number; row: number; size: number; glowColor: string }) {
+  const radius = Math.round(size * 0.22);
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        backgroundImage: "url('/gift-sprite.png')",
+        backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
+        backgroundPosition: `${(col / (COLS - 1)) * 100}% ${(row / (ROWS - 1)) * 100}%`,
+        backgroundRepeat: "no-repeat",
+        boxShadow: `0 ${Math.round(size * 0.06)}px ${Math.round(size * 0.22)}px rgba(0,0,0,0.45), 0 0 ${Math.round(size * 0.22)}px ${glowColor}`,
+        overflow: "hidden",
+      }}
+    />
+  );
+}
+
 function GiftVisual({ name, emoji, animationType, size = 56, rarity = "common" }: {
   name: string; emoji: string; animationType: string; size?: number; rarity?: string;
 }) {
-  const imgSrc = GIFT_IMAGE_MAP[name];
+  const spritePos = GIFT_SPRITE_MAP[name];
   const anim = getEmojiAnimation(animationType);
   const orb = RARITY_ORBS[rarity] || RARITY_ORBS.common;
   const orbSize = Math.round(size * 1.35);
 
-  if (imgSrc) {
+  if (spritePos) {
+    const [col, row] = spritePos;
     return (
-      <motion.div style={{ width: size, height: size }} className="flex items-center justify-center" {...(anim as any)}>
-        <img
-          src={imgSrc}
-          alt={name}
-          style={{
-            width: size,
-            height: size,
-            objectFit: "contain",
-            filter: `drop-shadow(0 ${Math.round(size*0.06)}px ${Math.round(size*0.22)}px rgba(0,0,0,0.55)) drop-shadow(0 0 ${Math.round(size*0.15)}px ${orb.outer})`,
-          }}
-          draggable={false}
-        />
+      <motion.div
+        style={{ width: size, height: size }}
+        className="flex items-center justify-center"
+        {...(anim as any)}
+      >
+        <GiftSprite col={col} row={row} size={size} glowColor={orb.outer} />
       </motion.div>
     );
   }
 
-  // Premium emoji orb fallback — looks like a designed 3D icon
+  // Emoji orb fallback for unmapped gifts
   return (
     <motion.div
       className="flex items-center justify-center relative"
       style={{ width: orbSize, height: orbSize }}
       {...(anim as any)}
     >
-      {/* Outer glow ring */}
       <div
         className="absolute inset-0 rounded-full opacity-60"
         style={{ background: orb.outer, filter: "blur(8px)", transform: "scale(1.15)" }}
       />
-      {/* 3D sphere background */}
       <div
         className="absolute inset-0 rounded-full"
-        style={{
-          background: orb.inner,
-          boxShadow: orb.glow,
-        }}
+        style={{ background: orb.inner, boxShadow: orb.glow }}
       />
-      {/* Specular highlight */}
       <div
         className="absolute rounded-full"
         style={{
-          width: "42%",
-          height: "35%",
-          top: "10%",
-          left: "14%",
+          width: "42%", height: "35%", top: "10%", left: "14%",
           background: "radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.1) 60%, transparent 100%)",
         }}
       />
-      {/* Emoji centered on orb */}
       <span
         className="relative z-10 select-none leading-none block"
         style={{
           fontSize: size * 0.56,
           fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
           lineHeight: 1,
-          filter: `drop-shadow(0 2px 6px rgba(0,0,0,0.6))`,
+          filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.6))",
         }}
       >
         {emoji}
