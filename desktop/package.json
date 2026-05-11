@@ -1,0 +1,55 @@
+{
+  "name": "pulse-messenger-desktop",
+  "version": "1.0.0",
+  "description": "Pulse Messenger — Desktop wrapper (Electron)",
+  "main": "main.js",
+  "author": "Pulse Team",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64",
+    "build:mac": "electron-builder --mac --universal",
+    "build:linux": "electron-builder --linux --x64"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.pulse.messenger",
+    "productName": "Pulse Messenger",
+    "copyright": "Copyright © 2025 Pulse",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "icon.png"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "icon.png",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": ["ru-RU", "en-US"],
+      "language": "1049",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "icon": "icon.png",
+      "category": "public.app-category.social-networking"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "icon": "icon.png",
+      "category": "Network"
+    }
+  }
+}

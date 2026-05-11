@@ -100,6 +100,30 @@ router.get("/chats", async (req, res) => {
   }
 });
 
+router.post("/chats/saved", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const rows = await db.execute(sql`
+      SELECT c.id FROM chats c
+      JOIN chat_members cm ON cm.chat_id = c.id AND cm.user_id = ${uid}
+      WHERE c.type = 'saved'
+      LIMIT 1
+    `);
+    if ((rows.rows as any[]).length > 0) {
+      const chatId = (rows.rows[0] as any).id;
+      const result = await buildChat(chatId, uid);
+      return res.json(result);
+    }
+    const [chat] = await db.insert(chatsTable).values({ type: "saved" as any, name: "Избранное", avatarColor: "#f59e0b" }).returning();
+    await db.insert(chatMembersTable).values({ chatId: chat.id, userId: uid, role: "member" });
+    const result = await buildChat(chat.id, uid);
+    res.status(201).json(result);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/chats/direct", async (req, res) => {
   try {
     const uid = req.currentUserId;

@@ -3,7 +3,7 @@ import { useGetChats, Chat } from "@workspace/api-client-react";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Search, Pin, VolumeX, Users, Radio, Bot, HeadphonesIcon, Bug, Menu,
-  SquarePen, X, ChevronRight, Check, ArrowLeft, Crown } from "lucide-react";
+  SquarePen, X, ChevronRight, Check, ArrowLeft, Crown, Bookmark } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -143,6 +143,49 @@ interface UserResult {
   avatarColor?: string;
 }
 
+function SavedMessagesEntry({ onOpen }: { onOpen: (id: number) => void }) {
+  const [loading, setLoading] = React.useState(false);
+  const [lastMsg, setLastMsg] = React.useState<string | null>(null);
+
+  const open = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const token = sessionStorage.getItem("pulse-token");
+      const res = await fetch("/api/chats/saved", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const chat = await res.json();
+        if (chat?.lastMessage?.text) setLastMsg(chat.lastMessage.text);
+        onOpen(chat.id);
+      }
+    } catch {}
+    setLoading(false);
+  };
+
+  return (
+    <button
+      onClick={open}
+      disabled={loading}
+      className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all text-left hover:bg-secondary border border-transparent hover:border-border/50"
+    >
+      <div className="w-12 h-12 rounded-[16px] bg-amber-500/15 flex items-center justify-center shrink-0 border border-amber-500/30">
+        <Bookmark size={22} className="text-amber-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-baseline mb-0.5">
+          <h3 className="font-bold text-[15px] text-foreground">Избранное</h3>
+        </div>
+        <p className="text-[13px] text-muted-foreground truncate font-medium">
+          {lastMsg || "Сохранённые сообщения"}
+        </p>
+      </div>
+    </button>
+  );
+}
+
 export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
   const { selectedChatId, setSelectedChatId, typingByChat } = useAppContext();
   const { t, lang } = useLanguage();
@@ -252,6 +295,7 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
       if (!name.toLowerCase().includes(search.toLowerCase())) return false;
     }
 
+    if ((chat as any).type === "saved") return false;
     if (folder === "unread") return (chat.unreadCount ?? 0) > 0;
     if (folder === "groups") return chat.type === "group" || chat.type === "channel";
     if (folder === "bots") return chat.type === "direct" && !!(chat.otherUser as any)?.isBot;
@@ -335,6 +379,7 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
       <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none mt-2 px-2 pb-4">
         {!search && folder === "all" && (
           <div className="space-y-1 mb-2">
+            <SavedMessagesEntry onOpen={(id) => setSelectedChatId(id)} />
             <button
               onClick={() => navigate("/support")}
               className="w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all text-left hover:bg-secondary border border-transparent hover:border-border/50"

@@ -281,7 +281,7 @@ router.post("/auth/verify-email", async (req, res) => {
 
 router.post("/auth/register", async (req, res) => {
   try {
-    const { username, displayName, password, ageGroup, birthDate, email } = req.body;
+    const { username, displayName, password, ageGroup, birthDate, email, avatarUrl } = req.body;
     if (!username || !displayName || !password) {
       return res.status(400).json({ error: "Заполните все поля" });
     }
@@ -335,10 +335,12 @@ router.post("/auth/register", async (req, res) => {
       verificationExpiry = new Date(Date.now() + 30 * 60 * 1000);
     }
 
+    const rawAvatarUrl = avatarUrl ? String(avatarUrl) : null;
+
     const result = await db.execute(
-      sql`INSERT INTO users (username, display_name, avatar_color, status, password_hash, balance, age_group, birth_date, age_verified, email, email_verified, email_verification_code, email_verification_expires_at)
-          VALUES (${rawUsername}, ${rawDisplay}, ${color}, 'online', ${passwordHash}, 0, ${ageGroup ? String(ageGroup) : null}, ${rawBirthDate}, true, ${rawEmail}, ${rawEmail ? false : false}, ${verificationCode}, ${verificationExpiry ? verificationExpiry.toISOString() : null})
-          RETURNING id, username, display_name, avatar_color, status, created_at, balance`
+      sql`INSERT INTO users (username, display_name, avatar_color, avatar_url, status, password_hash, balance, age_group, birth_date, age_verified, email, email_verified, email_verification_code, email_verification_expires_at)
+          VALUES (${rawUsername}, ${rawDisplay}, ${color}, ${rawAvatarUrl}, 'online', ${passwordHash}, 0, ${ageGroup ? String(ageGroup) : null}, ${rawBirthDate}, true, ${rawEmail}, ${rawEmail ? false : false}, ${verificationCode}, ${verificationExpiry ? verificationExpiry.toISOString() : null})
+          RETURNING id, username, display_name, avatar_color, avatar_url, status, created_at, balance`
     );
     const newUser = result.rows[0] as any;
 

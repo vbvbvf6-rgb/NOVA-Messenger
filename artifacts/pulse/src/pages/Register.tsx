@@ -1,8 +1,33 @@
 import React, { useState, useRef } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Calendar, ShieldAlert, ShieldCheck, AlertTriangle, Mail, KeyRound, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Calendar, ShieldAlert, ShieldCheck, AlertTriangle, Mail, KeyRound, Eye, EyeOff, Camera } from "lucide-react";
 import PulseLogo from "@/components/PulseLogo";
+
+async function compressAvatar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const size = 256;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        const ratio = Math.min(img.width, img.height);
+        const sx = (img.width - ratio) / 2;
+        const sy = (img.height - ratio) / 2;
+        ctx.drawImage(img, sx, sy, ratio, ratio, 0, 0, size, size);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 interface RegisterProps {
   onLogin: (userId: number) => void;
@@ -54,6 +79,9 @@ export default function Register({ onLogin }: RegisterProps) {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [pendingUser, setPendingUser] = useState<any>(null);
+
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
@@ -125,6 +153,7 @@ export default function Register({ onLogin }: RegisterProps) {
           ageGroup,
           email: email.trim() || undefined,
           birthDate: dobYear && dobMonth && dobDay ? `${dobYear}-${String(dobMonth).padStart(2,"0")}-${String(dobDay).padStart(2,"0")}` : undefined,
+          avatarUrl: avatarUrl || undefined,
         }),
       });
       const data = await res.json();
@@ -466,6 +495,41 @@ export default function Register({ onLogin }: RegisterProps) {
               exit={{ opacity: 0, x: -30 }}
               className="w-full"
             >
+              <div className="flex flex-col items-center mb-6">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const compressed = await compressAvatar(file);
+                      setAvatarUrl(compressed);
+                    } catch {}
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed border-primary/40 hover:border-primary transition-all group"
+                >
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-card/60 flex flex-col items-center justify-center gap-1">
+                      <Camera size={24} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="text-[10px] font-bold text-muted-foreground group-hover:text-primary transition-colors uppercase tracking-wide">Фото</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera size={20} className="text-white" />
+                  </div>
+                </button>
+                <p className="text-[11px] text-muted-foreground/60 mt-2">Нажмите, чтобы добавить фото</p>
+              </div>
+
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider pl-1">Никнейм</label>

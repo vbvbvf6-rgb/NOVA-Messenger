@@ -1,0 +1,20 @@
+{
+  "name": "Pulse Messenger",
+  "short_name": "Pulse",
+  "description": "Telegram-inspired messenger with real-time chats, calls, stories and gifts",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#ff5500",
+  "background_color": "#0d0d0d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "communication"],
+  "lang": "ru"
+}
