@@ -61,34 +61,34 @@ const RARITY_CONFIG: Record<string, {
 
 function getEmojiAnimation(animationType: string) {
   switch (animationType) {
-    case "hearts":    return { animate: { scale: [1, 1.2, 0.95, 1.1, 1], rotate: [0, -10, 10, -5, 0] }, transition: { duration: 1.8, repeat: Infinity, ease: "easeInOut" } };
-    case "fireworks": return { animate: { scale: [1, 1.4, 0.88, 1.2, 1], rotate: [0, 18, -18, 10, 0] }, transition: { duration: 1.2, repeat: Infinity, ease: "easeInOut" } };
-    case "stars":     return { animate: { rotate: [0, 360], scale: [1, 1.15, 1] }, transition: { duration: 2.5, repeat: Infinity, ease: "linear" } };
-    case "sparkle":   return { animate: { scale: [1, 1.3, 0.9, 1.2, 1] }, transition: { duration: 1.6, repeat: Infinity } };
-    case "confetti":  return { animate: { y: [0, -12, 3, -7, 0], rotate: [0, 12, -12, 6, 0] }, transition: { duration: 1.4, repeat: Infinity, ease: "easeInOut" } };
-    case "balloons":  return { animate: { y: [0, -16, -4, -12, 0], rotate: [-5, 5, -4, 4, -5] }, transition: { duration: 2.8, repeat: Infinity, ease: "easeInOut" } };
-    case "diamonds":  return { animate: { rotate: [0, 22, -22, 10, 0], scale: [1, 1.3, 0.92, 1.18, 1] }, transition: { duration: 2, repeat: Infinity } };
-    case "lightning": return { animate: { scale: [1, 1.4, 0.88, 1.22, 1], x: [-2, 2, -2, 1, 0] }, transition: { duration: 0.8, repeat: Infinity, repeatDelay: 1.2 } };
-    case "flame":     return { animate: { scale: [1, 1.15, 0.93, 1.1, 1], rotate: [-4, 4, -3, 3, -4], y: [0, -4, 1, -3, 0] }, transition: { duration: 0.9, repeat: Infinity, ease: "easeInOut" } };
-    case "magic":     return { animate: { rotate: [0, 360], scale: [1, 1.2, 0.95, 1.12, 1] }, transition: { duration: 1.8, repeat: Infinity, ease: "easeInOut" } };
-    case "galaxy":    return { animate: { rotate: [0, 360], scale: [1, 1.06, 0.97, 1.03, 1] }, transition: { duration: 4, repeat: Infinity, ease: "linear" } };
-    case "supernova": return { animate: { scale: [1, 1.5, 0.8, 1.3, 0.95, 1] }, transition: { duration: 1.8, repeat: Infinity, repeatDelay: 0.6 } };
-    case "vortex":    return { animate: { rotate: [0, 360], scale: [1, 1.1, 0.94, 1.05, 1] }, transition: { duration: 1.4, repeat: Infinity, ease: "linear" } };
-    case "bounce":    return { animate: { y: [0, -14, 2, -9, 0], scale: [1, 0.93, 1.07, 0.97, 1] }, transition: { duration: 1.1, repeat: Infinity, ease: "easeInOut" } };
-    default:          return { animate: { y: [0, -8, 0], rotate: [0, 4, -4, 0] }, transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } };
+    case "hearts":    return { animate: { scale: [1, 1.25, 0.92, 1.15, 1], rotate: [0, -12, 12, -6, 0], y: [0, -3, 1, -2, 0] }, transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" } };
+    case "fireworks": return { animate: { scale: [1, 1.5, 0.82, 1.28, 1], rotate: [0, 22, -22, 12, 0] }, transition: { duration: 1.1, repeat: Infinity, ease: "easeInOut" } };
+    case "stars":     return { animate: { rotate: [0, 360], scale: [1, 1.2, 0.95, 1.1, 1] }, transition: { duration: 2.2, repeat: Infinity, ease: "linear" } };
+    case "sparkle":   return { animate: { scale: [1, 1.35, 0.88, 1.22, 1], rotate: [0, 8, -8, 0] }, transition: { duration: 1.4, repeat: Infinity } };
+    case "confetti":  return { animate: { y: [0, -15, 4, -9, 0], rotate: [0, 15, -15, 8, 0], scale: [1, 1.08, 0.95, 1.05, 1] }, transition: { duration: 1.3, repeat: Infinity, ease: "easeInOut" } };
+    case "balloons":  return { animate: { y: [0, -20, -5, -14, 0], rotate: [-6, 6, -5, 5, -6], scale: [1, 1.05, 0.97, 1.03, 1] }, transition: { duration: 2.6, repeat: Infinity, ease: "easeInOut" } };
+    case "diamonds":  return { animate: { rotate: [0, 25, -25, 12, 0], scale: [1, 1.38, 0.88, 1.22, 1], y: [0, -4, 2, -2, 0] }, transition: { duration: 1.8, repeat: Infinity } };
+    case "lightning": return { animate: { scale: [1, 1.5, 0.82, 1.3, 1], x: [-3, 3, -3, 2, 0], y: [0, -3, 0, -1, 0] }, transition: { duration: 0.7, repeat: Infinity, repeatDelay: 1.0 } };
+    case "flame":     return { animate: { scale: [1, 1.2, 0.9, 1.15, 1], rotate: [-5, 5, -4, 4, -5], y: [0, -6, 2, -4, 0] }, transition: { duration: 0.8, repeat: Infinity, ease: "easeInOut" } };
+    case "magic":     return { animate: { rotate: [0, 360], scale: [1, 1.25, 0.92, 1.15, 1] }, transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" } };
+    case "galaxy":    return { animate: { rotate: [0, 360], scale: [1, 1.1, 0.94, 1.06, 1] }, transition: { duration: 3.5, repeat: Infinity, ease: "linear" } };
+    case "supernova": return { animate: { scale: [1, 1.65, 0.75, 1.4, 0.92, 1], rotate: [0, 15, -10, 5, 0] }, transition: { duration: 1.6, repeat: Infinity, repeatDelay: 0.4 } };
+    case "vortex":    return { animate: { rotate: [0, 360], scale: [1, 1.15, 0.9, 1.08, 1] }, transition: { duration: 1.2, repeat: Infinity, ease: "linear" } };
+    case "bounce":    return { animate: { y: [0, -18, 3, -11, 0], scale: [1, 0.9, 1.1, 0.95, 1] }, transition: { duration: 1.0, repeat: Infinity, ease: "easeInOut" } };
+    default:          return { animate: { y: [0, -10, 0], rotate: [0, 5, -5, 0] }, transition: { duration: 2, repeat: Infinity, ease: "easeInOut" } };
   }
 }
 
 // Sprite sheet: /gift-sprite.png — 7 cols × 5 rows (1408×768px)
-// Row 0: Rose, Rocket, Diamond, Crown, Robot, MagicWand, Parrot
-// Row 1: TreasureChest, HotAirBalloon, BirthdayCake, Books, Camera, Gamepad, Megaphone
-// Row 2: Lightbulb, Compass, Palette, Balls, MusicNote, PaperPlane, Trophy
-// Row 3: Planet, Lightning, HeartLock, GoldenKey, Car, Champagne, Guitar
-// Row 4: Microscope, Pen, Whistle, GiftBox, Magnifier, Sunflower, Telescope
+// Row 0: Rose(0,0), Rocket(1,0), Diamond(2,0), Crown(3,0), Robot(4,0), MagicWand(5,0), Parrot(6,0)
+// Row 1: TreasureChest(0,1), HotAirBalloon(1,1), Cake(2,1), Books(3,1), Camera(4,1), Gamepad(5,1), Megaphone(6,1)
+// Row 2: Lightbulb(0,2), Compass(1,2), Palette(2,2), Balls(3,2), MusicNote(4,2), PaperPlane(5,2), Trophy(6,2)
+// Row 3: Planet(0,3), Lightning(1,3), HeartLock(2,3), GoldenKey(3,3), Car(4,3), Champagne(5,3), Guitar(6,3)
+// Row 4: Microscope(0,4), Pen(1,4), Whistle(2,4), GiftBox(3,4), Magnifier(4,4), Sunflower(5,4), Telescope(6,4)
 const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   // Common
   "Сердечко":          [2, 3],
-  "Звёздочка":         [6, 2],
+  "Звёздочка":         [6, 4],
   "Мыльный пузырь":    [3, 2],
   "Конфета":           [3, 4],
   "Клубника":          [5, 4],
@@ -99,14 +99,14 @@ const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   "Мороженое":         [2, 1],
   "Рыбка":             [4, 4],
   "Подсолнух":         [5, 4],
-  "Чашка кофе":        [5, 3],
-  "Луна":              [0, 3],
-  "Четырёхлистник":    [1, 2],
+  "Чашка кофе":        [0, 2],
+  "Луна":              [6, 4],
+  "Четырёхлистник":    [5, 4],
   "Бабочка":           [2, 2],
-  "Котёнок":           [4, 0],
+  "Котёнок":           [6, 0],
   "Воздушный шар":     [1, 1],
-  "Ретро-телефон":     [6, 1],
-  "Пицца":             [3, 1],
+  "Ретро-телефон":     [4, 1],
+  "Пицца":             [2, 1],
   "Медвежонок":        [3, 4],
   "Торт":              [2, 1],
   "Игровая приставка": [5, 1],
@@ -116,16 +116,16 @@ const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   "Корона":            [3, 0],
   "Красная роза":      [0, 0],
   "Бриллиант":         [2, 0],
-  "Золотая монета":    [3, 3],
+  "Золотая монета":    [0, 1],
   "Ракета":            [1, 0],
   "Гитара":            [6, 3],
   "Кубок":             [6, 2],
-  "Радуга":            [4, 2],
+  "Радуга":            [2, 2],
   "Молния":            [1, 3],
   "Дельфин":           [4, 4],
   "Лиса":              [6, 0],
   "Сова":              [6, 0],
-  "Акула":             [0, 4],
+  "Акула":             [4, 4],
   "Парусник":          [5, 2],
   "Самоцвет":          [2, 0],
   "Медаль":            [6, 2],
@@ -141,7 +141,7 @@ const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   "Волшебство":        [5, 0],
   "Кристалл":          [2, 0],
   "Пегас":             [5, 2],
-  "Нарвал":            [4, 4],
+  "Нарвал":            [3, 2],
   "Хрустальное сердце":[2, 3],
   "Жар-птица":         [1, 3],
   "Морской конёк":     [4, 4],
@@ -151,7 +151,7 @@ const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   "Золотая рыбка":     [4, 4],
   "Рубиновое кольцо":  [2, 3],
   "Волшебная скрипка": [6, 3],
-  "Чёрный кот":        [4, 0],
+  "Чёрный кот":        [6, 0],
   "Сфинкс":            [1, 2],
   "Огненный дракон":   [1, 3],
   // Legendary
@@ -159,9 +159,9 @@ const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   "Ангел":             [5, 0],
   "Пульс":             [3, 4],
   "Легендарная звезда":[6, 2],
-  "Бесконечность":     [0, 3],
+  "Бесконечность":     [1, 2],
   "Золотой дракон":    [3, 3],
-  "Небесный кит":      [0, 3],
+  "Небесный кит":      [5, 2],
   "Северное сияние":   [0, 3],
   "Джинн":             [5, 0],
   "Хрустальный дворец":[3, 0],
@@ -169,14 +169,14 @@ const GIFT_SPRITE_MAP: Record<string, [number, number]> = {
   "Мировое дерево":    [5, 4],
   "Небесный феникс":   [1, 0],
   "Нептун":            [0, 3],
-  "Звёздная колесница":[6, 2],
+  "Звёздная колесница":[5, 2],
   // Cosmic
   "Нейтронная звезда": [0, 3],
   "Квазар":            [1, 3],
   "Чёрная дыра":       [0, 3],
   "Мультивселенная":   [0, 3],
   "Абсолют":           [6, 2],
-  "Сингулярность":     [0, 3],
+  "Сингулярность":     [1, 2],
   "Создатель":         [5, 0],
   "Вселенский огонь":  [1, 3],
   "Бог Грома":         [1, 3],
@@ -205,22 +205,146 @@ const RARITY_ORBS: Record<string, { inner: string; outer: string; glow: string }
 const COLS = 7;
 const ROWS = 5;
 
-function GiftSprite({ col, row, size, glowColor }: { col: number; row: number; size: number; glowColor: string }) {
+const RARITY_GLOW_COLORS: Record<string, string> = {
+  cosmic:    "rgba(167,139,250,0.7)",
+  legendary: "rgba(251,191,36,0.7)",
+  epic:      "rgba(192,132,252,0.6)",
+  rare:      "rgba(96,165,250,0.5)",
+  common:    "rgba(148,163,184,0.25)",
+};
+
+function GiftSprite({ col, row, size, glowColor, rarity = "common", animationType = "default" }: {
+  col: number; row: number; size: number; glowColor: string; rarity?: string; animationType?: string;
+}) {
   const radius = Math.round(size * 0.22);
+  const isHighRarity = ["epic", "legendary", "cosmic"].includes(rarity);
+  const isTopRarity = ["legendary", "cosmic"].includes(rarity);
+  const shimmerDelay = isTopRarity ? 1.2 : isHighRarity ? 2.5 : 5;
+
   return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: radius,
-        backgroundImage: "url('/gift-sprite.png')",
-        backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
-        backgroundPosition: `${(col / (COLS - 1)) * 100}% ${(row / (ROWS - 1)) * 100}%`,
-        backgroundRepeat: "no-repeat",
-        boxShadow: `0 ${Math.round(size * 0.06)}px ${Math.round(size * 0.22)}px rgba(0,0,0,0.45), 0 0 ${Math.round(size * 0.22)}px ${glowColor}`,
-        overflow: "hidden",
-      }}
-    />
+    <div style={{ position: "relative", width: size, height: size }}>
+      {isHighRarity && (
+        <motion.div
+          style={{
+            position: "absolute",
+            inset: -Math.round(size * 0.18),
+            borderRadius: radius + Math.round(size * 0.18),
+            background: glowColor,
+            filter: `blur(${Math.round(size * 0.25)}px)`,
+            zIndex: 0,
+          }}
+          animate={{ opacity: [0.25, 0.7, 0.25], scale: [0.92, 1.08, 0.92] }}
+          transition={{ duration: isTopRarity ? 1.6 : 2.2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundImage: "url('/gift-sprite.png')",
+          backgroundSize: `${COLS * 100}% ${ROWS * 100}%`,
+          backgroundPosition: `${(col / (COLS - 1)) * 100}% ${(row / (ROWS - 1)) * 100}%`,
+          backgroundRepeat: "no-repeat",
+          boxShadow: `0 ${Math.round(size * 0.07)}px ${Math.round(size * 0.28)}px rgba(0,0,0,0.5), 0 0 ${Math.round(size * 0.28)}px ${glowColor}`,
+          overflow: "hidden",
+        }}
+      >
+        <motion.div
+          style={{
+            position: "absolute",
+            top: 0,
+            width: "55%",
+            height: "100%",
+            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%)",
+            transform: "skewX(-20deg)",
+            pointerEvents: "none",
+          }}
+          animate={{ x: ["-110%", "280%"] }}
+          transition={{ duration: 1.4, repeat: Infinity, repeatDelay: shimmerDelay, ease: "easeInOut" }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: "6%", left: "8%",
+            width: "38%", height: "30%",
+            background: "radial-gradient(ellipse, rgba(255,255,255,0.35) 0%, transparent 70%)",
+            borderRadius: "50%",
+            pointerEvents: "none",
+          }}
+        />
+      </div>
+      {isHighRarity && (
+        <motion.div
+          style={{
+            position: "absolute",
+            inset: -2,
+            borderRadius: radius + 2,
+            border: `${isTopRarity ? 2 : 1.5}px solid ${glowColor}`,
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+          animate={{ opacity: [0.3, 1, 0.3], scale: [0.96, 1.04, 0.96] }}
+          transition={{ duration: isTopRarity ? 1.4 : 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      )}
+    </div>
+  );
+}
+
+const FLOAT_PARTICLES: Record<string, string[]> = {
+  hearts:    ["❤️","💕","💖","🌸"],
+  fireworks: ["✨","💥","🌟","🎆"],
+  stars:     ["⭐","🌟","✨","💫"],
+  sparkle:   ["✨","💫","⚡","🌟"],
+  confetti:  ["🎊","🎉","🌟","🎈"],
+  balloons:  ["🎈","✨","🥳","🎉"],
+  diamonds:  ["💎","✨","💙","🌟"],
+  lightning: ["⚡","💥","🌩️","✨"],
+  flame:     ["🔥","✨","💫","🌟"],
+  magic:     ["✨","🪄","💫","⭐"],
+  galaxy:    ["🌌","⭐","💫","✨"],
+  supernova: ["💥","✨","⭐","🌟"],
+  vortex:    ["🌀","💫","✨","⭐"],
+  bounce:    ["✨","💫","⭐","🎉"],
+};
+
+function FloatingParticles({ animationType, size, rarity }: { animationType: string; size: number; rarity: string }) {
+  const particles = FLOAT_PARTICLES[animationType] || ["✨","💫","⭐","🌟"];
+  const count = rarity === "cosmic" ? 5 : rarity === "legendary" ? 4 : 3;
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          style={{
+            position: "absolute",
+            fontSize: size * (0.18 + (i % 3) * 0.04),
+            left: `${8 + (i * 75 / (count - 1))}%`,
+            bottom: "10%",
+            zIndex: 10,
+            pointerEvents: "none",
+            lineHeight: 1,
+          }}
+          animate={{
+            y: [0, -(size * 1.1 + i * size * 0.12)],
+            x: [(i % 2 === 0 ? -1 : 1) * size * 0.15, (i % 2 === 0 ? 1 : -1) * size * 0.25],
+            opacity: [0, 1, 1, 0],
+            scale: [0.4, 1, 0.7],
+          }}
+          transition={{
+            duration: 1.4 + i * 0.25,
+            repeat: Infinity,
+            delay: i * 0.45,
+            ease: "easeOut",
+          }}
+        >
+          {particles[i % particles.length]}
+        </motion.div>
+      ))}
+    </>
   );
 }
 
@@ -230,55 +354,63 @@ function GiftVisual({ name, emoji, animationType, size = 56, rarity = "common" }
   const spritePos = GIFT_SPRITE_MAP[name];
   const anim = getEmojiAnimation(animationType);
   const orb = RARITY_ORBS[rarity] || RARITY_ORBS.common;
+  const glowColor = RARITY_GLOW_COLORS[rarity] || RARITY_GLOW_COLORS.common;
   const orbSize = Math.round(size * 1.35);
+  const isHighRarity = ["epic", "legendary", "cosmic"].includes(rarity);
+  const wrapSize = size + (isHighRarity ? Math.round(size * 0.5) : 0);
 
   if (spritePos) {
     const [col, row] = spritePos;
     return (
-      <motion.div
-        style={{ width: size, height: size }}
-        className="flex items-center justify-center"
-        {...(anim as any)}
-      >
-        <GiftSprite col={col} row={row} size={size} glowColor={orb.outer} />
-      </motion.div>
+      <div style={{ position: "relative", width: wrapSize, height: wrapSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {isHighRarity && <FloatingParticles animationType={animationType} size={size} rarity={rarity} />}
+        <motion.div
+          style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}
+          {...(anim as any)}
+        >
+          <GiftSprite col={col} row={row} size={size} glowColor={glowColor} rarity={rarity} animationType={animationType} />
+        </motion.div>
+      </div>
     );
   }
 
   // Emoji orb fallback for unmapped gifts
   return (
-    <motion.div
-      className="flex items-center justify-center relative"
-      style={{ width: orbSize, height: orbSize }}
-      {...(anim as any)}
-    >
-      <div
-        className="absolute inset-0 rounded-full opacity-60"
-        style={{ background: orb.outer, filter: "blur(8px)", transform: "scale(1.15)" }}
-      />
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{ background: orb.inner, boxShadow: orb.glow }}
-      />
-      <div
-        className="absolute rounded-full"
-        style={{
-          width: "42%", height: "35%", top: "10%", left: "14%",
-          background: "radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.1) 60%, transparent 100%)",
-        }}
-      />
-      <span
-        className="relative z-10 select-none leading-none block"
-        style={{
-          fontSize: size * 0.56,
-          fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
-          lineHeight: 1,
-          filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.6))",
-        }}
+    <div style={{ position: "relative", width: orbSize, height: orbSize, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {isHighRarity && <FloatingParticles animationType={animationType} size={size} rarity={rarity} />}
+      <motion.div
+        className="flex items-center justify-center relative"
+        style={{ width: orbSize, height: orbSize }}
+        {...(anim as any)}
       >
-        {emoji}
-      </span>
-    </motion.div>
+        <div
+          className="absolute inset-0 rounded-full opacity-60"
+          style={{ background: orb.outer, filter: "blur(8px)", transform: "scale(1.15)" }}
+        />
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{ background: orb.inner, boxShadow: orb.glow }}
+        />
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: "42%", height: "35%", top: "10%", left: "14%",
+            background: "radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.1) 60%, transparent 100%)",
+          }}
+        />
+        <span
+          className="relative z-10 select-none leading-none block"
+          style={{
+            fontSize: size * 0.56,
+            fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
+            lineHeight: 1,
+            filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.6))",
+          }}
+        >
+          {emoji}
+        </span>
+      </motion.div>
+    </div>
   );
 }
 
