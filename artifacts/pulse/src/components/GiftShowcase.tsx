@@ -29,8 +29,6 @@ const RARITY_ORBS: Record<string, { inner: string; outer: string }> = {
   common:    { inner: "radial-gradient(circle at 35% 30%, #e2e8f0, #94a3b8 55%, #475569)", outer: "rgba(148,163,184,0.3)" },
 };
 
-import { emojiToTwemojiUrl, GIFT_LOCAL_PNG } from "@/lib/twemoji";
-
 function getAnimation(animationType: string) {
   switch (animationType) {
     case "hearts":    return { animate: { scale: [1, 1.18, 0.96, 1.12, 0.99, 1], y: [0, -6, 1, -4, 0] }, transition: { duration: 1.8, repeat: Infinity, ease: "easeInOut" } };
