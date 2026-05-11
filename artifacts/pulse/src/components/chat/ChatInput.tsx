@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, memo } from "react";
+import { emojiToTwemojiUrl } from "@/lib/twemoji";
 import { useSendMessage, useGetMe, getGetMessagesQueryKey, getGetChatsQueryKey, Message } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Paperclip, Mic, SendHorizontal, X, Square, Trash2, Images, Reply, Pencil, Clock, BarChart2, Plus, Minus, SmilePlus } from "lucide-react";
@@ -20,9 +21,9 @@ const STICKERS = [
 ];
 
 const EMOJI_CATEGORIES: { label: string; emojis: string[] }[] = [
-  { label: "Смайлы", emojis: ["😀","😂","🤣","😊","😍","🥰","😘","😎","🤩","🥳","😭","😤","😡","🤔","😏","😴","🤤","😷","😱","😨","🤯","😮","🥺","😢","😔","😕","😫","🤗","🤭","🫢","🤫","🤥","😶","😐","😑"] },
-  { label: "Жесты", emojis: ["👍","👎","👋","🤚","✋","🖐","🖖","👌","🤌","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👏","🙌","🤲","🤝","🙏","💪","🦾"] },
-  { label: "Сердца", emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","💕","💞","💓","💗","💖","💘","💝","💫","⭐","🌟","✨","🔥","💎"] },
+  { label: "Смайлы", emojis: ["😀","😂","🤣","😊","😍","🥰","😘","😎","🤩","🥳","😭","😤","😡","🤔","😏","😴","🤤","😷","😱","😨","🤯","😮","🥺","😢","😔","😕","😫","🤗","🤭","🤐","🤫","🤥","😶","😐","😑"] },
+  { label: "Жесты", emojis: ["👍","👎","👋","🤚","✋","🖐","🖖","👌","🤏","✌","🤞","🤟","🤘","🤙","👈","👉","👆","👇","☝","👏","🙌","🤲","🤝","🙏","💪","🦾"] },
+  { label: "Сердца", emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💫","⭐","🌟","✨","🔥","💎"] },
 ];
 
 function formatDuration(seconds: number) {
@@ -497,8 +498,15 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
               <div className="p-3 grid grid-cols-7 gap-1 max-h-[220px] overflow-y-auto scrollbar-none">
                 {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
                   <button key={i} onClick={() => insertEmoji(emoji)}
-                    className="text-2xl hover:bg-secondary rounded-xl p-1.5 transition-colors text-center hover:scale-110 active:scale-95">
-                    {emoji}
+                    className="hover:bg-secondary rounded-xl p-1.5 transition-colors flex items-center justify-center hover:scale-110 active:scale-95">
+                    <img
+                      src={emojiToTwemojiUrl(emoji)}
+                      alt={emoji}
+                      width={26}
+                      height={26}
+                      draggable={false}
+                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; e.currentTarget.insertAdjacentText("afterend", emoji); }}
+                    />
                   </button>
                 ))}
               </div>
