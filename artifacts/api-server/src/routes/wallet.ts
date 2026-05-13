@@ -268,7 +268,7 @@ router.get("/stats/me", async (req, res) => {
       giftsSent: Number((giftsS.rows[0] as any)?.cnt ?? 0),
       giftsReceived: Number((giftsR.rows[0] as any)?.cnt ?? 0),
       contactsCount: Number((contacts.rows[0] as any)?.cnt ?? 0),
-      popularity: balance,
+      popularity: Math.min(balance, 10000),
     });
   } catch (err) {
     req.log.error(err);

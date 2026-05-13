@@ -15,7 +15,17 @@ async function buildGift(gift: typeof giftsTable.$inferSelect) {
 router.get("/gifts", async (req, res) => {
   try {
     const items = await db.select().from(giftItemsTable);
-    res.json(items);
+    const counts = await db.execute(sql`
+      SELECT gift_item_id, LEAST(COUNT(*)::int, 10000) AS times_given
+      FROM gifts
+      GROUP BY gift_item_id
+    `);
+    const countMap = new Map(counts.rows.map((r: any) => [Number(r.gift_item_id), Number(r.times_given)]));
+    const itemsWithPopularity = items.map(item => ({
+      ...item,
+      timesGiven: countMap.get(item.id) ?? 0,
+    }));
+    res.json(itemsWithPopularity);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

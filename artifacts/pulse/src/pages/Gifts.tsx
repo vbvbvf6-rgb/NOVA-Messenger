@@ -364,11 +364,22 @@ function GiftHoverPreview({ item, anchorRef, visible }: {
               </p>
             )}
 
-            {/* Price row */}
-            <div className="flex items-center gap-1.5 bg-white/8 border border-white/10 px-3 py-1 rounded-full mt-0.5">
-              <Zap size={11} className="text-yellow-400" />
-              <span className="text-[12px] font-black text-yellow-400">{(item as any).price?.toLocaleString() ?? item.stars.toLocaleString()}</span>
-              <span className="text-[10px] text-white/40">⚡</span>
+            {/* Price + Popularity rows */}
+            <div className="w-full flex flex-col gap-1 mt-0.5">
+              <div className="flex items-center justify-between bg-white/8 border border-white/10 px-3 py-1 rounded-full">
+                <span className="text-[9px] text-white/40 font-bold uppercase tracking-wide">Цена</span>
+                <div className="flex items-center gap-1">
+                  <Zap size={9} className="text-yellow-400" />
+                  <span className="text-[11px] font-black text-yellow-400">{((item as any).price ?? item.stars).toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between bg-white/8 border border-white/10 px-3 py-1 rounded-full">
+                <span className="text-[9px] text-white/40 font-bold uppercase tracking-wide">Популярность</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px]">🔥</span>
+                  <span className="text-[11px] font-black text-orange-300">{Math.min((item as any).timesGiven ?? 0, 10000).toLocaleString()}</span>
+                </div>
+              </div>
             </div>
 
             {/* Tap hint */}
@@ -457,6 +468,7 @@ function GiftCard({ item, onClick, hasPrime }: { item: GiftItem; onClick: () => 
       <div className="relative z-10 w-full px-2 pb-2.5 pt-1 text-center">
         <p className={`text-[11px] font-bold leading-tight truncate ${cfg.textColor}`}>{item.name}</p>
         <div className="flex items-center justify-center gap-0.5 mt-0.5">
+          <span className="text-[9px] text-white/35 font-medium mr-0.5">Цена</span>
           <span className="text-[10px]">⚡</span>
           <span className="text-[10px] text-yellow-400 font-black">{(item as any).price ?? item.stars}</span>
         </div>

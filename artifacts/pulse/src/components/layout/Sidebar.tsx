@@ -24,6 +24,16 @@ import {
   Bot,
   Trophy,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useAppContext } from "@/contexts/AppContext";
 import { useLanguage } from "@/contexts/LanguageContext";
