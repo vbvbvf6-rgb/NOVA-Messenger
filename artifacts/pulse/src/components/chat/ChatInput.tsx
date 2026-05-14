@@ -172,8 +172,8 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
       setText(editMessage.text || "");
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.style.height = "64px";
-          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + "px";
+          textareaRef.current.style.height = "44px";
+          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 140) + "px";
           textareaRef.current.focus();
         }
       }, 50);
@@ -382,7 +382,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
           await sendMessage.mutateAsync({ data: { chatId, text, type: "text", replyToId: replyTo?.id } });
         }
         setText("");
-        if (textareaRef.current) textareaRef.current.style.height = "64px";
+        if (textareaRef.current) textareaRef.current.style.height = "44px";
       }
       localStorage.removeItem(draftKey);
       setShowEmoji(false);
@@ -472,8 +472,8 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
-    e.target.style.height = "64px";
-    e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+    e.target.style.height = "44px";
+    e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
     if (e.target.value.trim()) sendTypingEvent();
     if (!editMessage) localStorage.setItem(draftKey, e.target.value);
   };
@@ -497,7 +497,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
       setText("");
       setScheduledAt("");
       setShowScheduledList(true);
-      if (textareaRef.current) textareaRef.current.style.height = "64px";
+      if (textareaRef.current) textareaRef.current.style.height = "44px";
       localStorage.removeItem(draftKey);
     } catch {
       alert("Ошибка соединения");
@@ -1026,9 +1026,9 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                     if (e.key === "Escape") { onCancelReply?.(); onCancelEdit?.(); setShowEmoji(false); }
                   }}
                   placeholder={editMessage ? "Редактировать..." : imagePreviews.length > 0 ? "Подпись..." : "Написать сообщение..."}
-                  className="flex-1 bg-transparent border-none resize-none max-h-40 min-h-[64px] py-5 px-2 focus:outline-none text-[15px] font-medium placeholder:text-muted-foreground/60 leading-normal scrollbar-none"
+                  className="flex-1 bg-transparent border-none resize-none max-h-36 min-h-[44px] py-3 px-2 focus:outline-none text-[15px] font-medium placeholder:text-muted-foreground/60 leading-normal scrollbar-none"
                   rows={1}
-                  style={{ height: "64px" }}
+                  style={{ height: "44px" }}
                   onFocus={() => { setShowEmoji(false); }}
                 />
 

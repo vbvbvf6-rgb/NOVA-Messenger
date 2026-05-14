@@ -362,9 +362,9 @@ export default function Stories() {
                 <X size={20} />
               </button>
 
-              <div className="absolute inset-0 flex">
-                <div className="flex-1" onClick={() => setViewingIndex(i => Math.max(0, i - 1))} />
-                <div className="flex-1" onClick={() => {
+              <div className="absolute top-20 bottom-0 left-0 right-0 flex">
+                <div className="flex-1 cursor-pointer" onClick={() => setViewingIndex(i => Math.max(0, i - 1))} />
+                <div className="flex-1 cursor-pointer" onClick={() => {
                   if (viewingIndex < viewingGroup.stories.length - 1) {
                     setViewingIndex(i => i + 1);
                   } else {

@@ -434,7 +434,7 @@ ${inline_code}
             content: m.text || "",
           }));
 
-          const systemPrompt = `Ты — DeepSeek AI, дружелюбный и умный ИИ-ассистент встроенный в мессенджер Pulse. Отвечай кратко и по делу. По умолчанию всегда отвечай на русском языке. Переходи на другой язык только если пользователь явно написал не по-русски.`;
+          const systemPrompt = `Ты — DeepSeek AI, умный и полезный ИИ-ассистент встроенный в мессенджер Pulse. Давай развёрнутые, детальные и полезные ответы. По умолчанию всегда отвечай на русском языке. Переходи на другой язык только если пользователь явно написал не по-русски.`;
 
           const userContent: any = isImageMessage
             ? [
@@ -461,7 +461,7 @@ ${inline_code}
               ? `${conversationText}\nUser: ${body.text}\nAssistant:`
               : body.text;
             const url = `https://text.pollinations.ai/${encodeURIComponent(fullPrompt || "")}?model=${model}&system=${encodeURIComponent(systemPrompt)}&seed=${Math.floor(Math.random() * 99999)}`;
-            const r = await fetch(url, { method: "GET", signal: AbortSignal.timeout(60000) });
+            const r = await fetch(url, { method: "GET", signal: AbortSignal.timeout(20000) });
             if (!r.ok) return undefined;
             const text = await r.text();
             return text?.trim() || undefined;
@@ -477,8 +477,8 @@ ${inline_code}
                   "HTTP-Referer": "https://pulse-messenger.replit.app",
                   "X-Title": "Pulse Messenger",
                 },
-                body: JSON.stringify({ model: aiModel, messages: chatPayload, max_tokens: 1200 }),
-                signal: AbortSignal.timeout(60000),
+                body: JSON.stringify({ model: aiModel, messages: chatPayload, max_tokens: 2000, temperature: 0.7 }),
+                signal: AbortSignal.timeout(30000),
               });
               const data = await r.json() as any;
               reply = data.choices?.[0]?.message?.content as string | undefined;
@@ -486,13 +486,16 @@ ${inline_code}
           }
 
           if (!reply && !isImageMessage) {
-            // Try Pollinations models sequentially (first winner wins)
-            for (const model of ["openai", "mistral"]) {
-              try {
-                const r = await callPollinations(model);
-                if (r) { reply = r; break; }
-              } catch {}
-            }
+            // Try Pollinations models in parallel (fastest wins)
+            try {
+              const results = await Promise.allSettled([
+                callPollinations("openai"),
+                callPollinations("mistral"),
+              ]);
+              for (const r of results) {
+                if (r.status === "fulfilled" && r.value) { reply = r.value; break; }
+              }
+            } catch {}
           }
 
           if (!reply || typeof reply !== "string" || !reply.trim()) return;
