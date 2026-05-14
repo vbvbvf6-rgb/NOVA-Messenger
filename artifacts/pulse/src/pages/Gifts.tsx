@@ -765,6 +765,16 @@ export default function Gifts() {
         </div>
       </header>
 
+      {/* Coming Soon Banner */}
+      <div className="bg-amber-500/8 border-b border-amber-500/20 px-6 py-3 flex items-center gap-3 shrink-0">
+        <span className="text-lg">🎁</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-amber-400">Скоро</p>
+          <p className="text-xs text-muted-foreground">Подарки появятся в ближайшем обновлении Pulse</p>
+        </div>
+        <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">Coming Soon</span>
+      </div>
+
       <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 w-full scrollbar-thin">
         <Tabs defaultValue="catalog" className="w-full max-w-5xl mx-auto">
           <div className="flex justify-center mb-5">

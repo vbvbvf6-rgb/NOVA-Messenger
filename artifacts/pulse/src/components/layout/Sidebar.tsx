@@ -126,16 +126,16 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
   const initial = me?.displayName?.[0]?.toUpperCase() || "U";
   const isPremium = (me as any)?.hasPrime ?? false;
 
-  const NAV_ITEMS = [
+  const NAV_ITEMS: Array<{ href: string; icon: any; label: string; soon?: boolean }> = [
     { href: "/",         icon: MessageCircle, label: t("nav.chats") },
     { href: "/calls",    icon: Phone,         label: t("nav.calls") },
     { href: "/feed",     icon: Rss,           label: t("nav.feed") },
     { href: "/contacts", icon: Users,         label: t("nav.contacts") },
-    { href: "/gifts",    icon: Gift,          label: t("nav.gifts") },
+    { href: "/gifts",    icon: Gift,          label: t("nav.gifts"),          soon: true },
     { href: "/stories",  icon: History,       label: t("nav.stories") },
-    { href: "/wallet",   icon: Wallet,        label: t("nav.wallet") },
+    { href: "/wallet",   icon: Wallet,        label: t("nav.wallet"),         soon: true },
     { href: "/bots",         icon: Bot,           label: t("nav.bots") },
-    { href: "/leaderboard",  icon: Trophy,        label: t("nav.leaderboard") },
+    { href: "/leaderboard",  icon: Trophy,        label: t("nav.leaderboard"), soon: true },
     { href: "/profile",      icon: UserCircle,    label: t("nav.profile") },
     { href: "/settings", icon: Settings,      label: t("nav.settings") },
   ];
@@ -214,7 +214,10 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
                   </div>
                 )}
               </div>
-              <span className="font-semibold text-sm truncate">{item.label}</span>
+              <span className="font-semibold text-sm truncate flex-1">{item.label}</span>
+              {item.soon && (
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/25 shrink-0">Soon</span>
+              )}
             </Link>
           );
         })}
@@ -370,7 +373,10 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
                   </div>
                 )}
               </div>
-              <span className="font-semibold truncate text-[15px]">{item.label}</span>
+              <span className="font-semibold truncate text-[15px] flex-1">{item.label}</span>
+              {item.soon && (
+                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/25 shrink-0">Soon</span>
+              )}
             </Link>
           );
         })}

@@ -353,28 +353,12 @@ function PrimePlusPanel({ navigate, toast, queryClient }: {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-black text-foreground">Ежемесячный эпический подарок</p>
             <p className="text-xs text-muted-foreground">
-              {giftStatus === "claimed" ? giftMsg :
-               giftStatus === "cooldown" ? giftMsg :
-               "Эксклюзивно для Prime+ — бесплатный эпик каждый месяц"}
+              Эксклюзивно для Prime+ — скоро в ближайшем обновлении
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={claimMonthlyGift}
-            disabled={giftStatus === "claiming" || giftStatus === "claimed" || giftStatus === "cooldown"}
-            className={`px-4 py-2 rounded-xl text-sm font-black transition-all shrink-0 ${
-              giftStatus === "claimed" ? "bg-green-500/20 text-green-400 cursor-default" :
-              giftStatus === "cooldown" ? "bg-secondary text-muted-foreground cursor-default" :
-              "text-white"
-            }`}
-            style={giftStatus === "idle" ? { background: "linear-gradient(135deg, #a855f7, #d946ef)" } : undefined}
-          >
-            {giftStatus === "claiming" ? "..." :
-             giftStatus === "claimed" ? "Получено ✓" :
-             giftStatus === "cooldown" ? "Позже" :
-             "Получить"}
-          </motion.button>
+          <span className="px-4 py-2 rounded-xl text-sm font-black shrink-0 bg-amber-500/15 text-amber-400 border border-amber-500/25">
+            Скоро
+          </span>
         </div>
       </motion.div>
 

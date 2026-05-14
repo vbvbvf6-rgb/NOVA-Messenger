@@ -16,11 +16,11 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
 
   const totalUnread = chats?.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) ?? 0;
 
-  const NAV_ITEMS = [
+  const NAV_ITEMS: Array<{ href: string; icon: any; label: string; badge: number; soon?: boolean }> = [
     { href: "/",          icon: MessageCircle, label: "Чаты",     badge: totalUnread },
     { href: "/calls",     icon: Phone,         label: "Звонки",   badge: 0 },
     { href: "/contacts",  icon: Users,         label: "Контакты", badge: 0 },
-    { href: "/gifts",     icon: Gift,          label: "Подарки",  badge: 0 },
+    { href: "/gifts",     icon: Gift,          label: "Подарки",  badge: 0, soon: true },
   ];
 
   if (selectedChatId) return null;
@@ -54,6 +54,11 @@ export function BottomNav({ onMoreClick }: BottomNavProps) {
                 {item.badge > 0 && (
                   <div className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-black flex items-center justify-center shadow-sm">
                     {item.badge > 99 ? "99+" : item.badge}
+                  </div>
+                )}
+                {item.soon && item.badge === 0 && (
+                  <div className="absolute -top-1.5 -right-1.5 px-1 py-px rounded-full bg-amber-500 text-white text-[8px] font-black leading-none shadow-sm">
+                    soon
                   </div>
                 )}
               </div>

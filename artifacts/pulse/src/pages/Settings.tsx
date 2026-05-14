@@ -1084,7 +1084,13 @@ export default function Settings() {
   };
 
   const handleEndSessions = () => {
+    const token = sessionStorage.getItem("pulse-token");
+    const userId = sessionStorage.getItem("pulse-user-id");
+    const tabOwned = sessionStorage.getItem("pulse-tab-owned");
     sessionStorage.clear();
+    if (token) sessionStorage.setItem("pulse-token", token);
+    if (userId) sessionStorage.setItem("pulse-user-id", userId);
+    if (tabOwned) sessionStorage.setItem("pulse-tab-owned", tabOwned);
     toast({ title: lang === "ru" ? "Готово" : "Done", description: lang === "ru" ? "Все другие сессии завершены." : "All other sessions ended." });
   };
 
@@ -1865,8 +1871,8 @@ export default function Settings() {
                   right={<Switch checked={powerSaving} onCheckedChange={v => { setPowerSaving(v); setLs("pulse-power-saving", v); toast({ title: t("common.saved") }); }}/>}/>
                 <Row icon={<Zap size={18}/>} color="bg-yellow-500/10 text-yellow-500"
                   label={lang==="ru"?"Анимированные подарки":"Animated Gifts"}
-                  desc={lang==="ru"?"Воспроизводить анимации при получении подарка":"Play animations when receiving gifts"}
-                  right={<Switch checked={!powerSaving} onCheckedChange={v => { setPowerSaving(!v); setLs("pulse-power-saving", !v); }}/>}/>
+                  desc={lang==="ru"?"Скоро — функция подарков находится в разработке":"Coming soon — gifts feature is in development"}
+                  right={<span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/25">Soon</span>}/>
               </Section>
             </div>
           )}
@@ -1991,29 +1997,30 @@ export default function Settings() {
           {/* ─── MY STARS ──────────────────────────────────── */}
           {displaySection === "stars" && (
             <div className="max-w-2xl mx-auto space-y-6">
-              <div className="text-center py-8">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-amber-500/30">
-                  <Star size={36} className="text-white fill-white"/>
+              <div className="text-center py-10">
+                <div className="relative w-20 h-20 mx-auto mb-5">
+                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-2xl shadow-amber-500/30">
+                    <Star size={36} className="text-white fill-white"/>
+                  </div>
+                  <span className="absolute -top-2 -right-2 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500 text-white border-2 border-card shadow">Soon</span>
                 </div>
-                <h3 className="text-4xl font-black mb-1">{starsBalance}</h3>
-                <p className="text-muted-foreground text-sm mb-6">{lang==="ru"?"Ваши звёзды":"Your Stars"}</p>
-                <div className="flex gap-3 justify-center">
-                  <a href="/prime" className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-white rounded-2xl font-bold text-sm shadow hover:opacity-90 transition-opacity">
-                    <Star size={15}/> {lang==="ru"?"Получить звёзды":"Get Stars"}
-                  </a>
-                  <a href="/gifts" className="inline-flex items-center gap-2 px-5 py-2.5 bg-card border border-border rounded-2xl font-bold text-sm text-foreground hover:bg-secondary transition-colors">
-                    <Gift size={15}/> {lang==="ru"?"Потратить":"Spend"}
-                  </a>
-                </div>
+                <h3 className="text-2xl font-black mb-2">{lang==="ru"?"Звёзды — скоро":"Stars — Coming Soon"}</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto leading-relaxed">
+                  {lang==="ru"
+                    ? "Звёзды появятся в ближайшем обновлении Pulse. Следите за новостями!"
+                    : "Stars are coming in the next Pulse update. Stay tuned!"}
+                </p>
               </div>
-              <Section title={lang==="ru"?"История транзакций":"Transaction History"} icon={<Star size={13}/>}>
-                <div className="p-8 text-center text-muted-foreground text-sm">
-                  {lang==="ru"?"Транзакций пока нет":"No transactions yet"}
+              <div className="bg-amber-500/8 border border-amber-500/20 rounded-2xl p-4 flex items-start gap-3">
+                <span className="text-xl shrink-0">🎁</span>
+                <div>
+                  <p className="text-sm font-semibold mb-0.5">{lang==="ru"?"Что такое Звёзды?":"What are Stars?"}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {lang==="ru"
+                      ? "Звёзды — внутренняя валюта Pulse для отправки анимированных подарков другим пользователям. Функция подарков и звёзд находится в разработке."
+                      : "Stars are Pulse's in-app currency for sending animated gifts to other users. Gifts and Stars features are currently in development."}
+                  </p>
                 </div>
-              </Section>
-              <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
-                <p className="text-sm font-semibold">{lang==="ru"?"Как получить звёзды?":"How to earn Stars?"}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{lang==="ru"?"Звёзды можно получить через Pulse Prime или как подарок от других пользователей. Используйте их для отправки гифтов.":"Stars can be earned through Pulse Prime or as gifts from others. Use them to send gifts and unlock content."}</p>
               </div>
             </div>
           )}
