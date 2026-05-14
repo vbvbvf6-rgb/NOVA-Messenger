@@ -262,6 +262,27 @@ function PollDisplay({ pollData, messageId, chatId, currentUserId, isMine }: {
   );
 }
 
+const GIFT_ORB_STYLES: Record<string, { sphere: string; glow: string; cardBg: string }> = {
+  common:    { sphere: "radial-gradient(circle at 35% 28%, #a78bfa, #6d28d9 55%, #2e1065)", glow: "rgba(139,92,246,0.55)", cardBg: "linear-gradient(145deg, #3b1d8a 0%, #4c1d95 40%, #1e1b4b 100%)" },
+  rare:      { sphere: "radial-gradient(circle at 35% 28%, #67e8f9, #0284c7 55%, #0c4a6e)", glow: "rgba(56,189,248,0.55)", cardBg: "linear-gradient(145deg, #164e63 0%, #0e7490 40%, #0c4a6e 100%)" },
+  epic:      { sphere: "radial-gradient(circle at 35% 28%, #f0abfc, #9333ea 55%, #3b0764)", glow: "rgba(217,70,239,0.6)",  cardBg: "linear-gradient(145deg, #581c87 0%, #7e22ce 40%, #3b0764 100%)" },
+  legendary: { sphere: "radial-gradient(circle at 35% 28%, #fde68a, #f59e0b 55%, #78350f)", glow: "rgba(251,191,36,0.65)", cardBg: "linear-gradient(145deg, #78350f 0%, #b45309 40%, #92400e 100%)" },
+  cosmic:    { sphere: "radial-gradient(circle at 35% 28%, #fda4af, #9333ea 55%, #1e1b4b)", glow: "rgba(244,63,94,0.55)",  cardBg: "linear-gradient(145deg, #4c0519 0%, #7e22ce 50%, #1e1b4b 100%)" },
+};
+
+function GiftOrbMini({ emoji, rarity = "common", size = 90 }: { emoji: string; rarity?: string; size?: number }) {
+  const s = GIFT_ORB_STYLES[rarity] || GIFT_ORB_STYLES.common;
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <div style={{ position: "absolute", inset: -size * 0.12, borderRadius: "50%", background: s.glow, filter: `blur(${size * 0.18}px)`, opacity: 0.8 }} />
+      <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: s.sphere, boxShadow: `inset -${size*0.07}px -${size*0.07}px ${size*0.18}px rgba(0,0,0,0.35), inset ${size*0.05}px ${size*0.05}px ${size*0.1}px rgba(255,255,255,0.18)` }}>
+        <div style={{ position: "absolute", top: "11%", left: "16%", width: "32%", height: "22%", borderRadius: "50%", background: "rgba(255,255,255,0.38)", filter: "blur(3px)" }} />
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.44, lineHeight: 1 }}>{emoji}</div>
+      </div>
+    </div>
+  );
+}
+
 export interface MessageBubbleProps {
   message: Message;
   onReply?: (msg: Message) => void;
@@ -481,83 +502,158 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
   const pollData = (message as any).pollData;
 
   if (message.type === "gift") {
-    const emoji = (message as any).giftData?.giftItem?.emoji || "🎁";
-    const giftName = (message as any).giftData?.giftItem?.name || "Подарок";
-    const rarity = (message as any).giftData?.giftItem?.rarity;
-    const description = (message as any).giftData?.giftItem?.description;
+    const giftItem = (message as any).giftData?.giftItem;
+    const emoji = giftItem?.emoji || "🎁";
+    const giftName = giftItem?.name || "Подарок";
+    const rarity = (giftItem?.rarity as string) || "common";
+    const description = giftItem?.description as string | undefined;
+    const exchangeVal = giftItem?.stars || giftItem?.price || 10;
+    const senderName = message.sender?.displayName ?? "Кто-то";
+    const orbStyle = GIFT_ORB_STYLES[rarity] || GIFT_ORB_STYLES.common;
+    const RARITY_LABEL: Record<string, string> = { common: "Обычный", rare: "Редкий", epic: "Эпический", legendary: "Легендарный", cosmic: "Космический" };
+    const RARITY_BADGE: Record<string, string> = { common: "bg-slate-500 text-white", rare: "bg-blue-500 text-white", epic: "bg-purple-500 text-white", legendary: "bg-yellow-500 text-yellow-950", cosmic: "bg-rose-500 text-white" };
+
+    // Subtle sparkle positions for card bg decoration
+    const sparkles = [
+      { top: "8%",  left: "10%", size: 5, op: 0.35 },
+      { top: "14%", left: "82%", size: 4, op: 0.28 },
+      { top: "62%", left: "88%", size: 6, op: 0.22 },
+      { top: "72%", left: "6%",  size: 4, op: 0.28 },
+      { top: "40%", left: "92%", size: 3, op: 0.2  },
+      { top: "30%", left: "4%",  size: 3, op: 0.2  },
+    ];
+
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+        initial={{ opacity: 0, scale: 0.88, y: 14 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className="flex justify-center w-full my-6"
+        transition={{ type: "spring", stiffness: 360, damping: 26 }}
+        className="flex justify-center w-full my-4"
       >
-        <div className="flex flex-col items-center gap-3 relative">
+        <div className="flex flex-col items-center gap-1.5 relative">
+
+          {/* ── Telegram-style gift card ── */}
           <div
             onClick={() => setShowGiftInfo(true)}
-            className="bg-card border border-border/80 rounded-[32px] px-8 py-6 flex flex-col items-center gap-3 shadow-xl cursor-pointer hover:border-primary/50 hover:shadow-primary/10 transition-all hover:-translate-y-1"
+            className="relative w-[220px] rounded-[28px] overflow-hidden cursor-pointer select-none"
+            style={{ background: orbStyle.cardBg, boxShadow: "0 12px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)" }}
           >
-            <motion.div
-              animate={{ scale: [1, 1.1, 1], rotate: [0, -5, 5, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="text-[64px] leading-none drop-shadow-2xl"
-            >
-              {emoji}
-            </motion.div>
-            <div className="text-center mt-2">
-              <p className="text-[15px] font-black text-foreground">
-                {isMine ? "Вы отправили" : `${message.sender?.displayName ?? "Кто-то"} отправил(а)`}
-              </p>
-              <p className="text-sm font-bold text-primary">{giftName}</p>
-            </div>
-            {message.text && (
-              <p className="text-[13px] font-medium text-muted-foreground italic text-center max-w-[200px] bg-secondary/50 px-3 py-2 rounded-xl mt-1">«{message.text}»</p>
-            )}
-          </div>
-          <span className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">{formatTime(message.createdAt)}</span>
+            {/* Decorative sparkle dots */}
+            {sparkles.map((sp, i) => (
+              <div key={i} style={{ position: "absolute", top: sp.top, left: sp.left, width: sp.size, height: sp.size, borderRadius: "50%", background: "white", opacity: sp.op, pointerEvents: "none" }} />
+            ))}
+            {/* Decorative ring */}
+            <div style={{ position: "absolute", top: "-30%", right: "-25%", width: "160px", height: "160px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: "-15%", right: "-10%", width: "100px", height: "100px", borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.06)", pointerEvents: "none" }} />
 
+            {/* Gift orb */}
+            <div className="flex justify-center pt-8 pb-3 relative z-10">
+              <motion.div
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <GiftOrbMini emoji={emoji} rarity={rarity} size={96} />
+              </motion.div>
+            </div>
+
+            {/* Sender label */}
+            <div className="text-center px-4 pb-3 relative z-10">
+              <p className="text-white/90 text-[14px] font-semibold leading-tight">
+                {isMine ? "Вы отправили подарок" : `Подарок от ${senderName}`}
+              </p>
+              {message.text && (
+                <p className="text-white/55 text-[12px] mt-1 leading-snug italic">«{message.text}»</p>
+              )}
+            </div>
+
+            {/* Action button bar */}
+            <div
+              className="mx-3 mb-3 relative z-10 rounded-2xl px-3 py-2.5 text-center"
+              style={{ background: "rgba(255,255,255,0.16)", backdropFilter: "blur(8px)" }}
+            >
+              <p className="text-white text-[12.5px] font-semibold leading-snug">
+                посмотреть или обменять на {exchangeVal} ⚡
+              </p>
+            </div>
+          </div>
+
+          <span className="text-[11px] text-muted-foreground font-medium">{formatTime(message.createdAt)}</span>
+
+          {/* ── Detail modal ── */}
           <AnimatePresence>
             {showGiftInfo && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/70 backdrop-blur-md"
                 onClick={() => setShowGiftInfo(false)}
               >
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 40, scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 380, damping: 28 }}
                   onClick={e => e.stopPropagation()}
-                  className="relative z-10 bg-card border border-border rounded-[40px] p-8 w-full max-w-sm shadow-2xl text-center"
+                  className="relative z-10 w-full max-w-sm shadow-2xl overflow-hidden rounded-[36px]"
                 >
-                  <button onClick={() => setShowGiftInfo(false)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors">
-                    <X size={18} />
-                  </button>
-                  <div className="text-[100px] mb-6 drop-shadow-2xl leading-none">{emoji}</div>
-                  <h3 className="text-2xl font-black mb-2">{giftName}</h3>
-                  {rarity && (
-                    <span className={cn(
-                      "text-xs font-black uppercase tracking-widest px-3 py-1 rounded-lg mb-4 inline-block shadow-sm",
-                      rarity === "legendary" ? "bg-yellow-500 text-yellow-950" :
-                      rarity === "epic" ? "bg-purple-500 text-white" :
-                      rarity === "rare" ? "bg-blue-500 text-white" :
-                      "bg-secondary text-foreground"
-                    )}>
-                      {rarity === "legendary" ? "Легендарный" : rarity === "epic" ? "Эпический" : rarity === "rare" ? "Редкий" : "Обычный"}
+                  {/* Modal gradient header */}
+                  <div className="relative flex flex-col items-center pt-10 pb-6 px-6" style={{ background: orbStyle.cardBg }}>
+                    {sparkles.slice(0, 4).map((sp, i) => (
+                      <div key={i} style={{ position: "absolute", top: sp.top, left: sp.left, width: sp.size + 1, height: sp.size + 1, borderRadius: "50%", background: "white", opacity: sp.op * 0.8, pointerEvents: "none" }} />
+                    ))}
+                    <button
+                      onClick={() => setShowGiftInfo(false)}
+                      className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full"
+                      style={{ background: "rgba(255,255,255,0.18)" }}
+                    >
+                      <X size={16} className="text-white" />
+                    </button>
+                    <motion.div
+                      animate={{ y: [0, -6, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <GiftOrbMini emoji={emoji} rarity={rarity} size={110} />
+                    </motion.div>
+                    <h3 className="text-white text-xl font-black mt-5">{giftName}</h3>
+                    <span className={cn("text-xs font-black uppercase tracking-widest px-3 py-1 rounded-xl mt-2 inline-block", RARITY_BADGE[rarity] || RARITY_BADGE.common)}>
+                      {RARITY_LABEL[rarity] || rarity}
                     </span>
-                  )}
-                  {description && <p className="text-[15px] font-medium text-muted-foreground mt-2 mb-6">{description}</p>}
-                  <div className="space-y-2 text-[15px] mt-4 bg-secondary rounded-[24px] p-5 text-left">
-                    <div className="flex justify-between items-center"><span className="text-muted-foreground font-medium">Отправитель:</span><span className="font-bold">{message.sender?.displayName ?? "Неизвестно"}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-muted-foreground font-medium">Время:</span><span className="font-bold">{formatTime(message.createdAt)}</span></div>
-                    {message.text && (
-                      <div className="pt-3 mt-3 border-t border-border">
-                        <span className="text-muted-foreground text-xs font-bold uppercase tracking-wider">Прикрепленное сообщение:</span>
-                        <p className="font-bold mt-1 text-[15px]">«{message.text}»</p>
-                      </div>
+                  </div>
+
+                  {/* Modal body */}
+                  <div className="bg-card px-6 pt-5 pb-6">
+                    {description && (
+                      <p className="text-[14px] text-muted-foreground text-center mb-5 leading-relaxed">{description}</p>
                     )}
+                    <div className="bg-secondary rounded-[20px] p-4 space-y-3 text-[14px]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground font-medium">Отправитель</span>
+                        <span className="font-bold">{isMine ? "Вы" : senderName}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground font-medium">Время</span>
+                        <span className="font-bold">{formatTime(message.createdAt)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground font-medium">Стоимость обмена</span>
+                        <span className="font-bold text-primary">{exchangeVal} ⚡</span>
+                      </div>
+                      {message.text && (
+                        <div className="pt-3 mt-1 border-t border-border">
+                          <span className="text-muted-foreground text-xs font-bold uppercase tracking-wider">Сообщение</span>
+                          <p className="font-semibold mt-1 italic text-foreground">«{message.text}»</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => setShowGiftInfo(false)}
+                      className="w-full mt-4 py-3.5 rounded-2xl text-[15px] font-bold text-white transition-all active:scale-95"
+                      style={{ background: orbStyle.cardBg }}
+                    >
+                      Закрыть
+                    </button>
                   </div>
                 </motion.div>
               </motion.div>
