@@ -168,8 +168,8 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
       setText(editMessage.text || "");
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.style.height = "52px";
-          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 128) + "px";
+          textareaRef.current.style.height = "64px";
+          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 160) + "px";
           textareaRef.current.focus();
         }
       }, 50);
@@ -335,7 +335,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
           await sendMessage.mutateAsync({ data: { chatId, text, type: "text", replyToId: replyTo?.id } });
         }
         setText("");
-        if (textareaRef.current) textareaRef.current.style.height = "52px";
+        if (textareaRef.current) textareaRef.current.style.height = "64px";
       }
       localStorage.removeItem(draftKey);
       setShowEmoji(false);
@@ -413,8 +413,8 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
-    e.target.style.height = "52px";
-    e.target.style.height = Math.min(e.target.scrollHeight, 128) + "px";
+    e.target.style.height = "64px";
+    e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
     if (e.target.value.trim()) sendTypingEvent();
     if (!editMessage) localStorage.setItem(draftKey, e.target.value);
   };
@@ -432,7 +432,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
       setText("");
       setScheduledAt("");
       setShowScheduler(false);
-      if (textareaRef.current) textareaRef.current.style.height = "52px";
+      if (textareaRef.current) textareaRef.current.style.height = "64px";
       localStorage.removeItem(draftKey);
     } catch {
       alert("Ошибка соединения");
@@ -447,7 +447,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
 
   return (
     <div className="relative px-4 pb-4 md:px-6 md:pb-6 z-30">
-      <div className="max-w-3xl mx-auto w-full relative">
+      <div className="max-w-xl mx-auto w-full relative">
         <AnimatePresence>
           {showScheduler && (
             <motion.div
@@ -871,9 +871,9 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                     if (e.key === "Escape") { onCancelReply?.(); onCancelEdit?.(); setShowEmoji(false); }
                   }}
                   placeholder={editMessage ? "Редактировать..." : imagePreviews.length > 0 ? "Подпись..." : "Написать сообщение..."}
-                  className="flex-1 bg-transparent border-none resize-none max-h-32 min-h-[52px] py-4 px-2 focus:outline-none text-[15px] font-medium placeholder:text-muted-foreground/60 leading-normal scrollbar-none"
+                  className="flex-1 bg-transparent border-none resize-none max-h-40 min-h-[64px] py-5 px-2 focus:outline-none text-[15px] font-medium placeholder:text-muted-foreground/60 leading-normal scrollbar-none"
                   rows={1}
-                  style={{ height: "52px" }}
+                  style={{ height: "64px" }}
                   onFocus={() => { setShowEmoji(false); setShowStickerPanel(false); }}
                 />
 

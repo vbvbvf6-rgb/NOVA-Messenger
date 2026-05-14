@@ -474,7 +474,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     pollRef.current = setInterval(async () => {
       attempts++;
       await queryClient.refetchQueries({ queryKey: getGetMessagesQueryKey({ chatId }) });
-      if (attempts >= 30) {
+      if (attempts >= 50) {
         setBotTyping(false);
         setTypingForChat(chatId, []);
         if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }

@@ -429,9 +429,7 @@ ${inline_code}
             { role: "user", content: userContent },
           ];
 
-          const aiModel = isImageMessage
-            ? "google/gemini-flash-1.5"
-            : "deepseek/deepseek-chat-v3-0324:free";
+          const aiModel = "google/gemini-flash-1.5";
 
           let reply: string | undefined;
 
@@ -459,7 +457,7 @@ ${inline_code}
                   "HTTP-Referer": "https://pulse-messenger.replit.app",
                   "X-Title": "Pulse Messenger",
                 },
-                body: JSON.stringify({ model: aiModel, messages: chatPayload, max_tokens: 500 }),
+                body: JSON.stringify({ model: aiModel, messages: chatPayload, max_tokens: 1200 }),
                 signal: AbortSignal.timeout(60000),
               });
               const data = await r.json() as any;
