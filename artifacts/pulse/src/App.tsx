@@ -12,6 +12,7 @@ import { ScreenLock } from "@/components/ScreenLock";
 import { motion } from "framer-motion";
 import { Clock, LogOut, ShieldCheck } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
+import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 
 import Home from "@/pages/Home";
 import Calls from "@/pages/Calls";
@@ -391,6 +392,7 @@ function App() {
           ) : (
             <AuthPages onLogin={handleLogin} />
           )}
+          <PwaInstallPrompt />
         </WouterRouter>
       </QueryClientProvider>
     </LanguageProvider>
