@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useGetChatById, useGetMessages, getGetMessagesQueryKey, useInitiateCall, useMarkChatAsRead, useUpdateChat, getGetChatsQueryKey, Message, useGetMe } from "@workspace/api-client-react";
 import { useNotifications } from "@/hooks/useNotifications";
-import { Phone, Video, MoreVertical, ArrowLeft, Search, BellOff, Bell, Pin, PinOff, User, Trash2, X, Timer, Flame, ChevronRight, ChevronDown, Settings, Crown, Palette, Check, Sparkles, Lock, MessageSquare } from "lucide-react";
+import { Phone, Video, MoreVertical, ArrowLeft, Search, BellOff, Bell, Pin, PinOff, User, Trash2, X, Timer, Flame, ChevronRight, ChevronDown, Settings, Crown, Palette, Check, Sparkles, Lock, MessageSquare, Users } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChatInfoPanel } from "./ChatInfoPanel";
 import { useAppContext } from "@/contexts/AppContext";
@@ -314,6 +314,9 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const [pinnedMsgIndex, setPinnedMsgIndex] = useState<number>(0);
   const [replyChipText, setReplyChipText] = useState<string | null>(null);
   const [typingOutMsgId, setTypingOutMsgId] = useState<number | null>(null);
+  const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false);
+  const [createGroupName, setCreateGroupName] = useState("");
+  const [creatingGroup, setCreatingGroup] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastMessageCountRef = useRef<number>(0);
   const sseRef = useRef<EventSource | null>(null);
@@ -720,10 +723,22 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60 rounded-2xl p-2 border-border shadow-2xl">
               {chat.type === "direct" && chat.otherUser?.id && (
-                <DropdownMenuItem onClick={openProfile} className="rounded-xl cursor-pointer py-2.5">
-                  <User size={18} className="mr-3 text-primary" />
-                  <span className="font-semibold">{t("chat.openProfile")}</span>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={openProfile} className="rounded-xl cursor-pointer py-2.5">
+                    <User size={18} className="mr-3 text-primary" />
+                    <span className="font-semibold">{t("chat.openProfile")}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setCreateGroupName("");
+                      setShowCreateGroupDialog(true);
+                    }}
+                    className="rounded-xl cursor-pointer py-2.5"
+                  >
+                    <Users size={18} className="mr-3 text-green-500" />
+                    <span className="font-semibold">Создать группу</span>
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuItem onClick={() => { setShowSearch(v => !v); }} className="rounded-xl cursor-pointer py-2.5">
                 <Search size={18} className="mr-3 text-muted-foreground" />
@@ -1085,6 +1100,89 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             onToggleMute={handleToggleMute}
             isMuted={chat.isMuted}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Create Group Dialog */}
+      <AnimatePresence>
+        {showCreateGroupDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowCreateGroupDialog(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 16 }}
+              transition={{ type: "spring", damping: 22, stiffness: 320 }}
+              className="w-full max-w-sm bg-card border border-border rounded-[24px] shadow-2xl overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="w-14 h-14 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-4">
+                  <Users size={28} className="text-green-500" />
+                </div>
+                <h2 className="text-center font-black text-xl mb-1">Создать группу</h2>
+                <p className="text-center text-sm text-muted-foreground mb-5">
+                  <span className="font-semibold text-foreground">{(chat as any).otherUser?.displayName}</span> будет добавлен автоматически
+                </p>
+                <input
+                  autoFocus
+                  type="text"
+                  value={createGroupName}
+                  onChange={(e) => setCreateGroupName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (createGroupName.trim() && !creatingGroup) { /* submit */ (async () => { setCreatingGroup(true); try { const res = await fetch("/api/chats", { method: "POST", headers: { "Content-Type": "application/json", ...getCWAuthHeaders() }, body: JSON.stringify({ type: "group", name: createGroupName.trim(), memberIds: [(chat as any).otherUser?.id] }) }); if (res.ok) { const newChat = await res.json(); queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() }); setSelectedChatId(newChat.id); setShowCreateGroupDialog(false); toast({ title: "Группа создана", description: createGroupName.trim() }); } else { const d = await res.json(); toast({ title: "Ошибка", description: d.error || "Не удалось создать группу", variant: "destructive" }); } } catch { toast({ title: "Ошибка сети", variant: "destructive" }); } setCreatingGroup(false); })(); } } }}
+                  placeholder="Название группы..."
+                  className="w-full bg-secondary border border-border rounded-[16px] px-4 py-3.5 text-[15px] font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:bg-background transition-all mb-4 placeholder:text-muted-foreground/60"
+                  maxLength={64}
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowCreateGroupDialog(false)}
+                    className="flex-1 py-3.5 rounded-[16px] bg-secondary text-foreground font-semibold text-[15px] hover:bg-secondary/80 transition-colors"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    disabled={!createGroupName.trim() || creatingGroup}
+                    onClick={async () => {
+                      if (!createGroupName.trim() || creatingGroup) return;
+                      setCreatingGroup(true);
+                      try {
+                        const res = await fetch("/api/chats", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", ...getCWAuthHeaders() },
+                          body: JSON.stringify({
+                            type: "group",
+                            name: createGroupName.trim(),
+                            memberIds: [(chat as any).otherUser?.id],
+                          }),
+                        });
+                        if (res.ok) {
+                          const newChat = await res.json();
+                          queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
+                          setSelectedChatId(newChat.id);
+                          setShowCreateGroupDialog(false);
+                          toast({ title: "Группа создана", description: createGroupName.trim() });
+                        } else {
+                          const d = await res.json();
+                          toast({ title: "Ошибка", description: d.error || "Не удалось создать группу", variant: "destructive" });
+                        }
+                      } catch {
+                        toast({ title: "Ошибка сети", variant: "destructive" });
+                      }
+                      setCreatingGroup(false);
+                    }}
+                    className="flex-1 py-3.5 rounded-[16px] bg-green-500 text-white font-bold text-[15px] hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[0_4px_14px_rgba(34,197,94,0.3)]"
+                  >
+                    {creatingGroup ? "Создаём..." : "Создать"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
