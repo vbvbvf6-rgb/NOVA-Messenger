@@ -110,7 +110,7 @@ export default function Stories() {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-4xl w-full mx-auto scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 max-w-4xl w-full mx-auto scrollbar-thin">
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (

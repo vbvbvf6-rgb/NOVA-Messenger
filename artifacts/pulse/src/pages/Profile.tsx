@@ -292,7 +292,7 @@ export default function Profile() {
         </Link>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-3xl w-full mx-auto scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 max-w-3xl w-full mx-auto scrollbar-thin">
         {userLoading ? (
           <div className="space-y-8">
             <div className="flex flex-col items-center">

@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from "react";
 import { useGetChats, Chat } from "@workspace/api-client-react";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Search, Pin, VolumeX, Users, Radio, Bot, HeadphonesIcon, Bug, Menu,
+import { Search, Pin, VolumeX, Users, Radio, Bot, HeadphonesIcon, Bug,
   SquarePen, X, ChevronRight, Check, ArrowLeft, Crown, Bookmark } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
@@ -193,7 +193,7 @@ function SavedMessagesEntry({ onOpen }: { onOpen: (id: number) => void }) {
   );
 }
 
-export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
+export function ChatList() {
   const { selectedChatId, setSelectedChatId, typingByChat } = useAppContext();
   const { t, lang } = useLanguage();
   const [, navigate] = useLocation();
@@ -324,14 +324,8 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
           <GlobalSearch onClose={() => setShowGlobalSearch(false)} />
         )}
       </AnimatePresence>
-      <div className="px-5 pt-6 pb-4">
+      <div className="px-5 pb-4" style={{ paddingTop: "max(20px, env(safe-area-inset-top, 20px))" }}>
         <div className="flex items-center gap-3">
-          <button
-            onClick={onMenuClick}
-            className="md:hidden w-11 h-11 rounded-2xl bg-secondary flex items-center justify-center text-foreground hover:bg-secondary/80 transition-colors shrink-0"
-          >
-            <Menu size={22} />
-          </button>
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
             <Input
@@ -383,7 +377,7 @@ export function ChatList({ onMenuClick }: { onMenuClick?: () => void }) {
         <StoriesBar />
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none mt-2 px-2 pb-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none mt-2 px-2 pb-24 md:pb-4">
         {!search && folder === "all" && (
           <div className="space-y-1 mb-2">
             <SavedMessagesEntry onOpen={(id) => setSelectedChatId(id)} />

@@ -91,7 +91,7 @@ export default function Contacts() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 max-w-3xl w-full mx-auto scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 max-w-3xl w-full mx-auto scrollbar-thin">
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3, 4].map((i) => (

@@ -487,16 +487,6 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen }: Side
 
   return (
     <>
-      <button
-        onClick={onMobileOpen}
-        className={cn(
-          "md:hidden fixed top-4 left-4 z-40 w-11 h-11 rounded-2xl bg-card/80 backdrop-blur-md border border-border flex items-center justify-center text-foreground shadow-lg transition-all",
-          mobileSidebarOpen && "opacity-0 pointer-events-none"
-        )}
-      >
-        <Menu size={22} />
-      </button>
-
       {DesktopSidebar}
 
       <div className={cn(

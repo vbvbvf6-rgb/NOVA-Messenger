@@ -765,7 +765,7 @@ export default function Gifts() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 w-full scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 w-full scrollbar-thin">
         <Tabs defaultValue="catalog" className="w-full max-w-5xl mx-auto">
           <div className="flex justify-center mb-5">
             <TabsList className="bg-card border border-border h-11 p-1">

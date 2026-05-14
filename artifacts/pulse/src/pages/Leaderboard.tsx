@@ -245,7 +245,7 @@ export default function Leaderboard() {
         )}
       </header>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+      <div className="flex-1 overflow-y-auto scrollbar-thin pb-24 md:pb-0">
         {loading ? (
           <div>
             <SkeletonPodium />

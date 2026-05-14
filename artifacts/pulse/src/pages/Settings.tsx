@@ -1129,7 +1129,7 @@ export default function Settings() {
         </button>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto scrollbar-none py-2">
+        <div className="flex-1 overflow-y-auto scrollbar-none py-2 pb-24 md:pb-2">
 
           {/* Group 1: Main settings */}
           <NavGroup>
