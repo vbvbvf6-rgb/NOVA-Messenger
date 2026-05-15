@@ -75,7 +75,7 @@ export default function Contacts() {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden relative">
-      <header className="h-16 border-b border-border flex items-center px-6 justify-between bg-card/80 backdrop-blur-md z-10 shrink-0">
+      <header className="border-b border-border flex items-center px-6 justify-between bg-card/80 backdrop-blur-md z-10 shrink-0" style={{ minHeight: "calc(4rem + env(safe-area-inset-top, 0px))", paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <h1 className="text-xl font-bold">Контакты</h1>
       </header>
 

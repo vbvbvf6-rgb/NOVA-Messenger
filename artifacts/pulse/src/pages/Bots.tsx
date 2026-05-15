@@ -874,7 +874,7 @@ export default function Bots() {
           <div className="absolute top-0 left-1/4 w-72 h-72 bg-violet-500/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
         </div>
-        <div className="relative px-6 pt-8 pb-6">
+        <div className="relative px-6 pb-6" style={{ paddingTop: "max(2rem, calc(1.5rem + env(safe-area-inset-top, 0px)))" }}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)]">

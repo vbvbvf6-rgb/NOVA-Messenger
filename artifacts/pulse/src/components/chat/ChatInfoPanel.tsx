@@ -171,7 +171,7 @@ export function ChatInfoPanel({ chatId, chatType, displayName, avatarUrl, avatar
       animate={{ x: 0 }}
       exit={{ x: "100%" }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="absolute top-0 right-0 h-full w-80 bg-card border-l border-border flex flex-col z-20 shadow-xl"
+      className="absolute top-0 right-0 h-full w-full sm:w-80 bg-card border-l border-border flex flex-col z-20 shadow-xl"
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
         <div className="flex items-center gap-2">

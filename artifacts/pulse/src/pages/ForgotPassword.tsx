@@ -85,7 +85,7 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-y-auto">
       <div
         className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] rounded-full blur-[120px] opacity-40 pointer-events-none"
         style={{ background: "radial-gradient(circle, hsl(16 100% 50% / 0.18), transparent 70%)" }}
@@ -106,7 +106,7 @@ export default function ForgotPassword() {
             initial={{ scale: 0.7, opacity: 0, rotate: -10 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.15 }}
-            className="w-24 h-24 rounded-[28px] flex items-center justify-center mb-6 relative"
+            className="w-16 h-16 sm:w-24 sm:h-24 rounded-[20px] sm:rounded-[28px] flex items-center justify-center mb-4 sm:mb-6 relative"
             style={{
               background: "linear-gradient(135deg, hsl(16 100% 50% / 0.15) 0%, hsl(16 100% 50% / 0.05) 100%)",
               border: "1px solid hsl(16 100% 50% / 0.2)",

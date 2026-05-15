@@ -237,7 +237,7 @@ export default function Register({ onLogin }: RegisterProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-y-auto">
       <div className="absolute inset-0 z-0">
         <div className="absolute top-[10%] right-[10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[10%] left-[10%] w-[40%] h-[40%] bg-orange-600/10 rounded-full blur-[120px]" />
@@ -247,19 +247,19 @@ export default function Register({ onLogin }: RegisterProps) {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-sm relative z-10"
+        className="w-full max-w-sm relative z-10 py-4"
       >
-        <div className="flex flex-col items-center mb-10">
+        <div className="flex flex-col items-center mb-6 sm:mb-10">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
-            className="w-24 h-24 rounded-3xl bg-card border border-border flex items-center justify-center shadow-2xl mb-6 relative"
+            className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl bg-card border border-border flex items-center justify-center shadow-2xl mb-4 sm:mb-6 relative"
           >
-            <div className="absolute inset-0 rounded-3xl bg-primary/5 shadow-[inset_0_0_20px_rgba(255,85,0,0.1)]" />
-            <PulseLogo size={48} />
+            <div className="absolute inset-0 rounded-2xl sm:rounded-3xl bg-primary/5 shadow-[inset_0_0_20px_rgba(255,85,0,0.1)]" />
+            <PulseLogo size={36} />
           </motion.div>
-          <h1 className="text-4xl font-black text-foreground tracking-tight mb-2">Pulse</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight mb-2">Pulse</h1>
           <p className="text-muted-foreground text-sm font-medium">
             {step === "verify-email" ? "Подтверждение email" : "Новый аккаунт"}
           </p>

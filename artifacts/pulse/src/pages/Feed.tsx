@@ -836,7 +836,7 @@ export default function Feed() {
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
       <header className="border-b border-border bg-card/80 backdrop-blur-md z-10 shrink-0">
-        <div className="h-16 flex items-center px-6 justify-between">
+        <div className="flex items-center px-6 justify-between" style={{ minHeight: "calc(4rem + env(safe-area-inset-top, 0px))", paddingTop: "env(safe-area-inset-top, 0px)" }}>
           <h1 className="text-xl font-bold flex items-center gap-2">
             <span className="text-primary">📡</span> Лента
           </h1>

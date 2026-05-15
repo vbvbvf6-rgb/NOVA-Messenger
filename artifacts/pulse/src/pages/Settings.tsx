@@ -1564,7 +1564,7 @@ export default function Settings() {
         activeSection === null ? "flex w-full" : "hidden"
       )}>
         {/* Sidebar header */}
-        <div className="h-16 border-b border-border flex items-center px-6 bg-card/80 backdrop-blur-md shrink-0">
+        <div className="border-b border-border flex items-center px-6 bg-card/80 backdrop-blur-md shrink-0" style={{ minHeight: "calc(4rem + env(safe-area-inset-top, 0px))", paddingTop: "env(safe-area-inset-top, 0px)" }}>
           <h1 className="text-xl font-bold flex items-center gap-2">
             <SettingsIcon size={20} className="text-primary" /> {t("settings.title")}
           </h1>
@@ -1657,7 +1657,7 @@ export default function Settings() {
       )}>
 
         {/* Content header */}
-        <header className="h-16 border-b border-border flex items-center px-6 gap-3 bg-card/80 backdrop-blur-md shrink-0">
+        <header className="border-b border-border flex items-center px-6 gap-3 bg-card/80 backdrop-blur-md shrink-0" style={{ minHeight: "calc(4rem + env(safe-area-inset-top, 0px))", paddingTop: "env(safe-area-inset-top, 0px)" }}>
           <button
             onClick={() => setActiveSection(null)}
             className="md:hidden w-9 h-9 rounded-xl hover:bg-secondary flex items-center justify-center text-muted-foreground transition-colors shrink-0"

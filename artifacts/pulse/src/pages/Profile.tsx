@@ -508,7 +508,7 @@ export default function Profile() {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden relative">
-      <header className="h-16 border-b border-border flex items-center px-6 justify-between bg-card/80 backdrop-blur-md z-10 shrink-0">
+      <header className="border-b border-border flex items-center px-6 justify-between bg-card/80 backdrop-blur-md z-10 shrink-0" style={{ minHeight: "calc(4rem + env(safe-area-inset-top, 0px))", paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <h1 className="text-xl font-bold">Мой профиль</h1>
         <Link href="/settings">
           <button className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-xl text-sm font-medium transition-colors">
