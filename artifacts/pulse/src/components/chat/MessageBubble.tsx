@@ -721,7 +721,7 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
           : (message.text ?? "");
         return (
           <div>
-            <p className="text-[15px] whitespace-pre-wrap break-words leading-snug font-medium">
+            <p className="text-[15px] whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-snug font-medium">
               {visibleText}
               {isAnimating && (
                 <span className="inline-block w-[2px] h-[14px] ml-[2px] mb-[-2px] align-middle rounded-sm animate-pulse" style={{ background: isMine ? "rgba(255,255,255,0.7)" : "currentColor", opacity: 0.7 }} />
@@ -852,7 +852,7 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
             </div>
           )}
 
-          <div className="flex flex-col gap-1.5 relative">
+          <div className="flex flex-col gap-1.5 relative min-w-0">
             <div
               ref={bubbleRef}
               onContextMenu={handleContextMenu}
@@ -860,14 +860,14 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
               onTouchEnd={handleTouchEnd}
               onTouchMove={handleTouchMove}
               className={cn(
-                "relative cursor-pointer transition-transform active:scale-[0.98]",
+                "relative cursor-pointer transition-transform active:scale-[0.98] max-w-full overflow-hidden",
                 message.type === "sticker"
                   ? "px-1 py-1 bg-transparent border-none shadow-none"
                   : cn(
                     "px-5 py-3.5 rounded-[24px]",
                     isMine
-                      ? (ownBubbleStyle ? "text-white rounded-br-sm border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.25)]" : "bubble-mine text-primary-foreground rounded-br-sm")
-                      : "bg-card text-foreground rounded-bl-sm border border-border/60 shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+                      ? (ownBubbleStyle ? "text-white rounded-br-sm border border-white/15 shadow-[0_4px_16px_rgba(0,0,0,0.25)]" : "bubble-mine text-primary-foreground rounded-br-sm")
+                      : "bg-secondary text-foreground rounded-bl-sm border border-border shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
                   )
               )}
               style={isMine && ownBubbleStyle && message.type !== "sticker" ? ownBubbleStyle : undefined}
