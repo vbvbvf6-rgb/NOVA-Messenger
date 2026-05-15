@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -25,7 +25,7 @@ export const chatMembersTable = pgTable("chat_members", {
   isMuted: boolean("is_muted").notNull().default(false),
   lastReadAt: timestamp("last_read_at", { withTimezone: true }),
   joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [unique("chat_members_chat_user_unique").on(t.chatId, t.userId)]);
 
 export const insertChatSchema = createInsertSchema(chatsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertChatMemberSchema = createInsertSchema(chatMembersTable).omit({ id: true, joinedAt: true });

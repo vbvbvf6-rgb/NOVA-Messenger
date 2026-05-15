@@ -4,6 +4,7 @@ import { runSeed } from "./seed";
 import { db, messagesTable } from "@workspace/db";
 import { sql, and, eq, lte } from "drizzle-orm";
 import { broadcastToChat } from "./lib/sse";
+import { runWeeklyScan } from "./routes/admin";
 
 const rawPort = process.env["PORT"];
 
@@ -64,3 +65,56 @@ setInterval(async () => {
     logger.warn({ err }, "Auto-delete cleanup error");
   }
 }, 10_000);
+
+// ── Weekly AI moderation scan ─────────────────────────────────────────────────
+// Checks every hour whether 7 days have passed since the last scan.
+// This approach survives server restarts gracefully.
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+async function maybeRunWeeklyScan() {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS moderation_scan_runs (
+        id SERIAL PRIMARY KEY,
+        started_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        finished_at TIMESTAMP WITH TIME ZONE,
+        posts_scanned INTEGER NOT NULL DEFAULT 0,
+        posts_flagged INTEGER NOT NULL DEFAULT 0,
+        triggered_by TEXT NOT NULL DEFAULT 'scheduler',
+        status TEXT NOT NULL DEFAULT 'running'
+      )
+    `);
+    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_status TEXT`);
+    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_reason TEXT`);
+    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_confidence INTEGER`);
+    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_categories TEXT`);
+    await db.execute(sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS moderation_scanned_at TIMESTAMP WITH TIME ZONE`);
+
+    const lastRun = await db.execute(sql`
+      SELECT started_at FROM moderation_scan_runs
+      WHERE status = 'completed' AND triggered_by = 'scheduler'
+      ORDER BY started_at DESC LIMIT 1
+    `);
+
+    const lastRunAt = (lastRun.rows[0] as any)?.started_at;
+    const now = Date.now();
+    const shouldRun = !lastRunAt || (now - new Date(lastRunAt).getTime()) >= WEEK_MS;
+
+    if (!shouldRun) return;
+
+    const [runResult] = (await db.execute(sql`
+      INSERT INTO moderation_scan_runs (triggered_by, status)
+      VALUES ('scheduler', 'running')
+      RETURNING id
+    `)).rows as any[];
+
+    logger.info({ runId: runResult.id }, "Weekly AI moderation scan starting");
+    setImmediate(() => runWeeklyScan(runResult.id, "scheduler"));
+  } catch (err) {
+    logger.warn({ err }, "Weekly moderation scheduler error");
+  }
+}
+
+// Run once shortly after startup, then every hour thereafter
+setTimeout(() => maybeRunWeeklyScan(), 60_000);
+setInterval(() => maybeRunWeeklyScan(), 60 * 60 * 1000);
