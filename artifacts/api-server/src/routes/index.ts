@@ -20,6 +20,7 @@ import primeRouter from "./prime";
 import pushRouter from "./push";
 import pollsRouter from "./polls";
 import translateRouter from "./translate";
+import referralRouter from "./referral";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(primeRouter);
 router.use(pushRouter);
 router.use(pollsRouter);
 router.use(translateRouter);
+router.use(referralRouter);
 
 export default router;

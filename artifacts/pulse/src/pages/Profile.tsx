@@ -1,12 +1,121 @@
 import React, { useState } from "react";
 import { useGetMyStats, useGetMe } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { GiftShowcase } from "@/components/GiftShowcase";
 import { GiftLeaderboard } from "@/components/GiftLeaderboard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageSquare, Phone, Gift, Users, Clock, CalendarDays, Settings, BadgeCheck, Crown, Zap, QrCode, Sparkles, Activity, TrendingUp, Star, Share2 } from "lucide-react";
+import { MessageSquare, Phone, Gift, Users, Clock, CalendarDays, Settings, BadgeCheck, Crown, Zap, QrCode, Sparkles, Activity, TrendingUp, Star, Share2, Copy, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+
+const TOKEN_KEY = "pulse-token";
+const getToken = () => sessionStorage.getItem(TOKEN_KEY);
+const apiFetch = (url: string) =>
+  fetch(url, { headers: { Authorization: `Bearer ${getToken()}` } }).then(r => r.json());
+
+function ReferralSection() {
+  const { data: myCode, isLoading } = useQuery({
+    queryKey: ["my-referral-code"],
+    queryFn: () => apiFetch("/api/referral/my-code"),
+  });
+
+  const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopy = () => {
+    if (!myCode?.code) return;
+    navigator.clipboard.writeText(myCode.code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleShare = () => {
+    if (!myCode?.link) return;
+    if (navigator.share) {
+      navigator.share({ title: "Присоединяйся к Pulse!", text: `Используй мой код: ${myCode.code}`, url: myCode.link }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(myCode.link).then(() => {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      });
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-3xl border border-green-500/30 overflow-hidden"
+      style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.07), rgba(6,182,212,0.04))" }}
+    >
+      <div className="p-5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-500/15">
+            <Users size={18} className="text-green-500" />
+          </div>
+          <div>
+            <h3 className="font-black text-base text-foreground">Реферальная программа</h3>
+            <p className="text-xs text-muted-foreground">Приглашайте друзей в Pulse</p>
+          </div>
+          {!isLoading && myCode?.invited > 0 && (
+            <span className="ml-auto text-[11px] font-black px-2.5 py-1 rounded-full bg-green-500/15 text-green-400 border border-green-500/25">
+              {myCode.invited} приглашён{myCode.invited === 1 ? "" : "о"}
+            </span>
+          )}
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-10 rounded-xl" />
+          </div>
+        ) : myCode ? (
+          <>
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className="flex-1 bg-background/50 border border-border rounded-2xl px-5 py-3 font-mono text-xl font-black tracking-[0.3em] text-foreground text-center cursor-pointer select-all"
+                onClick={handleCopy}
+              >
+                {myCode.code}
+              </div>
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-green-500/15 border border-green-500/25 text-green-500 font-bold text-sm hover:bg-green-500/25 transition-all shrink-0"
+              >
+                <Copy size={15} />
+                {copied ? "✓" : "Код"}
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleShare}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-xs font-bold text-primary hover:bg-primary/20 transition-all"
+              >
+                <ExternalLink size={13} />
+                {copiedLink ? "Ссылка скопирована!" : "Поделиться ссылкой"}
+              </button>
+              <Link href="/leaderboard">
+                <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-secondary border border-border text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all">
+                  <TrendingUp size={13} />
+                  Таблица лидеров
+                </button>
+              </Link>
+            </div>
+
+            {myCode.invited === 0 && (
+              <p className="text-[11px] text-muted-foreground/70 text-center mt-3">
+                Поделитесь кодом — и ваши друзья появятся здесь
+              </p>
+            )}
+          </>
+        ) : null}
+      </div>
+    </motion.div>
+  );
+}
 
 const ANIMATED_STATUSES = [
   { id: null, label: "Нет", preview: "" },
@@ -425,6 +534,9 @@ export default function Profile() {
                 <CalendarDays size={14} /> Joined {user?.createdAt ? format(new Date(user.createdAt), "MMMM yyyy") : "Unknown"}
               </div>
             </div>
+
+            {/* Referral Section — available to all */}
+            <ReferralSection />
 
             {/* Prime+ Exclusive: QR Code */}
             {isPrimePlus && user && <QRCodeSection user={user} />}

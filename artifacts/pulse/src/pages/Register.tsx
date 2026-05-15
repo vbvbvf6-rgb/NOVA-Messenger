@@ -1,7 +1,7 @@
-import React, { useState, useRef } from "react";
-import { Link } from "wouter";
+import React, { useState, useRef, useEffect } from "react";
+import { Link, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Calendar, ShieldAlert, ShieldCheck, AlertTriangle, Mail, KeyRound, Eye, EyeOff, Camera } from "lucide-react";
+import { ArrowLeft, Calendar, ShieldAlert, ShieldCheck, AlertTriangle, Mail, KeyRound, Eye, EyeOff, Camera, Gift } from "lucide-react";
 import PulseLogo from "@/components/PulseLogo";
 
 async function compressAvatar(file: File): Promise<string> {
@@ -82,6 +82,18 @@ export default function Register({ onLogin }: RegisterProps) {
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralApplied, setReferralApplied] = useState(false);
+
+  const search = useSearch();
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const ref = params.get("ref");
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+      setReferralApplied(true);
+    }
+  }, [search]);
 
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
@@ -154,6 +166,7 @@ export default function Register({ onLogin }: RegisterProps) {
           email: email.trim() || undefined,
           birthDate: dobYear && dobMonth && dobDay ? `${dobYear}-${String(dobMonth).padStart(2,"0")}-${String(dobDay).padStart(2,"0")}` : undefined,
           avatarUrl: avatarUrl || undefined,
+          referralCode: referralCode.trim().toUpperCase() || undefined,
         }),
       });
       const data = await res.json();
@@ -606,6 +619,35 @@ export default function Register({ onLogin }: RegisterProps) {
                     autoComplete="new-password"
                     className="w-full bg-card/50 border border-border rounded-2xl px-5 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-base font-medium"
                   />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 pl-1">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Реферальный код</label>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-green-500/10 text-green-500 border border-green-500/20">необязательно</span>
+                  </div>
+                  <div className="relative">
+                    <Gift size={18} className={`absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none ${referralApplied ? "text-green-500" : "text-muted-foreground"}`} />
+                    <input
+                      type="text"
+                      value={referralCode}
+                      onChange={(e) => {
+                        const v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+                        setReferralCode(v);
+                        setReferralApplied(false);
+                      }}
+                      placeholder="XXXXXXXX"
+                      className={`w-full bg-card/50 border rounded-2xl pl-11 pr-5 py-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-all text-base font-mono font-bold tracking-widest ${
+                        referralApplied
+                          ? "border-green-500/50 focus:border-green-500 focus:ring-green-500 text-green-500"
+                          : "border-border focus:border-primary focus:ring-primary"
+                      }`}
+                    />
+                    {referralApplied && (
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-black text-green-500 bg-green-500/10 px-2 py-0.5 rounded-lg">✓ Применён</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground/70 pl-1">Введите код друга, который пригласил вас</p>
                 </div>
 
                 {error && (

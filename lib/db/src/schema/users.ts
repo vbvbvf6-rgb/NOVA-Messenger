@@ -38,6 +38,8 @@ export const usersTable = pgTable("users", {
   emailVerificationExpiresAt: timestamp("email_verification_expires_at", { withTimezone: true }),
   showOnlineStatus: boolean("show_online_status").notNull().default(true),
   readReceiptsEnabled: boolean("read_receipts_enabled").notNull().default(true),
+  referralCode: text("referral_code").unique(),
+  referredBy: text("referred_by"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

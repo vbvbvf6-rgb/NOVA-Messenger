@@ -499,15 +499,6 @@ export default function Admin() {
     setTicketReplying(false);
   };
 
-  const fetchAppeals = async () => {
-    setAppealsLoading(true);
-    try {
-      const res = await fetch("/api/admin/moderation/appeals", { headers: getHeader() });
-      if (res.ok) setAppeals(await res.json());
-    } catch {}
-    setAppealsLoading(false);
-  };
-
   const handleAppealApprove = async (appealId: number) => {
     setAppealActionLoading(appealId);
     try {

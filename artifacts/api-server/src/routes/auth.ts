@@ -9,6 +9,13 @@ import { generateTotpSecret, verifyTotp, buildTotpUri } from "../lib/totp";
 
 const router = Router();
 const SALT_ROUNDS = 12;
+
+function generateReferralCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
 const TOKEN_TTL = "30d";
 const PENDING_2FA_TTL = "5m";
 
@@ -281,7 +288,7 @@ router.post("/auth/verify-email", async (req, res) => {
 
 router.post("/auth/register", async (req, res) => {
   try {
-    const { username, displayName, password, ageGroup, birthDate, email, avatarUrl } = req.body;
+    const { username, displayName, password, ageGroup, birthDate, email, avatarUrl, referralCode } = req.body;
     if (!username || !displayName || !password) {
       return res.status(400).json({ error: "Заполните все поля" });
     }
@@ -337,9 +344,21 @@ router.post("/auth/register", async (req, res) => {
 
     const rawAvatarUrl = avatarUrl ? String(avatarUrl) : null;
 
+    const newReferralCode = generateReferralCode();
+
+    let validReferredBy: string | null = null;
+    if (referralCode) {
+      const refRows = await db.execute(
+        sql`SELECT referral_code FROM users WHERE referral_code = ${String(referralCode).trim().toUpperCase()} LIMIT 1`
+      );
+      if ((refRows.rows as any[]).length > 0) {
+        validReferredBy = String(referralCode).trim().toUpperCase();
+      }
+    }
+
     const result = await db.execute(
-      sql`INSERT INTO users (username, display_name, avatar_color, avatar_url, status, password_hash, balance, age_group, birth_date, age_verified, email, email_verified, email_verification_code, email_verification_expires_at)
-          VALUES (${rawUsername}, ${rawDisplay}, ${color}, ${rawAvatarUrl}, 'online', ${passwordHash}, 0, ${ageGroup ? String(ageGroup) : null}, ${rawBirthDate}, true, ${rawEmail}, ${rawEmail ? false : false}, ${verificationCode}, ${verificationExpiry ? verificationExpiry.toISOString() : null})
+      sql`INSERT INTO users (username, display_name, avatar_color, avatar_url, status, password_hash, balance, age_group, birth_date, age_verified, email, email_verified, email_verification_code, email_verification_expires_at, referral_code, referred_by)
+          VALUES (${rawUsername}, ${rawDisplay}, ${color}, ${rawAvatarUrl}, 'online', ${passwordHash}, 0, ${ageGroup ? String(ageGroup) : null}, ${rawBirthDate}, true, ${rawEmail}, ${rawEmail ? false : false}, ${verificationCode}, ${verificationExpiry ? verificationExpiry.toISOString() : null}, ${newReferralCode}, ${validReferredBy})
           RETURNING id, username, display_name, avatar_color, avatar_url, status, created_at, balance`
     );
     const newUser = result.rows[0] as any;
