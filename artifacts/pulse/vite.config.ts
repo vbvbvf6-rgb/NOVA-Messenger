@@ -88,6 +88,14 @@ export default defineConfig({
           proxy.on("error", () => {});
         },
       },
+      "/socket.io": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        ws: true,
+        configure: (proxy) => {
+          proxy.on("error", () => {});
+        },
+      },
     },
   },
   preview: {

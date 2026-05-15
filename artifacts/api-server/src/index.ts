@@ -1,5 +1,7 @@
+import { createServer } from "node:http";
 import app from "./app";
 import { logger } from "./lib/logger";
+import { initSocketIO } from "./lib/socket";
 import { runSeed } from "./seed";
 import { db, messagesTable } from "@workspace/db";
 import { sql, and, eq, lte } from "drizzle-orm";
@@ -20,14 +22,12 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+const httpServer = createServer(app);
+initSocketIO(httpServer);
+
 runSeed().catch((err) => logger.error({ err }, "Seed failed"));
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
-
+httpServer.listen(port, () => {
   logger.info({ port }, "Server listening");
 });
 
@@ -66,9 +66,6 @@ setInterval(async () => {
   }
 }, 10_000);
 
-// ── Weekly AI moderation scan ─────────────────────────────────────────────────
-// Checks every hour whether 7 days have passed since the last scan.
-// This approach survives server restarts gracefully.
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function maybeRunWeeklyScan() {
@@ -115,6 +112,5 @@ async function maybeRunWeeklyScan() {
   }
 }
 
-// Run once shortly after startup, then every hour thereafter
 setTimeout(() => maybeRunWeeklyScan(), 60_000);
 setInterval(() => maybeRunWeeklyScan(), 60 * 60 * 1000);

@@ -1,29 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
+import { io, Socket } from "socket.io-client";
 import { Call } from "@workspace/api-client-react";
 import { getSavedAccounts, SavedAccount, MAX_ACCOUNTS } from "@/lib/accounts";
 
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun.relay.metered.ca:80" },
-  {
-    urls: "turn:global.relay.metered.ca:80",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:global.relay.metered.ca:443",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turns:global.relay.metered.ca:443",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
 ];
 
-// Creates a silent audio stream as a fallback when getUserMedia is unavailable
 function createSilentStream(): MediaStream {
   try {
     const ac = new AudioContext();
@@ -89,10 +73,13 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const activeCallRef = useRef<Call | null>(null);
   activeCallRef.current = activeCall;
-  const pendingSignalsRef = useRef<{ type: string; payload: any }[]>([]);
+  const pendingSignalsRef = useRef<{ type: string; sdp?: string; candidate?: RTCIceCandidateInit }[]>([]);
   const localStreamRef = useRef<MediaStream | null>(null);
   const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
+
+  // Socket.IO — one persistent connection per session
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     if (isDark) {
@@ -113,10 +100,28 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     return { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) };
   }, []);
 
+  const getSocket = useCallback((): Socket => {
+    if (socketRef.current?.connected) return socketRef.current;
+    const token = sessionStorage.getItem("pulse-token");
+    const sock = io("/", {
+      path: "/socket.io",
+      auth: { token },
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionDelay: 1000,
+    });
+    socketRef.current = sock;
+    return sock;
+  }, []);
+
   const cleanupCall = useCallback(() => {
     if (ringTimeoutRef.current) {
       clearTimeout(ringTimeoutRef.current);
       ringTimeoutRef.current = null;
+    }
+    const callId = activeCallRef.current?.id;
+    if (callId && socketRef.current) {
+      socketRef.current.emit("leave-call", { callId });
     }
     if (peerRef.current) {
       peerRef.current.close();
@@ -140,48 +145,49 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     }
   }, []);
 
-  const applySignal = useCallback(async (pc: RTCPeerConnection, signal: { type: string; payload: any }) => {
+  const applySignal = useCallback(async (pc: RTCPeerConnection, signal: { type: string; sdp?: string; candidate?: RTCIceCandidateInit }) => {
     try {
-      const callId = activeCallRef.current?.id;
-      if (!callId) return;
       if (signal.type === "offer") {
         if (pc.signalingState !== "stable") return;
-        await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: signal.sdp }));
         await flushPendingIce(pc);
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
-        await fetch(`/api/calls/${callId}/signal`, {
-          method: "POST",
-          headers: getUserHeaders(),
-          body: JSON.stringify({ type: "answer", payload: answer }),
-        });
+        const callId = activeCallRef.current?.id;
+        if (callId && socketRef.current) {
+          socketRef.current.emit("webrtc-signal", {
+            callId,
+            signal: { type: "answer", sdp: answer.sdp },
+          });
+        }
       } else if (signal.type === "answer") {
         if (pc.signalingState === "have-local-offer") {
-          await pc.setRemoteDescription(new RTCSessionDescription(signal.payload));
+          await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: signal.sdp }));
           await flushPendingIce(pc);
         }
       } else if (signal.type === "ice") {
-        if (pc.remoteDescription) {
-          await pc.addIceCandidate(new RTCIceCandidate(signal.payload));
-        } else {
-          pendingIceCandidatesRef.current.push(signal.payload);
+        if (signal.candidate) {
+          if (pc.remoteDescription) {
+            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+          } else {
+            pendingIceCandidatesRef.current.push(signal.candidate);
+          }
         }
       }
     } catch (err) {
       console.warn("applySignal error:", err);
     }
-  }, [getUserHeaders, flushPendingIce]);
+  }, [flushPendingIce]);
 
   const createPeer = useCallback((callId: number): RTCPeerConnection => {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
     pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        fetch(`/api/calls/${callId}/signal`, {
-          method: "POST",
-          headers: getUserHeaders(),
-          body: JSON.stringify({ type: "ice", payload: e.candidate }),
-        }).catch(() => {});
+      if (e.candidate && socketRef.current) {
+        socketRef.current.emit("webrtc-signal", {
+          callId,
+          signal: { type: "ice", candidate: e.candidate.toJSON() },
+        });
       }
     };
 
@@ -196,7 +202,20 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     };
 
     return pc;
-  }, [getUserHeaders, cleanupCall]);
+  }, [cleanupCall]);
+
+  // Set up the webrtc-signal listener from socket
+  const setupSocketSignaling = useCallback((sock: Socket) => {
+    sock.off("webrtc-signal");
+    sock.on("webrtc-signal", async ({ signal }: { signal: { type: string; sdp?: string; candidate?: RTCIceCandidateInit }; fromUserId: number }) => {
+      if (peerRef.current) {
+        await applySignal(peerRef.current, signal);
+      } else {
+        // Buffer until peer is created (e.g. callee accepting)
+        pendingSignalsRef.current.push(signal);
+      }
+    });
+  }, [applySignal]);
 
   const startCall = useCallback(async (calleeId: number, chatId: number | null, type: "audio" | "video") => {
     try {
@@ -215,7 +234,6 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
             stream = createSilentStream();
           }
         } else {
-          // Permission denied or any other error — proceed with silent stream so UI still works
           stream = createSilentStream();
         }
       }
@@ -233,6 +251,11 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       activeCallRef.current = call;
       setActiveCall(call);
 
+      // Join Socket.IO room for this call
+      const sock = getSocket();
+      setupSocketSignaling(sock);
+      sock.emit("join-call", { callId: call.id });
+
       const pc = createPeer(call.id);
       peerRef.current = pc;
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -240,10 +263,9 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      await fetch(`/api/calls/${call.id}/signal`, {
-        method: "POST",
-        headers: getUserHeaders(),
-        body: JSON.stringify({ type: "offer", payload: offer }),
+      sock.emit("webrtc-signal", {
+        callId: call.id,
+        signal: { type: "offer", sdp: offer.sdp },
       });
 
       ringTimeoutRef.current = setTimeout(async () => {
@@ -263,7 +285,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       cleanupCall();
       throw err;
     }
-  }, [getUserHeaders, createPeer, cleanupCall]);
+  }, [getUserHeaders, createPeer, cleanupCall, getSocket, setupSocketSignaling]);
 
   const acceptCall = useCallback(async () => {
     const call = activeCallRef.current;
@@ -284,10 +306,16 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       localStreamRef.current = stream;
       setLocalStream(stream);
 
+      // Join Socket.IO room — this will flush buffered offer
+      const sock = getSocket();
+      setupSocketSignaling(sock);
+      sock.emit("join-call", { callId: call.id });
+
       const pc = createPeer(call.id);
       peerRef.current = pc;
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
+      // Process any signals already buffered client-side (pre-socket)
       const pending = pendingSignalsRef.current.splice(0);
       for (const signal of pending) {
         await applySignal(pc, signal);
@@ -305,7 +333,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       console.error("acceptCall error:", err);
       cleanupCall();
     }
-  }, [createPeer, applySignal, getUserHeaders, cleanupCall]);
+  }, [createPeer, applySignal, getUserHeaders, cleanupCall, getSocket, setupSocketSignaling]);
 
   const declineCall = useCallback(async () => {
     const call = activeCallRef.current;
@@ -333,6 +361,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     cleanupCall();
   }, [getUserHeaders, cleanupCall]);
 
+  // SSE for non-call real-time events (messages, typing) + call lifecycle events
   useEffect(() => {
     let es: EventSource | null = null;
     let retryTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -377,25 +406,12 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
         try {
           const data = JSON.parse(e.data);
           window.dispatchEvent(new CustomEvent("pulse:new-message", { detail: data }));
-          // Auto-deliver: tell the server the message reached this device
-          // (even if the chat isn't open — upgrades ✓ sent → ✓✓ gray delivered)
           const token = sessionStorage.getItem("pulse-token");
           if (token && data.chatId) {
             fetch(`/api/chats/${data.chatId}/deliver`, {
               method: "POST",
               headers: { Authorization: `Bearer ${token}` },
             }).catch(() => {});
-          }
-        } catch {}
-      });
-
-      es.addEventListener("webrtc-signal", async (e: MessageEvent) => {
-        try {
-          const signal = JSON.parse(e.data);
-          if (peerRef.current) {
-            await applySignal(peerRef.current, signal);
-          } else {
-            pendingSignalsRef.current.push(signal);
           }
         } catch {}
       });
@@ -421,7 +437,15 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       if (retryTimeout) clearTimeout(retryTimeout);
       es?.close();
     };
-  }, [currentUserId, applySignal, cleanupCall]);
+  }, [currentUserId, cleanupCall]);
+
+  // Clean up socket on unmount
+  useEffect(() => {
+    return () => {
+      socketRef.current?.disconnect();
+      socketRef.current = null;
+    };
+  }, []);
 
   const setTypingForChat = useCallback((chatId: number, names: string[], typingType?: string) => {
     setTypingByChat(prev => {
