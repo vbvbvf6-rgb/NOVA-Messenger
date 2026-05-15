@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, chatsTable, chatMembersTable, usersTable, messagesTable, reactionsTable, pinnedMessagesTable } from "@workspace/db";
 import { eq, and, desc, inArray, count, gt, ne, sql } from "drizzle-orm";
 import { CreateChatBody, UpdateChatBody, AddChatMemberBody } from "@workspace/api-zod";
-import { broadcastToChat } from "../lib/sse";
+import { broadcastToChat, setTyping, stopTyping } from "../lib/sse";
 
 const router = Router();
 
@@ -517,10 +517,23 @@ router.put("/chats/:chatId/pin", async (req, res) => {
 
 // Typing routes
 router.post("/chats/:chatId/typing", async (req, res) => {
+  const uid = req.currentUserId;
+  const chatId = Number(req.params.chatId);
+  const typingType = typeof req.body?.typingType === "string" ? req.body.typingType : "text";
+  try {
+    const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+    if (user) setTyping(chatId, uid, user.displayName, typingType);
+  } catch {}
   res.status(204).send();
 });
 
 router.post("/chats/:chatId/typing/stop", async (req, res) => {
+  const uid = req.currentUserId;
+  const chatId = Number(req.params.chatId);
+  try {
+    const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+    if (user) stopTyping(chatId, uid, user.displayName);
+  } catch {}
   res.status(204).send();
 });
 

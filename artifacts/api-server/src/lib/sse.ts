@@ -98,17 +98,17 @@ export function broadcastToUser(userId: number, event: string, data: unknown) {
   }
 }
 
-export function setTyping(chatId: number, userId: number, displayName: string) {
+export function setTyping(chatId: number, userId: number, displayName: string, typingType: string = "text") {
   if (!typingUsers.has(chatId)) typingUsers.set(chatId, new Map());
   const chatTyping = typingUsers.get(chatId)!;
   const existing = chatTyping.get(userId);
   if (existing) clearTimeout(existing);
 
-  broadcastToChat(chatId, "typing", { userId, displayName, typing: true });
+  broadcastToChat(chatId, "typing", { userId, displayName, typing: true, typingType });
 
   const timeout = setTimeout(() => {
     chatTyping.delete(userId);
-    broadcastToChat(chatId, "typing", { userId, displayName, typing: false });
+    broadcastToChat(chatId, "typing", { userId, displayName, typing: false, typingType: "text" });
   }, 4000);
   chatTyping.set(userId, timeout);
 }
@@ -119,5 +119,5 @@ export function stopTyping(chatId: number, userId: number, displayName: string) 
   const existing = chatTyping.get(userId);
   if (existing) clearTimeout(existing);
   chatTyping.delete(userId);
-  broadcastToChat(chatId, "typing", { userId, displayName, typing: false });
+  broadcastToChat(chatId, "typing", { userId, displayName, typing: false, typingType: "text" });
 }

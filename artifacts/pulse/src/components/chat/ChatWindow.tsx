@@ -315,7 +315,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [botTyping, setBotTyping] = useState(false);
-  const [typingUsers, setTypingUsers] = useState<{ userId: number; displayName: string }[]>([]);
+  const [typingUsers, setTypingUsers] = useState<{ userId: number; displayName: string; typingType: string }[]>([]);
   const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
   const [autoDeleteLoading, setAutoDeleteLoading] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -399,17 +399,23 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
     es.addEventListener("typing", (e: MessageEvent) => {
       try {
         const currentUid = Number(sessionStorage.getItem("pulse-user-id") || "1");
-        const data = JSON.parse(e.data) as { userId: number; displayName: string; typing: boolean };
+        const data = JSON.parse(e.data) as { userId: number; displayName: string; typing: boolean; typingType?: string };
         if (data.userId === currentUid) return;
         setTypingUsers(prev => {
-          let next: { userId: number; displayName: string }[];
+          let next: { userId: number; displayName: string; typingType: string }[];
           if (data.typing) {
-            if (prev.some(u => u.userId === data.userId)) next = prev;
-            else next = [...prev, { userId: data.userId, displayName: data.displayName }];
+            const tt = data.typingType || "text";
+            const existing = prev.find(u => u.userId === data.userId);
+            if (existing) {
+              next = prev.map(u => u.userId === data.userId ? { ...u, typingType: tt } : u);
+            } else {
+              next = [...prev, { userId: data.userId, displayName: data.displayName, typingType: tt }];
+            }
           } else {
             next = prev.filter(u => u.userId !== data.userId);
           }
-          setTypingForChat(chatId, next.map(u => u.displayName));
+          const firstType = next[0]?.typingType || "text";
+          setTypingForChat(chatId, next.map(u => u.displayName), firstType);
           return next;
         });
       } catch {}
@@ -763,9 +769,24 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               ) : null}
             </div>
             <p className="text-[13px] text-muted-foreground truncate font-medium mt-0.5">
-              {chat.type === "direct" && chat.otherUser ? (
+              {(botTyping || typingUsers.length > 0) ? (
+                <span className="text-primary font-semibold">
+                  {(() => {
+                    const tt = typingUsers[0]?.typingType || "text";
+                    if (botTyping) return "печатает…";
+                    if (tt === "audio") return "записывает аудио 🎤";
+                    if (tt === "photo") return "отправляет фото 📷";
+                    if (tt === "video") return "отправляет видео 🎬";
+                    return "печатает…";
+                  })()}
+                </span>
+              ) : chat.type === "direct" && chat.otherUser ? (
                 <span className={chat.otherUser.status === "online" ? "text-primary" : ""}>
-                  {chat.otherUser.status === "online" ? t("chat.online") : (chat.otherUser as any).statusText || t("chat.offline")}
+                  {chat.otherUser.status === "online"
+                    ? "в сети"
+                    : (chat.otherUser as any).statusText
+                      ? `был(а) в сети ${(chat.otherUser as any).statusText}`
+                      : "не в сети"}
                 </span>
               ) : isChannel ? (
                 <span className="flex items-center gap-1">
@@ -1244,15 +1265,53 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                 <span className="text-[11px] font-bold text-muted-foreground px-1">
                   {botTyping ? botDisplayName : typingUsers[0].displayName}
                 </span>
-                <div className="flex items-center gap-[5px] px-4 py-3 rounded-[18px] rounded-bl-[4px] bg-secondary border border-border shadow-sm">
-                  {[0, 0.18, 0.36].map((delay, i) => (
-                    <span
-                      key={i}
-                      className="w-2 h-2 rounded-full bg-muted-foreground inline-block"
-                      style={{ animation: `typingBounce 1.2s ease-in-out infinite`, animationDelay: `${delay}s` }}
-                    />
-                  ))}
-                </div>
+                {(() => {
+                  const tt = botTyping ? "text" : (typingUsers[0]?.typingType || "text");
+                  if (tt === "audio") {
+                    return (
+                      <div className="flex items-center gap-[3px] px-4 py-3 rounded-[18px] rounded-bl-[4px] bg-secondary border border-border shadow-sm">
+                        <span className="text-[15px]">🎤</span>
+                        <span className="text-[12px] font-semibold text-muted-foreground ml-1">записывает аудио</span>
+                        {[0,0.1,0.2,0.3,0.4].map((d,i) => (
+                          <span key={i} className="w-[3px] rounded-full bg-primary inline-block mx-[1px]"
+                            style={{ height: `${8 + (i % 3) * 4}px`, animation: `typingBounce 0.8s ease-in-out infinite`, animationDelay: `${d}s` }} />
+                        ))}
+                      </div>
+                    );
+                  }
+                  if (tt === "photo") {
+                    return (
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-[18px] rounded-bl-[4px] bg-secondary border border-border shadow-sm">
+                        <span className="text-[15px]">📷</span>
+                        <span className="text-[12px] font-semibold text-muted-foreground">отправляет фото</span>
+                        {[0,0.18,0.36].map((delay, i) => (
+                          <span key={i} className="w-2 h-2 rounded-full bg-muted-foreground inline-block"
+                            style={{ animation: `typingBounce 1.2s ease-in-out infinite`, animationDelay: `${delay}s` }} />
+                        ))}
+                      </div>
+                    );
+                  }
+                  if (tt === "video") {
+                    return (
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-[18px] rounded-bl-[4px] bg-secondary border border-border shadow-sm">
+                        <span className="text-[15px]">🎬</span>
+                        <span className="text-[12px] font-semibold text-muted-foreground">отправляет видео</span>
+                        {[0,0.18,0.36].map((delay, i) => (
+                          <span key={i} className="w-2 h-2 rounded-full bg-muted-foreground inline-block"
+                            style={{ animation: `typingBounce 1.2s ease-in-out infinite`, animationDelay: `${delay}s` }} />
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="flex items-center gap-[5px] px-4 py-3 rounded-[18px] rounded-bl-[4px] bg-secondary border border-border shadow-sm">
+                      {[0, 0.18, 0.36].map((delay, i) => (
+                        <span key={i} className="w-2 h-2 rounded-full bg-muted-foreground inline-block"
+                          style={{ animation: `typingBounce 1.2s ease-in-out infinite`, animationDelay: `${delay}s` }} />
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </motion.div>
           )}

@@ -210,7 +210,7 @@ function SavedMessagesEntry({ onOpen }: { onOpen: (id: number) => void }) {
 }
 
 export function ChatList() {
-  const { selectedChatId, setSelectedChatId, typingByChat, currentUserId } = useAppContext();
+  const { selectedChatId, setSelectedChatId, typingByChat, typingTypeByChat, currentUserId } = useAppContext();
   const { t, lang } = useLanguage();
   const [, navigate] = useLocation();
   const { data: chats, isLoading } = useGetChats();
@@ -553,20 +553,25 @@ export function ChatList() {
                               transition={{ duration: 0.15 }}
                               className="flex items-center gap-1.5 text-primary font-bold"
                             >
-                              <span className="truncate">
-                                {typingByChat[chat.id].length === 1
-                                  ? `${typingByChat[chat.id][0]} печатает`
-                                  : "печатают"}
-                              </span>
-                              <span className="flex items-center gap-[3px] shrink-0">
-                                {[0, 0.15, 0.3].map((delay, i) => (
-                                  <span
-                                    key={i}
-                                    className="w-1.5 h-1.5 rounded-full bg-primary inline-block"
-                                    style={{ animation: `typingBounce 1s ease-in-out infinite`, animationDelay: `${delay}s` }}
-                                  />
-                                ))}
-                              </span>
+                              {(() => {
+                                const tt = typingTypeByChat[chat.id] || "text";
+                                const name = typingByChat[chat.id][0];
+                                const multi = typingByChat[chat.id].length > 1;
+                                if (tt === "audio") return <span className="truncate">{multi ? "записывают" : `${name} записывает`} 🎤</span>;
+                                if (tt === "photo") return <span className="truncate">{multi ? "отправляют" : `${name} отправляет`} 📷</span>;
+                                if (tt === "video") return <span className="truncate">{multi ? "отправляют" : `${name} отправляет`} 🎬</span>;
+                                return (
+                                  <>
+                                    <span className="truncate">{multi ? "печатают" : `${name} печатает`}</span>
+                                    <span className="flex items-center gap-[3px] shrink-0">
+                                      {[0, 0.15, 0.3].map((delay, i) => (
+                                        <span key={i} className="w-1.5 h-1.5 rounded-full bg-primary inline-block"
+                                          style={{ animation: `typingBounce 1s ease-in-out infinite`, animationDelay: `${delay}s` }} />
+                                      ))}
+                                    </span>
+                                  </>
+                                );
+                              })()}
                             </motion.span>
                           ) : (
                             <motion.span

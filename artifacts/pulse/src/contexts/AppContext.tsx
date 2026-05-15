@@ -44,7 +44,8 @@ interface AppState {
   toggleTheme: () => void;
   logout: () => void;
   typingByChat: Record<number, string[]>;
-  setTypingForChat: (chatId: number, names: string[]) => void;
+  typingTypeByChat: Record<number, string>;
+  setTypingForChat: (chatId: number, names: string[], typingType?: string) => void;
   savedAccounts: SavedAccount[];
   switchAccount: (userId: number) => void;
   removeAccount: (userId: number) => void;
@@ -72,6 +73,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [activeCall, setActiveCall] = useState<Call | null>(null);
   const [typingByChat, setTypingByChat] = useState<Record<number, string[]>>({});
+  const [typingTypeByChat, setTypingTypeByChat] = useState<Record<number, string>>({});
   const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => getSavedAccounts());
   const [isDark, setIsDark] = useState(() => {
     const stored = localStorage.getItem("pulse-theme");
@@ -421,7 +423,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     };
   }, [currentUserId, applySignal, cleanupCall]);
 
-  const setTypingForChat = useCallback((chatId: number, names: string[]) => {
+  const setTypingForChat = useCallback((chatId: number, names: string[], typingType?: string) => {
     setTypingByChat(prev => {
       const current = prev[chatId] || [];
       if (JSON.stringify(current) === JSON.stringify(names)) return prev;
@@ -431,6 +433,14 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
         return next;
       }
       return { ...prev, [chatId]: names };
+    });
+    setTypingTypeByChat(prev => {
+      if (!typingType || names.length === 0) {
+        const next = { ...prev };
+        delete next[chatId];
+        return next;
+      }
+      return { ...prev, [chatId]: typingType };
     });
   }, []);
 
@@ -460,6 +470,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     toggleTheme,
     logout,
     typingByChat,
+    typingTypeByChat,
     setTypingForChat,
     savedAccounts,
     switchAccount,

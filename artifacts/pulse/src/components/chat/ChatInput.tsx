@@ -251,9 +251,13 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
     return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) + ` в ${timeStr}`;
   };
 
-  const sendTypingEvent = () => {
+  const sendTypingEvent = (typingType: string = "text") => {
     if (!typingTimeoutRef.current) {
-      fetch(`/api/chats/${chatId}/typing`, { method: "POST", headers: getAuthHeaders() }).catch(() => {});
+      fetch(`/api/chats/${chatId}/typing`, {
+        method: "POST",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ typingType }),
+      }).catch(() => {});
       typingTimeoutRef.current = setTimeout(() => { typingTimeoutRef.current = null; }, 2500);
     }
     if (stopTypingTimeoutRef.current) clearTimeout(stopTypingTimeoutRef.current);
@@ -305,6 +309,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
     const results = await Promise.all(files.map(f => compressImage(f)));
     setImagePreviews(prev => [...prev, ...results]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    sendTypingEvent("photo");
   };
 
   const removeImage = (idx: number) => setImagePreviews(prev => prev.filter((_, i) => i !== idx));
@@ -467,6 +472,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
       recorder.start(100);
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
+      sendTypingEvent("audio");
       setRecordSeconds(0);
       timerRef.current = setInterval(() => {
         setRecordSeconds(s => {
@@ -529,7 +535,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
     setText(e.target.value);
     e.target.style.height = "44px";
     e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
-    if (e.target.value.trim()) sendTypingEvent();
+    if (e.target.value.trim()) sendTypingEvent("text");
     if (!editMessage) localStorage.setItem(draftKey, e.target.value);
   };
 
