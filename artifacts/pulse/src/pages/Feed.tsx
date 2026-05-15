@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useGetPosts, useGetMe, useCreatePost, useLikePost, useCreatePostComment, useGetPostComments, Post } from "@workspace/api-client-react";
+import { useGetPosts, useGetMe, useLikePost, useCreatePostComment, useGetPostComments, Post } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Heart, MessageCircle, Send, Image, X, Plus, Trash2, MoreVertical, ZoomIn, ShieldAlert, AlertCircle, CheckCircle2, Clock, ChevronDown, ChevronUp, Flame, TrendingUp, Star, Camera } from "lucide-react";
+import { Heart, MessageCircle, Send, Image, X, Plus, Trash2, MoreVertical, ZoomIn, ShieldAlert, AlertCircle, CheckCircle2, Clock, ChevronDown, ChevronUp, Flame, TrendingUp, Star, Camera, Hash } from "lucide-react";
 import { formatDistanceToNow as fDTN } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -413,7 +413,7 @@ function CommentThread({ post, onCountChange }: { post: any; onCountChange: (n: 
   );
 }
 
-function PostCard({ post, onAppealSubmitted }: { post: Post & { appeal?: any; moderationStatus?: string; moderationReason?: string }; onAppealSubmitted?: () => void }) {
+function PostCard({ post, onAppealSubmitted, onTopicClick }: { post: Post & { appeal?: any; moderationStatus?: string; moderationReason?: string }; onAppealSubmitted?: () => void; onTopicClick?: (topicId: string) => void }) {
   const [showComments, setShowComments] = useState(false);
   const [localCommentCount, setLocalCommentCount] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -528,6 +528,17 @@ function PostCard({ post, onAppealSubmitted }: { post: Post & { appeal?: any; mo
 
         <div className="px-4 pb-3">
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{post.text}</p>
+          {(post as any).topic && (() => {
+            const t = TOPICS.find(tp => tp.id === (post as any).topic);
+            return t ? (
+              <button
+                onClick={() => onTopicClick?.(t.id)}
+                className={`mt-2 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-gradient-to-r ${t.color} transition-opacity hover:opacity-80 ${onTopicClick ? "cursor-pointer" : "cursor-default"}`}
+              >
+                {t.emoji} {t.label}
+              </button>
+            ) : null;
+          })()}
         </div>
 
         {post.imageUrl && (
@@ -603,6 +614,25 @@ const FEED_MODES: { id: FeedMode; label: string; icon: React.ReactNode; descript
   { id: "media",   label: "С фото",     icon: <Camera size={14} />,     description: "Только с фотографиями" },
 ];
 
+const TOPICS = [
+  { id: "games",   emoji: "🎮", label: "Игры",          color: "from-violet-500/20 to-indigo-500/20 border-violet-500/40 text-violet-300" },
+  { id: "life",    emoji: "💫", label: "Жизнь",         color: "from-yellow-500/20 to-amber-500/20 border-yellow-500/40 text-yellow-300" },
+  { id: "music",   emoji: "🎵", label: "Музыка",        color: "from-pink-500/20 to-rose-500/20 border-pink-500/40 text-pink-300" },
+  { id: "sport",   emoji: "🏋️", label: "Спорт",         color: "from-green-500/20 to-emerald-500/20 border-green-500/40 text-green-300" },
+  { id: "humor",   emoji: "😂", label: "Юмор",          color: "from-orange-500/20 to-yellow-500/20 border-orange-500/40 text-orange-300" },
+  { id: "food",    emoji: "🍕", label: "Еда",           color: "from-red-500/20 to-orange-500/20 border-red-500/40 text-red-300" },
+  { id: "travel",  emoji: "✈️", label: "Путешествия",   color: "from-sky-500/20 to-blue-500/20 border-sky-500/40 text-sky-300" },
+  { id: "tech",    emoji: "💻", label: "Технологии",    color: "from-cyan-500/20 to-teal-500/20 border-cyan-500/40 text-cyan-300" },
+  { id: "cinema",  emoji: "🎬", label: "Кино",          color: "from-purple-500/20 to-fuchsia-500/20 border-purple-500/40 text-purple-300" },
+  { id: "beauty",  emoji: "💄", label: "Красота",       color: "from-fuchsia-500/20 to-pink-500/20 border-fuchsia-500/40 text-fuchsia-300" },
+  { id: "animals", emoji: "🐾", label: "Животные",      color: "from-lime-500/20 to-green-500/20 border-lime-500/40 text-lime-300" },
+  { id: "art",     emoji: "🎨", label: "Арт",           color: "from-indigo-500/20 to-violet-500/20 border-indigo-500/40 text-indigo-300" },
+  { id: "edu",     emoji: "📚", label: "Учёба",         color: "from-teal-500/20 to-cyan-500/20 border-teal-500/40 text-teal-300" },
+  { id: "love",    emoji: "❤️", label: "Отношения",     color: "from-rose-500/20 to-red-500/20 border-rose-500/40 text-rose-300" },
+] as const;
+
+type TopicId = typeof TOPICS[number]["id"];
+
 function applyFeedMode(posts: any[], mode: FeedMode): any[] {
   if (!Array.isArray(posts)) return [];
   const visible = posts.filter((p: any) => !(p as any)._optimistic || true);
@@ -640,11 +670,12 @@ export default function Feed() {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [newPostText, setNewPostText] = useState("");
   const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  const [newPostTopic, setNewPostTopic] = useState<TopicId | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [feedMode, setFeedMode] = useState<FeedMode>("all");
+  const [selectedTopic, setSelectedTopic] = useState<TopicId | null>(null);
   const { data: posts, isLoading, refetch } = useGetPosts({ query: { refetchInterval: 20000 } } as any);
   const { data: me } = useGetMe();
-  const createPost = useCreatePost();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUserId = getCurrentUserId();
@@ -694,8 +725,10 @@ export default function Feed() {
     if (!newPostText.trim() && !newPostImage) return;
     const text = newPostText;
     const image = newPostImage;
+    const topic = newPostTopic;
     setNewPostText("");
     setNewPostImage(null);
+    setNewPostTopic(null);
     setShowCreatePost(false);
 
     const optimisticId = -Date.now();
@@ -703,6 +736,7 @@ export default function Feed() {
       id: optimisticId,
       text: text || " ",
       imageUrl: image || null,
+      topic: topic || null,
       likesCount: 0,
       commentsCount: 0,
       isLiked: false,
@@ -725,9 +759,15 @@ export default function Feed() {
     );
 
     try {
-      await createPost.mutateAsync(
-        { data: { text: text || " ", imageUrl: image || undefined } },
-      );
+      const token = sessionStorage.getItem("pulse-token");
+      await fetch("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ text: text || " ", imageUrl: image || undefined, topic: topic || undefined }),
+      });
     } catch {
       queryClient.setQueryData(["/api/posts"], (old: any) =>
         Array.isArray(old) ? old.filter((p: any) => p.id !== optimisticId) : old
@@ -738,8 +778,10 @@ export default function Feed() {
     }
   };
 
-  const filteredPosts = applyFeedMode(posts as any[] ?? [], feedMode);
+  const filteredPosts = applyFeedMode(posts as any[] ?? [], feedMode)
+    .filter((p: any) => !selectedTopic || p.topic === selectedTopic);
   const activeMode = FEED_MODES.find(m => m.id === feedMode)!;
+  const activeTopic = selectedTopic ? TOPICS.find(t => t.id === selectedTopic) : null;
 
   return (
     <div className="flex-1 flex flex-col h-full bg-background overflow-hidden">
@@ -756,8 +798,8 @@ export default function Feed() {
           </button>
         </div>
 
-        {/* Recommendation tabs */}
-        <div className="px-4 pb-3 flex gap-1.5 overflow-x-auto scrollbar-none">
+        {/* Feed mode tabs */}
+        <div className="px-4 pt-1 pb-2 flex gap-1.5 overflow-x-auto scrollbar-none">
           {FEED_MODES.map((mode) => {
             const isActive = feedMode === mode.id;
             return (
@@ -777,19 +819,57 @@ export default function Feed() {
           })}
         </div>
 
-        {/* Active mode hint */}
+        {/* TikTok-style topic filter chips */}
+        <div className="px-3 pb-3 flex gap-2 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setSelectedTopic(null)}
+            className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap shrink-0 border transition-all ${
+              selectedTopic === null
+                ? "bg-foreground text-background border-transparent"
+                : "bg-transparent border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+            }`}
+          >
+            <Hash size={10} /> Все темы
+          </button>
+          {TOPICS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedTopic(prev => prev === t.id ? null : t.id)}
+              className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap shrink-0 border transition-all ${
+                selectedTopic === t.id
+                  ? `bg-gradient-to-r ${t.color} border-current`
+                  : "bg-transparent border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              }`}
+            >
+              <span>{t.emoji}</span> {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Active hint bar */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={feedMode}
+            key={`${feedMode}-${selectedTopic ?? "all"}`}
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             className="px-5 pb-2 flex items-center gap-1.5 text-[11px] text-muted-foreground"
           >
-            <span className="text-primary/70">{activeMode.icon}</span>
-            <span>{activeMode.description}</span>
-            {feedMode !== "all" && (
+            {activeTopic ? (
+              <>
+                <span>{activeTopic.emoji}</span>
+                <span className="font-semibold text-foreground/70">{activeTopic.label}</span>
+                <span>·</span>
+                <span>{activeMode.description.toLowerCase()}</span>
+              </>
+            ) : (
+              <>
+                <span className="text-primary/70">{activeMode.icon}</span>
+                <span>{activeMode.description}</span>
+              </>
+            )}
+            {(feedMode !== "all" || selectedTopic) && (
               <span className="ml-auto text-primary/60 font-medium">
                 {filteredPosts.length} публ.
               </span>
@@ -824,6 +904,26 @@ export default function Feed() {
                     className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-colors resize-none"
                     autoFocus
                   />
+                  {/* Topic picker */}
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1.5 flex items-center gap-1"><Hash size={10}/> Тема поста</p>
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+                      <button type="button" onClick={() => setNewPostTopic(null)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 border transition-all ${
+                          newPostTopic === null ? "bg-foreground text-background border-transparent" : "border-border text-muted-foreground hover:text-foreground"
+                        }`}>
+                        Без темы
+                      </button>
+                      {TOPICS.map(t => (
+                        <button key={t.id} type="button" onClick={() => setNewPostTopic(prev => prev === t.id ? null : t.id)}
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap shrink-0 border transition-all ${
+                            newPostTopic === t.id ? `bg-gradient-to-r ${t.color} border-current` : "border-border text-muted-foreground hover:text-foreground"
+                          }`}>
+                          {t.emoji} {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   {imageLoading && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground py-1">
                       <div className="w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
@@ -888,23 +988,25 @@ export default function Feed() {
             </div>
           ) : filteredPosts.length === 0 ? (
             <motion.div
-              key={feedMode}
+              key={`${feedMode}-${selectedTopic ?? "all"}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center py-16 text-muted-foreground"
             >
               <div className="text-5xl mb-4">
-                {feedMode === "media" ? "🖼️" : feedMode === "hot" ? "🔥" : feedMode === "popular" ? "⭐" : "📡"}
+                {activeTopic ? activeTopic.emoji : feedMode === "media" ? "🖼️" : feedMode === "hot" ? "🔥" : feedMode === "popular" ? "⭐" : "📡"}
               </div>
               <h3 className="text-base font-semibold mb-1">
-                {feedMode === "media" ? "Нет публикаций с фото" :
-                 feedMode === "hot" ? "Нет активных постов за 48 ч" :
-                 feedMode === "popular" ? "Пока нет популярных постов" :
-                 "Нет постов"}
+                {activeTopic
+                  ? `Нет постов по теме «${activeTopic.label}»`
+                  : feedMode === "media" ? "Нет публикаций с фото"
+                  : feedMode === "hot" ? "Нет активных постов за 48 ч"
+                  : feedMode === "popular" ? "Пока нет популярных постов"
+                  : "Нет постов"}
               </h3>
               <p className="text-sm">
-                {feedMode !== "all"
-                  ? <button onClick={() => setFeedMode("all")} className="text-primary hover:underline">Посмотреть все публикации</button>
+                {(selectedTopic || feedMode !== "all")
+                  ? <button onClick={() => { setSelectedTopic(null); setFeedMode("all"); }} className="text-primary hover:underline">Показать все публикации</button>
                   : "Будь первым кто поделится чем-нибудь!"
                 }
               </p>
@@ -912,7 +1014,7 @@ export default function Feed() {
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
-                key={feedMode}
+                key={`${feedMode}-${selectedTopic ?? "all"}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.2 }}
@@ -923,6 +1025,7 @@ export default function Feed() {
                     key={post.id}
                     post={post}
                     onAppealSubmitted={() => refetch()}
+                    onTopicClick={(id) => setSelectedTopic(id as TopicId)}
                   />
                 ))}
               </motion.div>
