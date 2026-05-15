@@ -346,6 +346,8 @@ router.post("/auth/register", async (req, res) => {
 
     const newReferralCode = generateReferralCode();
 
+    const REFERRAL_BONUS = 50;
+
     let validReferredBy: string | null = null;
     if (referralCode) {
       const refRows = await db.execute(
@@ -362,6 +364,15 @@ router.post("/auth/register", async (req, res) => {
           RETURNING id, username, display_name, avatar_color, avatar_url, status, created_at, balance`
     );
     const newUser = result.rows[0] as any;
+
+    // Reward the referrer with bonus coins
+    if (validReferredBy) {
+      try {
+        await db.execute(
+          sql`UPDATE users SET balance = balance + ${REFERRAL_BONUS} WHERE referral_code = ${validReferredBy}`
+        );
+      } catch {}
+    }
 
     // Auto-join all existing channels
     try {

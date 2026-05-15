@@ -23,6 +23,10 @@ function ReferralSection() {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  const referralLink = myCode?.code
+    ? `${window.location.origin}/register?ref=${myCode.code}`
+    : null;
+
   const handleCopy = () => {
     if (!myCode?.code) return;
     navigator.clipboard.writeText(myCode.code).then(() => {
@@ -32,11 +36,11 @@ function ReferralSection() {
   };
 
   const handleShare = () => {
-    if (!myCode?.link) return;
+    if (!referralLink) return;
     if (navigator.share) {
-      navigator.share({ title: "Присоединяйся к Pulse!", text: `Используй мой код: ${myCode.code}`, url: myCode.link }).catch(() => {});
+      navigator.share({ title: "Присоединяйся к Pulse!", text: `Используй мой реферальный код: ${myCode.code}`, url: referralLink }).catch(() => {});
     } else {
-      navigator.clipboard.writeText(myCode.link).then(() => {
+      navigator.clipboard.writeText(referralLink).then(() => {
         setCopiedLink(true);
         setTimeout(() => setCopiedLink(false), 2000);
       });
@@ -61,7 +65,7 @@ function ReferralSection() {
           </div>
           {!isLoading && myCode?.invited > 0 && (
             <span className="ml-auto text-[11px] font-black px-2.5 py-1 rounded-full bg-green-500/15 text-green-400 border border-green-500/25">
-              {myCode.invited} приглашён{myCode.invited === 1 ? "" : "о"}
+              {myCode.invited} {myCode.invited === 1 ? "друг" : myCode.invited < 5 ? "друга" : "друзей"}
             </span>
           )}
         </div>
@@ -107,7 +111,7 @@ function ReferralSection() {
 
             {myCode.invited === 0 && (
               <p className="text-[11px] text-muted-foreground/70 text-center mt-3">
-                Поделитесь кодом — и ваши друзья появятся здесь
+                За каждого приглашённого друга вы получаете +50 монет
               </p>
             )}
           </>
