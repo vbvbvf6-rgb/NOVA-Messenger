@@ -240,7 +240,7 @@ function BlockedPostCard({ post, onAppealSubmitted }: { post: any; onAppealSubmi
   );
 }
 
-const getAuthHeader = () => {
+const getAuthHeader = (): Record<string, string> => {
   const t = sessionStorage.getItem("pulse-token");
   return t ? { "Authorization": `Bearer ${t}` } : {};
 };
@@ -293,7 +293,9 @@ function CommentThread({ post, onCountChange }: { post: any; onCountChange: (n: 
           : old
       );
       onCountChange(Math.max(0, (post.commentsCount || 0) - 1));
-    } catch {}
+    } catch {
+      setDeletingId(null);
+    }
     setDeletingId(null);
   };
 

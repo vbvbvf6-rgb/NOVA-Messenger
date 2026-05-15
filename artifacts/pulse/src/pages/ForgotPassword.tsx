@@ -68,7 +68,14 @@ export default function ForgotPassword() {
       });
       const data = await res.json();
       if (!res.ok) { setResetError(data.error || "Ошибка сброса пароля"); return; }
-      if (data.token) sessionStorage.setItem("pulse-token", data.token);
+      if (data.token) {
+        sessionStorage.setItem("pulse-token", data.token);
+        if (data.userId) {
+          sessionStorage.setItem("pulse-user-id", String(data.userId));
+          if (data.user) sessionStorage.setItem("pulse-user", JSON.stringify(data.user));
+          sessionStorage.setItem("pulse-tab-owned", "1");
+        }
+      }
       setStep("success");
     } catch {
       setResetError("Ошибка подключения к серверу");

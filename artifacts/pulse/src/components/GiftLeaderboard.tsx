@@ -28,7 +28,7 @@ export function GiftLeaderboard({ userId: _userId }: { userId: number }) {
     fetch("/api/gifts/leaderboard?limit=10", {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); })
       .then(data => {
         if (Array.isArray(data)) setEntries(data);
       })

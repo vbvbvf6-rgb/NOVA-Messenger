@@ -78,6 +78,10 @@ router.post("/stories", async (req, res) => {
 router.delete("/stories/:storyId", async (req, res) => {
   try {
     const storyId = Number(req.params.storyId);
+    const uid = req.currentUserId;
+    const story = await db.query.storiesTable.findFirst({ where: eq(storiesTable.id, storyId) });
+    if (!story) return res.status(404).json({ error: "Story not found" });
+    if (story.userId !== uid) return res.status(403).json({ error: "Forbidden" });
     await db.delete(storyViewsTable).where(eq(storyViewsTable.storyId, storyId));
     await db.delete(storiesTable).where(eq(storiesTable.id, storyId));
     res.status(204).send();

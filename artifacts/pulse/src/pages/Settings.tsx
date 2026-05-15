@@ -613,6 +613,7 @@ function SpeakersSection({ lang }: { lang: string }) {
   const [permission, setPermission] = useState<"unknown" | "granted" | "denied">("unknown");
   const [testing, setTesting] = useState<null | "mic" | "speaker">(null);
   const [micLevel, setMicLevel] = useState(0);
+  const stopMicRef = useRef(false);
 
   useEffect(() => {
     navigator.mediaDevices?.enumerateDevices().then(devs => {
@@ -634,7 +635,8 @@ function SpeakersSection({ lang }: { lang: string }) {
   };
 
   const testMic = async () => {
-    if (testing === "mic") { setTesting(null); setMicLevel(0); return; }
+    if (testing === "mic") { stopMicRef.current = true; setTesting(null); setMicLevel(0); return; }
+    stopMicRef.current = false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setTesting("mic");
@@ -644,14 +646,14 @@ function SpeakersSection({ lang }: { lang: string }) {
       analyser.fftSize = 64;
       const arr = new Uint8Array(analyser.frequencyBinCount);
       const tick = () => {
-        if (testing !== null) { stream.getTracks().forEach(t => t.stop()); ctx.close(); return; }
+        if (stopMicRef.current) { stream.getTracks().forEach(t => t.stop()); ctx.close(); return; }
         analyser.getByteFrequencyData(arr);
         const avg = arr.reduce((a, b) => a + b, 0) / arr.length;
         setMicLevel(avg);
         requestAnimationFrame(tick);
       };
       tick();
-      setTimeout(() => { stream.getTracks().forEach(t => t.stop()); ctx.close(); setTesting(null); setMicLevel(0); }, 5000);
+      setTimeout(() => { stopMicRef.current = true; stream.getTracks().forEach(t => t.stop()); ctx.close(); setTesting(null); setMicLevel(0); }, 5000);
     } catch { setPermission("denied"); }
   };
 
@@ -981,7 +983,7 @@ function FeaturesSection({ lang, navigate }: { lang: string; navigate: (path: st
 
 // ─── Support Section ──────────────────────────────────────────────────────────
 
-function SupportSection({ lang, user, t, currentStatusOpt }: { lang: string; user: any; t: (key: string) => string; currentStatusOpt: any }) {
+function SupportSection({ lang, user, t, currentStatusOpt, onNavigate }: { lang: string; user: any; t: (key: string) => string; currentStatusOpt: any; onNavigate?: (section: string) => void }) {
   const [copied, setCopied] = useState(false);
 
   const copyDebugInfo = () => {
@@ -1051,14 +1053,14 @@ function SupportSection({ lang, user, t, currentStatusOpt }: { lang: string; use
           { icon: <HelpCircle size={14} className="text-blue-400"/>, bg: "bg-blue-500/15", title: lang === "ru" ? "Часто задаваемые вопросы" : "FAQ", desc: lang === "ru" ? "Ответы на популярные вопросы" : "Answers to common questions", onClick: "faq" },
         ].map((item, i) => (
           item.onClick ? (
-            <div key={i} className="flex items-center gap-3 px-4 py-3.5 cursor-default opacity-70">
+            <button key={i} onClick={() => onNavigate?.(item.onClick as string)} className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors text-left">
               <div className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>{item.icon}</div>
               <div className="flex-1">
                 <p className="font-semibold text-foreground text-sm">{item.title}</p>
                 <p className="text-xs text-muted-foreground">{item.desc}</p>
               </div>
               <ChevronRight size={15} className="text-muted-foreground"/>
-            </div>
+            </button>
           ) : (
             <a key={i} href={item.href} className="flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/50 transition-colors">
               <div className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>{item.icon}</div>
@@ -1315,6 +1317,7 @@ export default function Settings() {
   const [linkPreview, setLinkPreview] = useState(() => lsb("pulse-link-preview", true));
   const [sendOnEnter, setSendOnEnter] = useState(() => lsb("pulse-send-on-enter", true));
   const [animatedEmoji, setAnimatedEmoji] = useState(() => lsb("pulse-animated-emoji", true));
+  const [msgEffects, setMsgEffects] = useState(() => lsb("pulse-msg-effects", true));
   const [msgGroupDate, setMsgGroupDate] = useState(() => lsb("pulse-msg-group-date", true));
   const [emojiSize, setEmojiSize] = useState(() => ls("pulse-emoji-size", "medium"));
 
@@ -2246,7 +2249,7 @@ export default function Settings() {
                 <Row icon={<Zap size={18}/>} color="bg-blue-500/10 text-blue-500"
                   label={lang==="ru"?"Эффекты сообщений":"Message Effects"}
                   desc={lang==="ru"?"Конфетти, снег и огонь при отправке":"Confetti, snow and fire on send"}
-                  right={<Switch checked={linkPreview} onCheckedChange={v => { setLinkPreview(v); setLs("pulse-msg-effects", v); toast({ title: t("common.saved") }); }}/>}/>
+                  right={<Switch checked={msgEffects} onCheckedChange={v => { setMsgEffects(v); setLs("pulse-msg-effects", v); toast({ title: t("common.saved") }); }}/>}/>
               </Section>
               <div className="bg-card border border-border rounded-2xl p-4 flex items-start gap-3">
                 <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl shrink-0"><Battery size={16}/></div>
@@ -2384,7 +2387,7 @@ export default function Settings() {
           {displaySection === "features" && <FeaturesSection lang={lang} navigate={(path: string) => { window.location.href = path; }} />}
 
           {/* ─── SUPPORT ───────────────────────────────────── */}
-          {displaySection === "support" && <SupportSection lang={lang} user={user} t={t} currentStatusOpt={currentStatusOpt} />}
+          {displaySection === "support" && <SupportSection lang={lang} user={user} t={t} currentStatusOpt={currentStatusOpt} onNavigate={setActiveSection} />}
 
         </div>
       </div>

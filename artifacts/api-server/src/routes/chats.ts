@@ -292,6 +292,12 @@ router.put("/chats/:chatId", async (req, res) => {
 router.delete("/chats/:chatId", async (req, res) => {
   try {
     const chatId = Number(req.params.chatId);
+    const uid = req.currentUserId;
+    const membership = await db.query.chatMembersTable.findFirst({
+      where: and(eq(chatMembersTable.chatId, chatId), eq(chatMembersTable.userId, uid)),
+    });
+    if (!membership) return res.status(403).json({ error: "Forbidden" });
+    if (membership.role !== "owner" && membership.role !== "admin") return res.status(403).json({ error: "Only chat owners can delete chats" });
     // Clean up pinned messages first
     await db.execute(sql`DELETE FROM pinned_messages WHERE chat_id = ${chatId}`).catch(() => {});
     await db.delete(messagesTable).where(eq(messagesTable.chatId, chatId));

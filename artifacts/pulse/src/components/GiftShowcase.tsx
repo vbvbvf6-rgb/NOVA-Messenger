@@ -27,7 +27,7 @@ export function GiftShowcase({ userId: _userId }: { userId: number }) {
   useEffect(() => {
     const token = sessionStorage.getItem("pulse-token");
     fetch("/api/gifts", { headers: token ? { Authorization: `Bearer ${token}` } : {} })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error("Failed"); return r.json(); })
       .then(data => { if (Array.isArray(data)) setGifts(data); })
       .catch(() => {})
       .finally(() => setLoading(false));

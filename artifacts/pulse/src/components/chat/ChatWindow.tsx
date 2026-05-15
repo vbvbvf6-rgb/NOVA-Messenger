@@ -707,7 +707,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               {(chat.type === "direct" ? (chat.otherUser as any)?.avatarUrl : chat.avatarUrl) ? (
                 <img src={(chat.type === "direct" ? (chat.otherUser as any)?.avatarUrl : chat.avatarUrl)} alt={displayName} className="w-full h-full object-cover" />
               ) : (
-                displayName[0].toUpperCase()
+                (displayName[0] || "?").toUpperCase()
               )}
             </button>
             {otherUserHasPrime && (
@@ -1152,7 +1152,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             >
               {(chat.otherUser as any)?.avatarUrl ? (
                 <img src={(chat.otherUser as any).avatarUrl} alt={displayName} className="w-full h-full object-cover" />
-              ) : displayName[0].toUpperCase()}
+              ) : (displayName[0] || "?").toUpperCase()}
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-center gap-2">
