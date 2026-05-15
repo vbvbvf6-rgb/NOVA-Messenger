@@ -75,6 +75,10 @@ export function unsubscribeFromUserEvents(userId: number, res: Response) {
   userSubscribers.get(userId)?.delete(res);
 }
 
+export function getUserConnectionCount(userId: number): number {
+  return userSubscribers.get(userId)?.size ?? 0;
+}
+
 export function broadcastToUser(userId: number, event: string, data: unknown) {
   const subs = userSubscribers.get(userId);
   if (!subs || subs.size === 0) {

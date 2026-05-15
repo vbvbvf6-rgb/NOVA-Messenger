@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useGetChatById, useGetMessages, getGetMessagesQueryKey, useInitiateCall, useMarkChatAsRead, useUpdateChat, getGetChatsQueryKey, Message } from "@workspace/api-client-react";
 import { useP2PChannel } from "@/hooks/useP2PChannel";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useLastSeen } from "@/hooks/useLastSeen";
 import { Phone, Video, MoreVertical, ArrowLeft, Search, BellOff, Bell, Pin, PinOff, User, Trash2, X, Timer, Flame, ChevronRight, ChevronDown, ChevronUp, Settings, Crown, Palette, Check, Sparkles, Lock, MessageSquare, Users, Megaphone } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChatInfoPanel } from "./ChatInfoPanel";
@@ -657,6 +658,10 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
 
   const displayName = chat.type === "direct" ? (chat.otherUser?.displayName || chat.name || "Chat") : (chat.name || "Group");
   const avatarColor = chat.type === "direct" ? (chat.otherUser?.avatarColor || chat.avatarColor || "#333") : (chat.avatarColor || "#333");
+  const otherUserLastSeen = (chat.otherUser as any)?.lastSeen ?? null;
+  const otherUserStatus = chat.otherUser?.status ?? "offline";
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const lastSeenLabel = useLastSeen(otherUserLastSeen, otherUserStatus);
   const isVerified = chat.type === "direct" && (chat.otherUser as any)?.isVerified;
   const isChannel = chat.type === "channel";
   const myMemberRole = (chat.members as any[])?.find((m: any) => m.userId === currentUserId)?.role;
@@ -781,12 +786,8 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
                   })()}
                 </span>
               ) : chat.type === "direct" && chat.otherUser ? (
-                <span className={chat.otherUser.status === "online" ? "text-primary" : ""}>
-                  {chat.otherUser.status === "online"
-                    ? "в сети"
-                    : (chat.otherUser as any).statusText
-                      ? `был(а) в сети ${(chat.otherUser as any).statusText}`
-                      : "не в сети"}
+                <span className={otherUserStatus === "online" ? "text-primary" : ""}>
+                  {lastSeenLabel}
                 </span>
               ) : isChannel ? (
                 <span className="flex items-center gap-1">

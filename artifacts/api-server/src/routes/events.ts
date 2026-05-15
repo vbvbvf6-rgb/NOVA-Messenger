@@ -2,10 +2,11 @@ import { Router } from "express";
 import {
   subscribeToChatEvents, unsubscribeFromChatEvents,
   subscribeToUserEvents, unsubscribeFromUserEvents,
+  getUserConnectionCount,
   setTyping, stopTyping, broadcastToUser,
 } from "../lib/sse";
-import { db } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { db, usersTable } from "@workspace/db";
+import { sql, eq } from "drizzle-orm";
 
 const router = Router();
 
@@ -91,7 +92,7 @@ router.post("/chats/:chatId/p2p-signal", async (req, res) => {
   }
 });
 
-router.get("/users/me/events", (req, res) => {
+router.get("/users/me/events", async (req, res) => {
   const uid = req.currentUserId;
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -108,9 +109,23 @@ router.get("/users/me/events", (req, res) => {
 
   subscribeToUserEvents(uid, res);
 
-  req.on("close", () => {
+  // Mark user online
+  try {
+    await db.update(usersTable).set({ status: "online" }).where(eq(usersTable.id, uid));
+  } catch {}
+
+  req.on("close", async () => {
     clearInterval(keepAlive);
     unsubscribeFromUserEvents(uid, res);
+
+    // Only go offline if this was the last connection
+    if (getUserConnectionCount(uid) === 0) {
+      try {
+        await db.update(usersTable)
+          .set({ status: "offline", lastSeen: new Date().toISOString() })
+          .where(eq(usersTable.id, uid));
+      } catch {}
+    }
   });
 });
 
