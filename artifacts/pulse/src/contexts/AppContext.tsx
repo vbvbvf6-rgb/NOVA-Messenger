@@ -18,7 +18,7 @@ function createSilentStream(): MediaStream {
   }
 }
 
-interface AppState {
+export interface AppState {
   currentUserId: number;
   selectedChatId: number | null;
   setSelectedChatId: (id: number | null) => void;
@@ -39,8 +39,14 @@ interface AppState {
   acceptCall: () => Promise<void>;
   declineCall: () => Promise<void>;
   hangUp: () => Promise<void>;
+  inviteToCall: (inviteeId: number) => Promise<void>;
+  startScreenShare: () => Promise<void>;
+  stopScreenShare: () => void;
   localStream: MediaStream | null;
   remoteStream: MediaStream | null;
+  remoteStreams: Map<number, MediaStream>;
+  isScreenSharing: boolean;
+  callParticipantIds: number[];
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -64,23 +70,33 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     return stored !== "light";
   });
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+  const [remoteStreams, setRemoteStreams] = useState<Map<number, MediaStream>>(new Map());
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   const currentUserId = Number(sessionStorage.getItem("pulse-user-id") || "1");
   const currentUserIdRef = useRef(currentUserId);
   currentUserIdRef.current = currentUserId;
 
-  const peerRef = useRef<RTCPeerConnection | null>(null);
+  // ── refs ─────────────────────────────────────────────────────────────────
   const activeCallRef = useRef<Call | null>(null);
   activeCallRef.current = activeCall;
-  const pendingSignalsRef = useRef<{ type: string; sdp?: string; candidate?: RTCIceCandidateInit }[]>([]);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingIceCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
 
-  // Socket.IO — one persistent connection per session
+  // groupRoomId = the Socket.IO room for this call session (= original callId)
+  const groupRoomIdRef = useRef<number | null>(null);
+
+  // userId → RTCPeerConnection for every remote participant
+  const peersRef = useRef<Map<number, RTCPeerConnection>>(new Map());
+
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
+  const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Signals that arrived before the peer was created — keyed by fromUserId
+  const pendingSignalsRef = useRef<Map<number, { type: string; sdp?: string; candidate?: RTCIceCandidateInit }[]>>(new Map());
+
   const socketRef = useRef<Socket | null>(null);
 
+  // ── theme ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add("dark");
@@ -92,14 +108,15 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     localStorage.setItem("pulse-theme", isDark ? "dark" : "light");
   }, [isDark]);
 
-  const toggleTheme = () => setIsDark(prev => !prev);
+  const toggleTheme = () => setIsDark((p) => !p);
   const logout = () => { onLogout(); };
 
   const getUserHeaders = useCallback((): Record<string, string> => {
     const token = sessionStorage.getItem("pulse-token");
-    return { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) };
+    return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }, []);
 
+  // ── socket ────────────────────────────────────────────────────────────────
   const getSocket = useCallback((): Socket => {
     if (socketRef.current?.connected) return socketRef.current;
     const token = sessionStorage.getItem("pulse-token");
@@ -114,109 +131,187 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     return sock;
   }, []);
 
+  // ── cleanup ───────────────────────────────────────────────────────────────
   const cleanupCall = useCallback(() => {
     if (ringTimeoutRef.current) {
       clearTimeout(ringTimeoutRef.current);
       ringTimeoutRef.current = null;
     }
-    const callId = activeCallRef.current?.id;
-    if (callId && socketRef.current) {
-      socketRef.current.emit("leave-call", { callId });
+    const roomId = groupRoomIdRef.current;
+    if (roomId && socketRef.current) {
+      socketRef.current.emit("leave-call", { callId: roomId });
+      socketRef.current.off("webrtc-signal");
+      socketRef.current.off("peer-joined");
+      socketRef.current.off("peers-present");
+      socketRef.current.off("peer-left");
     }
-    if (peerRef.current) {
-      peerRef.current.close();
-      peerRef.current = null;
-    }
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(t => t.stop());
-      localStreamRef.current = null;
-    }
+    groupRoomIdRef.current = null;
+
+    peersRef.current.forEach((pc) => { try { pc.close(); } catch {} });
+    peersRef.current.clear();
+
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop());
+    screenStreamRef.current = null;
+
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current = null;
+
+    pendingSignalsRef.current.clear();
+
     setLocalStream(null);
-    setRemoteStream(null);
+    setRemoteStreams(new Map());
+    setIsScreenSharing(false);
     setActiveCall(null);
-    pendingSignalsRef.current = [];
-    pendingIceCandidatesRef.current = [];
   }, []);
 
-  const flushPendingIce = useCallback(async (pc: RTCPeerConnection) => {
-    const candidates = pendingIceCandidatesRef.current.splice(0);
-    for (const c of candidates) {
-      try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch {}
-    }
-  }, []);
-
-  const applySignal = useCallback(async (pc: RTCPeerConnection, signal: { type: string; sdp?: string; candidate?: RTCIceCandidateInit }) => {
-    try {
-      if (signal.type === "offer") {
-        if (pc.signalingState !== "stable") return;
-        await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: signal.sdp }));
-        await flushPendingIce(pc);
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        const callId = activeCallRef.current?.id;
-        if (callId && socketRef.current) {
-          socketRef.current.emit("webrtc-signal", {
-            callId,
-            signal: { type: "answer", sdp: answer.sdp },
-          });
-        }
-      } else if (signal.type === "answer") {
-        if (pc.signalingState === "have-local-offer") {
-          await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: signal.sdp }));
-          await flushPendingIce(pc);
-        }
-      } else if (signal.type === "ice") {
-        if (signal.candidate) {
-          if (pc.remoteDescription) {
-            await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
-          } else {
-            pendingIceCandidatesRef.current.push(signal.candidate);
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("applySignal error:", err);
-    }
-  }, [flushPendingIce]);
-
-  const createPeer = useCallback((callId: number): RTCPeerConnection => {
+  // ── peer factory ──────────────────────────────────────────────────────────
+  const createPeer = useCallback((targetUserId: number, roomId: number): RTCPeerConnection => {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
     pc.onicecandidate = (e) => {
       if (e.candidate && socketRef.current) {
         socketRef.current.emit("webrtc-signal", {
-          callId,
+          callId: roomId,
+          targetUserId,
           signal: { type: "ice", candidate: e.candidate.toJSON() },
         });
       }
     };
 
     pc.ontrack = (e) => {
-      if (e.streams?.[0]) setRemoteStream(e.streams[0]);
+      if (e.streams?.[0]) {
+        setRemoteStreams((prev) => {
+          const next = new Map(prev);
+          next.set(targetUserId, e.streams[0]);
+          return next;
+        });
+      }
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "disconnected" || pc.connectionState === "failed") {
-        cleanupCall();
+      const state = pc.connectionState;
+      if (state === "disconnected" || state === "failed" || state === "closed") {
+        peersRef.current.delete(targetUserId);
+        setRemoteStreams((prev) => {
+          const next = new Map(prev);
+          next.delete(targetUserId);
+          return next;
+        });
+        if (peersRef.current.size === 0 && state === "failed") {
+          cleanupCall();
+        }
       }
     };
 
     return pc;
   }, [cleanupCall]);
 
-  // Set up the webrtc-signal listener from socket
-  const setupSocketSignaling = useCallback((sock: Socket) => {
+  // ── signal handler ────────────────────────────────────────────────────────
+  const applySignal = useCallback(async (
+    fromUserId: number,
+    signal: { type: string; sdp?: string; candidate?: RTCIceCandidateInit },
+    roomId: number,
+  ) => {
+    try {
+      let pc = peersRef.current.get(fromUserId);
+      if (!pc) {
+        // Peer not yet created — create it and buffer this signal
+        pc = createPeer(fromUserId, roomId);
+        peersRef.current.set(fromUserId, pc);
+        if (localStreamRef.current) {
+          localStreamRef.current.getTracks().forEach((t) => pc!.addTrack(t, localStreamRef.current!));
+        }
+        // Flush any earlier pending signals for this user
+        const pending = pendingSignalsRef.current.get(fromUserId) || [];
+        pendingSignalsRef.current.delete(fromUserId);
+        for (const s of pending) await applySignal(fromUserId, s, roomId);
+      }
+
+      if (signal.type === "offer") {
+        if (pc.signalingState !== "stable") return;
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: signal.sdp }));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socketRef.current?.emit("webrtc-signal", {
+          callId: roomId,
+          targetUserId: fromUserId,
+          signal: { type: "answer", sdp: answer.sdp },
+        });
+      } else if (signal.type === "answer") {
+        if (pc.signalingState === "have-local-offer") {
+          await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: signal.sdp }));
+        }
+      } else if (signal.type === "ice" && signal.candidate) {
+        if (pc.remoteDescription) {
+          await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        } else {
+          // Queue ICE for after remote description is set
+          const arr = pendingSignalsRef.current.get(fromUserId) || [];
+          arr.push(signal);
+          pendingSignalsRef.current.set(fromUserId, arr);
+        }
+      }
+    } catch (err) {
+      console.warn("applySignal error:", err);
+    }
+  }, [createPeer]);
+
+  // ── setup socket listeners for an active call ────────────────────────────
+  const setupCallSocket = useCallback((sock: Socket, roomId: number) => {
     sock.off("webrtc-signal");
-    sock.on("webrtc-signal", async ({ signal }: { signal: { type: string; sdp?: string; candidate?: RTCIceCandidateInit }; fromUserId: number }) => {
-      if (peerRef.current) {
-        await applySignal(peerRef.current, signal);
-      } else {
-        // Buffer until peer is created (e.g. callee accepting)
-        pendingSignalsRef.current.push(signal);
+    sock.off("peer-joined");
+    sock.off("peers-present");
+    sock.off("peer-left");
+
+    sock.on("webrtc-signal", async ({ signal, fromUserId }: { signal: { type: string; sdp?: string; candidate?: RTCIceCandidateInit }; fromUserId: number }) => {
+      await applySignal(fromUserId, signal, roomId);
+    });
+
+    // Another user just joined our room — we (as the existing member) send them an offer
+    sock.on("peer-joined", async ({ userId: newUserId }: { userId: number; callId: number }) => {
+      if (newUserId === currentUserIdRef.current) return;
+      const pc = createPeer(newUserId, roomId);
+      peersRef.current.set(newUserId, pc);
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((t) => pc.addTrack(t, localStreamRef.current!));
+      }
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      sock.emit("webrtc-signal", {
+        callId: roomId,
+        targetUserId: newUserId,
+        signal: { type: "offer", sdp: offer.sdp },
+      });
+    });
+
+    // We just joined and there are existing peers — they will send us offers,
+    // but we pre-create peer slots so signals can be routed
+    sock.on("peers-present", ({ userIds }: { userIds: number[]; callId: number }) => {
+      for (const uid of userIds) {
+        if (uid === currentUserIdRef.current) continue;
+        if (!peersRef.current.has(uid)) {
+          const pc = createPeer(uid, roomId);
+          peersRef.current.set(uid, pc);
+          if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((t) => pc.addTrack(t, localStreamRef.current!));
+          }
+        }
       }
     });
-  }, [applySignal]);
 
+    sock.on("peer-left", ({ userId: leftUserId }: { userId: number }) => {
+      const pc = peersRef.current.get(leftUserId);
+      if (pc) { try { pc.close(); } catch {} }
+      peersRef.current.delete(leftUserId);
+      setRemoteStreams((prev) => {
+        const next = new Map(prev);
+        next.delete(leftUserId);
+        return next;
+      });
+    });
+  }, [applySignal, createPeer]);
+
+  // ── startCall ─────────────────────────────────────────────────────────────
   const startCall = useCallback(async (calleeId: number, chatId: number | null, type: "audio" | "video") => {
     try {
       let stream: MediaStream;
@@ -228,11 +323,8 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
         }
       } catch (mediaErr: any) {
         if (type === "video" && (mediaErr.name === "NotFoundError" || mediaErr.name === "DevicesNotFoundError")) {
-          try {
-            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          } catch {
-            stream = createSilentStream();
-          }
+          try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
+          catch { stream = createSilentStream(); }
         } else {
           stream = createSilentStream();
         }
@@ -250,21 +342,22 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
 
       activeCallRef.current = call;
       setActiveCall(call);
+      groupRoomIdRef.current = call.id;
 
-      // Join Socket.IO room for this call
       const sock = getSocket();
-      setupSocketSignaling(sock);
+      setupCallSocket(sock, call.id);
       sock.emit("join-call", { callId: call.id });
 
-      const pc = createPeer(call.id);
-      peerRef.current = pc;
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      // Create peer for callee
+      const pc = createPeer(calleeId, call.id);
+      peersRef.current.set(calleeId, pc);
+      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-
       sock.emit("webrtc-signal", {
         callId: call.id,
+        targetUserId: calleeId,
         signal: { type: "offer", sdp: offer.sdp },
       });
 
@@ -280,46 +373,36 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
           cleanupCall();
         }
       }, 60_000);
-    } catch (err: any) {
+    } catch (err) {
       console.error("startCall error:", err);
       cleanupCall();
       throw err;
     }
-  }, [getUserHeaders, createPeer, cleanupCall, getSocket, setupSocketSignaling]);
+  }, [getUserHeaders, createPeer, cleanupCall, getSocket, setupCallSocket]);
 
+  // ── acceptCall ────────────────────────────────────────────────────────────
   const acceptCall = useCallback(async () => {
     const call = activeCallRef.current;
     if (!call) return;
-    if (ringTimeoutRef.current) {
-      clearTimeout(ringTimeoutRef.current);
-      ringTimeoutRef.current = null;
-    }
+    if (ringTimeoutRef.current) { clearTimeout(ringTimeoutRef.current); ringTimeoutRef.current = null; }
     try {
       let stream: MediaStream;
       try {
         stream = navigator.mediaDevices?.getUserMedia
           ? await navigator.mediaDevices.getUserMedia({ audio: true, video: call.type === "video" })
           : createSilentStream();
-      } catch {
-        stream = createSilentStream();
-      }
+      } catch { stream = createSilentStream(); }
+
       localStreamRef.current = stream;
       setLocalStream(stream);
 
-      // Join Socket.IO room — this will flush buffered offer
+      // groupRoomId was stored when incoming-call arrived
+      const roomId = groupRoomIdRef.current ?? call.id;
+      groupRoomIdRef.current = roomId;
+
       const sock = getSocket();
-      setupSocketSignaling(sock);
-      sock.emit("join-call", { callId: call.id });
-
-      const pc = createPeer(call.id);
-      peerRef.current = pc;
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
-
-      // Process any signals already buffered client-side (pre-socket)
-      const pending = pendingSignalsRef.current.splice(0);
-      for (const signal of pending) {
-        await applySignal(pc, signal);
-      }
+      setupCallSocket(sock, roomId);
+      sock.emit("join-call", { callId: roomId });
 
       await fetch(`/api/calls/${call.id}`, {
         method: "PUT",
@@ -333,8 +416,9 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       console.error("acceptCall error:", err);
       cleanupCall();
     }
-  }, [createPeer, applySignal, getUserHeaders, cleanupCall, getSocket, setupSocketSignaling]);
+  }, [getSocket, setupCallSocket, getUserHeaders, cleanupCall]);
 
+  // ── declineCall ───────────────────────────────────────────────────────────
   const declineCall = useCallback(async () => {
     const call = activeCallRef.current;
     if (!call) return;
@@ -348,6 +432,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     cleanupCall();
   }, [getUserHeaders, cleanupCall]);
 
+  // ── hangUp ────────────────────────────────────────────────────────────────
   const hangUp = useCallback(async () => {
     const call = activeCallRef.current;
     if (!call) return;
@@ -361,7 +446,79 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     cleanupCall();
   }, [getUserHeaders, cleanupCall]);
 
-  // SSE for non-call real-time events (messages, typing) + call lifecycle events
+  // ── inviteToCall ──────────────────────────────────────────────────────────
+  const inviteToCall = useCallback(async (inviteeId: number) => {
+    const call = activeCallRef.current;
+    if (!call) return;
+    const roomId = groupRoomIdRef.current ?? call.id;
+    await fetch(`/api/calls/${roomId}/invite`, {
+      method: "POST",
+      headers: getUserHeaders(),
+      body: JSON.stringify({ inviteeId }),
+    });
+  }, [getUserHeaders]);
+
+  // ── screen sharing ────────────────────────────────────────────────────────
+  const startScreenShare = useCallback(async () => {
+    try {
+      const screenStream = await (navigator.mediaDevices as any).getDisplayMedia({
+        video: { displaySurface: "monitor" },
+        audio: true,
+      });
+      screenStreamRef.current = screenStream;
+      const screenTrack = screenStream.getVideoTracks()[0];
+      if (!screenTrack) return;
+
+      // Replace video track in every peer connection
+      peersRef.current.forEach((pc) => {
+        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) sender.replaceTrack(screenTrack).catch(() => {});
+      });
+
+      // Also replace in localStream so the local PiP shows the screen
+      if (localStreamRef.current) {
+        const oldVideoTrack = localStreamRef.current.getVideoTracks()[0];
+        if (oldVideoTrack) localStreamRef.current.removeTrack(oldVideoTrack);
+        localStreamRef.current.addTrack(screenTrack);
+        setLocalStream(new MediaStream(localStreamRef.current.getTracks()));
+      }
+
+      setIsScreenSharing(true);
+
+      // Auto-stop when user clicks "Stop sharing" in browser
+      screenTrack.onended = () => {
+        stopScreenShare();
+      };
+    } catch (err) {
+      console.warn("getDisplayMedia error:", err);
+    }
+  }, []);
+
+  const stopScreenShare = useCallback(() => {
+    const screenStream = screenStreamRef.current;
+    if (!screenStream) return;
+    screenStream.getTracks().forEach((t) => t.stop());
+    screenStreamRef.current = null;
+
+    // Switch back to camera track
+    const cameraStream = localStreamRef.current;
+    if (cameraStream) {
+      const cameraVideoTrack = cameraStream.getVideoTracks().find((t) => t.label !== "Screen");
+      peersRef.current.forEach((pc) => {
+        const sender = pc.getSenders().find((s) => s.track?.kind === "video");
+        if (sender && cameraVideoTrack) sender.replaceTrack(cameraVideoTrack).catch(() => {});
+      });
+      // Rebuild localStream with camera tracks
+      const audioTracks = cameraStream.getAudioTracks();
+      const newStream = new MediaStream([...(cameraVideoTrack ? [cameraVideoTrack] : []), ...audioTracks]);
+      localStreamRef.current = newStream;
+      setLocalStream(newStream);
+    }
+
+    setIsScreenSharing(false);
+  }, []);
+
+  // ── SSE for lifecycle events ──────────────────────────────────────────────
   useEffect(() => {
     let es: EventSource | null = null;
     let retryTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -378,29 +535,27 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
 
       es.addEventListener("incoming-call", (e: MessageEvent) => {
         try {
-          const call = JSON.parse(e.data);
-          setActiveCall(call);
+          const callData = JSON.parse(e.data);
+          // Store group room ID if this is a group invite
+          if (callData.groupRoomId) {
+            groupRoomIdRef.current = callData.groupRoomId;
+          } else {
+            groupRoomIdRef.current = callData.id;
+          }
+          setActiveCall(callData as Call);
         } catch {}
       });
 
       es.addEventListener("call-accepted", (e: MessageEvent) => {
         try {
           const data = JSON.parse(e.data);
-          if (ringTimeoutRef.current) {
-            clearTimeout(ringTimeoutRef.current);
-            ringTimeoutRef.current = null;
-          }
-          setActiveCall(prev => prev ? { ...prev, status: "active", ...data } : null);
+          if (ringTimeoutRef.current) { clearTimeout(ringTimeoutRef.current); ringTimeoutRef.current = null; }
+          setActiveCall((prev) => (prev ? { ...prev, status: "active", ...data } : null));
         } catch {}
       });
 
-      es.addEventListener("call-declined", () => {
-        cleanupCall();
-      });
-
-      es.addEventListener("call-ended", () => {
-        cleanupCall();
-      });
+      es.addEventListener("call-declined", () => { cleanupCall(); });
+      es.addEventListener("call-ended", () => { cleanupCall(); });
 
       es.addEventListener("new-message", (e: MessageEvent) => {
         try {
@@ -431,7 +586,6 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     };
 
     connect();
-
     return () => {
       dead = true;
       if (retryTimeout) clearTimeout(retryTimeout);
@@ -439,7 +593,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     };
   }, [currentUserId, cleanupCall]);
 
-  // Clean up socket on unmount
+  // ── socket cleanup on unmount ─────────────────────────────────────────────
   useEffect(() => {
     return () => {
       socketRef.current?.disconnect();
@@ -447,23 +601,16 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     };
   }, []);
 
+  // ── typing ────────────────────────────────────────────────────────────────
   const setTypingForChat = useCallback((chatId: number, names: string[], typingType?: string) => {
-    setTypingByChat(prev => {
+    setTypingByChat((prev) => {
       const current = prev[chatId] || [];
       if (JSON.stringify(current) === JSON.stringify(names)) return prev;
-      if (names.length === 0) {
-        const next = { ...prev };
-        delete next[chatId];
-        return next;
-      }
+      if (names.length === 0) { const next = { ...prev }; delete next[chatId]; return next; }
       return { ...prev, [chatId]: names };
     });
-    setTypingTypeByChat(prev => {
-      if (!typingType || names.length === 0) {
-        const next = { ...prev };
-        delete next[chatId];
-        return next;
-      }
+    setTypingTypeByChat((prev) => {
+      if (!typingType || names.length === 0) { const next = { ...prev }; delete next[chatId]; return next; }
       return { ...prev, [chatId]: typingType };
     });
   }, []);
@@ -478,11 +625,13 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     setSavedAccounts(getSavedAccounts());
   }, [onRemoveAccount]);
 
-  const openAddAccount = useCallback(() => {
-    onOpenAddAccount();
-  }, [onOpenAddAccount]);
+  const openAddAccount = useCallback(() => { onOpenAddAccount(); }, [onOpenAddAccount]);
 
   const canAddAccount = savedAccounts.length < MAX_ACCOUNTS;
+
+  // Convenience: first remote stream (for 1-on-1 calls)
+  const remoteStream = remoteStreams.size > 0 ? [...remoteStreams.values()][0] : null;
+  const callParticipantIds = [...peersRef.current.keys()];
 
   const state: AppState = {
     currentUserId,
@@ -505,8 +654,14 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     acceptCall,
     declineCall,
     hangUp,
+    inviteToCall,
+    startScreenShare,
+    stopScreenShare,
     localStream,
     remoteStream,
+    remoteStreams,
+    isScreenSharing,
+    callParticipantIds,
   };
 
   return <AppContext.Provider value={state}>{children}</AppContext.Provider>;
@@ -514,8 +669,6 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
 
 export function useAppContext() {
   const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error("useAppContext must be used within an AppProvider");
-  }
+  if (context === undefined) throw new Error("useAppContext must be used within an AppProvider");
   return context;
 }

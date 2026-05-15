@@ -44,7 +44,6 @@ router.post("/calls", async (req, res) => {
     const built = await buildCall(call);
 
     if (callee?.isBot) {
-      // Bot users auto-decline calls immediately
       const [declined] = await db.update(callsTable)
         .set({ status: "declined", endedAt: new Date() })
         .where(eq(callsTable.id, call.id))
@@ -129,6 +128,48 @@ router.post("/calls/:callId/signal", async (req, res) => {
     }
 
     res.json({ ok: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Invite a user to an existing call (group call)
+router.post("/calls/:callId/invite", async (req, res) => {
+  try {
+    const callId = Number(req.params.callId);
+    const uid = req.currentUserId;
+    const { inviteeId } = req.body;
+    if (!inviteeId) return res.status(400).json({ error: "Missing inviteeId" });
+
+    const originalCall = await db.query.callsTable.findFirst({ where: eq(callsTable.id, callId) });
+    if (!originalCall) return res.status(404).json({ error: "Call not found" });
+
+    const invitee = await db.query.usersTable.findFirst({ where: eq(usersTable.id, Number(inviteeId)) });
+    if (!invitee) return res.status(404).json({ error: "User not found" });
+
+    // Create a new call record for the invite
+    const [newCall] = await db.insert(callsTable).values({
+      callerId: uid,
+      calleeId: Number(inviteeId),
+      type: originalCall.type,
+      status: "ringing",
+    }).returning();
+
+    const built = await buildCall(newCall);
+
+    if (invitee.isBot) {
+      const [declined] = await db.update(callsTable)
+        .set({ status: "declined", endedAt: new Date() })
+        .where(eq(callsTable.id, newCall.id))
+        .returning();
+      return res.status(201).json({ ...await buildCall(declined), groupRoomId: callId });
+    }
+
+    // Send incoming-call with groupRoomId so invitee knows which room to join
+    broadcastToUser(Number(inviteeId), "incoming-call", { ...built, groupRoomId: callId });
+
+    res.status(201).json({ ...built, groupRoomId: callId });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
