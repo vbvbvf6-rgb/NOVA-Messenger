@@ -1636,7 +1636,6 @@ export default function Settings() {
           {/* Group 2: Interface */}
           <NavGroup>
             <NavItem id="language" icon={<Globe size={16}/>}   color="bg-blue-600"   label={lang==="ru"?"Язык":"Language"}             badge={lang==="ru"?"Русский":"English"}  active={displaySection} onClick={setActiveSection}/>
-            <NavItem id="scale"    icon={<Monitor size={16}/>} color="bg-indigo-600" label={lang==="ru"?"Масштаб интерфейса":"Interface Scale"} badge={`${pageZoom}%`} active={displaySection} onClick={setActiveSection}/>
           </NavGroup>
 
           {/* Group 3: Premium */}
@@ -1698,7 +1697,6 @@ export default function Settings() {
             : displaySection === "speakers"      ? (lang==="ru"?"Динамики и камера":"Speakers & Camera")
             : displaySection === "battery"       ? (lang==="ru"?"Батарея и анимации":"Battery & Animations")
             : displaySection === "language"      ? (lang==="ru"?"Язык":"Language")
-            : displaySection === "scale"         ? (lang==="ru"?"Масштаб интерфейса":"Interface Scale")
             : displaySection === "prime"         ? "Pulse Prime"
 
             : displaySection === "faq"           ? "Pulse FAQ"
@@ -2388,51 +2386,6 @@ export default function Settings() {
                     {language===opt.value && <CheckCircle size={18} className="text-primary shrink-0"/>}
                   </div>
                 ))}
-              </Section>
-            </div>
-          )}
-
-          {/* ─── INTERFACE SCALE ───────────────────────────── */}
-          {displaySection === "scale" && (
-            <div className="max-w-2xl mx-auto space-y-6">
-              <Section title={lang==="ru"?"Масштаб страницы":"Page Scale"} icon={<Monitor size={13}/>}>
-                <div className="p-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-primary/10 text-primary rounded-xl"><Monitor size={18}/></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{lang==="ru"?"Масштаб интерфейса":"Interface Scale"}</p>
-                      <p className="text-xs text-muted-foreground">{lang==="ru"?"Изменить размер всего интерфейса":"Scale the entire interface"}</p>
-                    </div>
-                    <span className="text-sm font-bold text-primary min-w-[3rem] text-right">{pageZoom}%</span>
-                  </div>
-                  <input type="range" min={75} max={150} step={5} value={pageZoom}
-                    onChange={e => { const v=e.target.value; setPageZoom(v); setLs("pulse-page-zoom", v); window.dispatchEvent(new CustomEvent("pulse:zoom-change", { detail: Number(v) })); }}
-                    className="w-full accent-primary"/>
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                    <span>75%</span><span>100%</span><span>150%</span>
-                  </div>
-                </div>
-              </Section>
-              <Section title={t("settings.fontSize")} icon={<Type size={13}/>}>
-                <div className="p-4">
-                  <div className="grid grid-cols-3 gap-2">
-                    {FONT_SIZE_OPTIONS.map(opt => (
-                      <button key={opt.value}
-                        onClick={() => { setFontSize(opt.value); setLs("pulse-font-size", opt.value); toast({ title: t("common.saved"), description: `${t("settings.fontSize")}: ${opt.label}` }); }}
-                        className={`py-2.5 rounded-xl border text-center transition-all flex flex-col items-center gap-0.5 ${fontSize===opt.value ? "border-primary bg-primary/8 text-primary" : "border-border hover:border-primary/30"}`}
-                        style={{ fontSize: opt.size }}>
-                        {opt.label}
-                        {fontSize===opt.value && <CheckCircle size={12} className="text-primary"/>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </Section>
-              <Section title={lang==="ru"?"Оформление":"Appearance"} icon={<Palette size={13}/>}>
-                <Row icon={isDark ? <Moon size={18}/> : <Sun size={18}/>} color="bg-primary/10 text-primary"
-                  label={isDark ? t("settings.darkTheme") : t("settings.lightTheme")}
-                  desc={isDark ? t("settings.darkThemeDesc") : t("settings.lightThemeDesc")}
-                  right={<Switch checked={isDark} onCheckedChange={toggleTheme}/>}/>
               </Section>
             </div>
           )}
