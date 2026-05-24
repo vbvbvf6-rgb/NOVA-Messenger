@@ -160,6 +160,23 @@ const HATE_PATTERNS = [
   /\bкнига\s+мира.*взрыв/i,
 ];
 
+export function checkCustomBannedWords(text: string, words: string[]): ModerationResult | null {
+  if (!words.length) return null;
+  const lower = text.toLowerCase();
+  for (const w of words) {
+    if (!w.trim()) continue;
+    if (lower.includes(w.toLowerCase())) {
+      return {
+        flagged: true,
+        categories: ["custom_banned"],
+        confidence: 99,
+        reason: `Запрещённое слово: «${w}»`,
+      };
+    }
+  }
+  return null;
+}
+
 export function localModerationCheck(text: string): ModerationResult | null {
   const categories: string[] = [];
 

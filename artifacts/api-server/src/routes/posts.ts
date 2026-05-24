@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, postsTable, postLikesTable, postCommentsTable, usersTable } from "@workspace/db";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { moderateContent, localModerationCheck } from "../lib/moderation";
+import { moderateContent, localModerationCheck, checkCustomBannedWords } from "../lib/moderation";
 
 const router = Router();
 
@@ -87,6 +87,31 @@ router.post("/posts", async (req, res) => {
         error: "Вы временно ограничены в публикациях из-за нарушений правил. Ограничение снимается через 24 часа.",
         code: "FEED_MUTED",
       });
+    }
+
+    // ── Custom banned words check ─────────────────────────────────────────────
+    if (text) {
+      try {
+        const bwRows = await db.execute(sql`
+          SELECT word FROM banned_words LIMIT 500
+        `);
+        const customWords = (bwRows.rows as any[]).map(r => r.word);
+        const customResult = checkCustomBannedWords(text, customWords);
+        if (customResult) {
+          await db.insert(postsTable).values({
+            userId: uid, text, imageUrl, topic: topic || null,
+            moderationStatus: "rejected",
+            moderationReason: customResult.reason,
+            moderationConfidence: customResult.confidence,
+            moderationCategories: customResult.categories,
+          } as any).returning();
+          return res.status(422).json({
+            error: customResult.reason,
+            code: "MODERATION_BLOCKED",
+            categories: customResult.categories,
+          });
+        }
+      } catch {}
     }
 
     // ── Synchronous local regex check (instant, no network) ──────────────────

@@ -373,6 +373,12 @@ export default function Admin() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [showUserReports, setShowUserReports] = useState(false);
   const [userReports, setUserReports] = useState<any[]>([]);
+  const [showBannedWords, setShowBannedWords] = useState(false);
+  const [bannedWords, setBannedWords] = useState<{ id: number; word: string; category: string; created_at: string }[]>([]);
+  const [bannedWordsLoading, setBannedWordsLoading] = useState(false);
+  const [newBannedWord, setNewBannedWord] = useState("");
+  const [newBannedCategory, setNewBannedCategory] = useState("custom");
+  const [addingWord, setAddingWord] = useState(false);
   const [editingEvent, setEditingEvent] = useState<PlatformEvent | null>(null);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDesc, setEventDesc] = useState("");
@@ -422,6 +428,39 @@ export default function Admin() {
       });
       setUserReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
     } catch {}
+  };
+
+  const fetchBannedWords = async () => {
+    setBannedWordsLoading(true);
+    try {
+      const res = await fetch("/api/admin/banned-words", { headers: getHeader() });
+      if (res.ok) setBannedWords(await res.json());
+    } catch {} finally { setBannedWordsLoading(false); }
+  };
+
+  const addBannedWord = async () => {
+    if (!newBannedWord.trim()) return;
+    setAddingWord(true);
+    try {
+      const res = await fetch("/api/admin/banned-words", {
+        method: "POST",
+        headers: { ...getHeader(), "Content-Type": "application/json" },
+        body: JSON.stringify({ word: newBannedWord.trim(), category: newBannedCategory }),
+      });
+      if (res.ok) {
+        const row = await res.json();
+        setBannedWords(prev => [row, ...prev.filter(w => w.word !== row.word)]);
+        setNewBannedWord("");
+        showToast("Слово добавлено", "ok");
+      } else { showToast("Ошибка", "err"); }
+    } catch { showToast("Ошибка", "err"); } finally { setAddingWord(false); }
+  };
+
+  const deleteBannedWord = async (id: number) => {
+    try {
+      await fetch(`/api/admin/banned-words/${id}`, { method: "DELETE", headers: getHeader() });
+      setBannedWords(prev => prev.filter(w => w.id !== id));
+    } catch { showToast("Ошибка", "err"); }
   };
 
   const openEventForm = (ev?: PlatformEvent) => {
@@ -2184,6 +2223,113 @@ export default function Admin() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Banned Words */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <button
+            onClick={() => { setShowBannedWords(v => !v); if (!showBannedWords && bannedWords.length === 0) fetchBannedWords(); }}
+            className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center">
+                <Ban size={18} className="text-orange-400" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm">Запрещённые слова</p>
+                <p className="text-xs text-muted-foreground">
+                  {bannedWords.length > 0 ? `${bannedWords.length} слов в списке` : "Настройка фильтра контента"}
+                </p>
+              </div>
+            </div>
+            {showBannedWords ? <ChevronDown size={16} className="text-muted-foreground" /> : <ChevronRight size={16} className="text-muted-foreground" />}
+          </button>
+          {showBannedWords && (
+            <div className="border-t border-border">
+              {/* Add word form */}
+              <div className="p-4 border-b border-border space-y-3">
+                <p className="text-xs text-muted-foreground">Любое слово или фраза в этом списке будет <span className="text-orange-400 font-semibold">автоматически блокировать</span> пост в ленте.</p>
+                <div className="flex gap-2">
+                  <input
+                    value={newBannedWord}
+                    onChange={e => setNewBannedWord(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && addBannedWord()}
+                    placeholder="Слово или фраза…"
+                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                  />
+                  <select
+                    value={newBannedCategory}
+                    onChange={e => setNewBannedCategory(e.target.value)}
+                    className="bg-background border border-border rounded-xl px-2 py-2 text-xs focus:outline-none focus:border-orange-500 transition-colors"
+                  >
+                    <option value="custom">Общее</option>
+                    <option value="insult">Оскорбление</option>
+                    <option value="spam">Спам</option>
+                    <option value="hate">Ненависть</option>
+                    <option value="adult">18+</option>
+                  </select>
+                  <button
+                    onClick={addBannedWord}
+                    disabled={addingWord || !newBannedWord.trim()}
+                    className="px-3 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 transition-colors disabled:opacity-50 flex items-center gap-1"
+                  >
+                    {addingWord ? <div className="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin" /> : <Plus size={13} />}
+                    Добавить
+                  </button>
+                </div>
+              </div>
+
+              {/* Words list */}
+              {bannedWordsLoading ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">Загрузка…</div>
+              ) : bannedWords.length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="text-2xl mb-2">🚫</p>
+                  <p className="text-sm text-muted-foreground">Список пуст — добавьте первое слово</p>
+                </div>
+              ) : (
+                <div className="max-h-72 overflow-y-auto divide-y divide-border/50">
+                  {bannedWords.map(w => {
+                    const catColors: Record<string, string> = {
+                      custom: "bg-orange-500/15 text-orange-400",
+                      insult: "bg-red-500/15 text-red-400",
+                      spam: "bg-yellow-500/15 text-yellow-400",
+                      hate: "bg-purple-500/15 text-purple-400",
+                      adult: "bg-pink-500/15 text-pink-400",
+                    };
+                    const catLabels: Record<string, string> = {
+                      custom: "Общее", insult: "Оскорбление", spam: "Спам", hate: "Ненависть", adult: "18+",
+                    };
+                    return (
+                      <div key={w.id} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-secondary/20 transition-colors">
+                        <span className="flex-1 text-sm font-mono text-foreground">«{w.word}»</span>
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${catColors[w.category] || catColors.custom}`}>
+                          {catLabels[w.category] || w.category}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground hidden group-hover:block">
+                          {new Date(w.created_at).toLocaleDateString("ru-RU")}
+                        </span>
+                        <button
+                          onClick={() => deleteBannedWord(w.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-destructive hover:bg-destructive/10 transition-all"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {bannedWords.length > 0 && (
+                <div className="p-3 border-t border-border flex justify-end">
+                  <button onClick={fetchBannedWords} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-secondary transition-colors">
+                    <RefreshCw size={12} className={bannedWordsLoading ? "animate-spin" : ""} /> Обновить
+                  </button>
                 </div>
               )}
             </div>

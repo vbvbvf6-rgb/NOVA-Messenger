@@ -1054,4 +1054,70 @@ router.patch("/admin/user-reports/:id", requireAdmin, async (req, res) => {
   }
 });
 
+/* ── Banned Words ──────────────────────────────────────────────────────────── */
+
+async function ensureBannedWordsTable() {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS banned_words (
+      id SERIAL PRIMARY KEY,
+      word TEXT NOT NULL UNIQUE,
+      category TEXT NOT NULL DEFAULT 'custom',
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `);
+}
+
+router.get("/admin/banned-words", requireAdmin, async (req, res) => {
+  try {
+    await ensureBannedWordsTable();
+    const rows = await db.execute(sql`SELECT id, word, category, created_at FROM banned_words ORDER BY created_at DESC`);
+    res.json(rows.rows);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/admin/banned-words", requireAdmin, async (req, res) => {
+  try {
+    await ensureBannedWordsTable();
+    const { word, category } = req.body as { word: string; category?: string };
+    if (!word?.trim()) return res.status(400).json({ error: "Word required" });
+    const clean = word.trim().toLowerCase();
+    await db.execute(sql`
+      INSERT INTO banned_words (word, category, created_by)
+      VALUES (${clean}, ${category || "custom"}, ${req.currentUserId})
+      ON CONFLICT (word) DO NOTHING
+    `);
+    const result = await db.execute(sql`SELECT id, word, category, created_at FROM banned_words WHERE word = ${clean}`);
+    res.status(201).json(result.rows[0] || { word: clean, category: category || "custom" });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/admin/banned-words/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    await db.execute(sql`DELETE FROM banned_words WHERE id = ${id}`);
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Public route used by moderation service at post-time
+router.get("/admin/banned-words/list", requireAdmin, async (req, res) => {
+  try {
+    await ensureBannedWordsTable();
+    const rows = await db.execute(sql`SELECT word FROM banned_words`);
+    res.json((rows.rows as any[]).map(r => r.word));
+  } catch {
+    res.json([]);
+  }
+});
+
 export default router;
