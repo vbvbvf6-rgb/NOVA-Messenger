@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Crown, Zap, Check, Star, Shield, MessageCircle, Gift, Image,
+  Crown, Zap, Check, Star, Shield, MessageCircle, Image,
   Infinity as InfinityIcon, X, AlertTriangle, Palette, RefreshCw, TrendingUp,
   ShoppingCart, Bell, Clock, Lock, CalendarClock, RotateCcw, Flame,
   Sparkles, Mic, Video, Brush, Layers, ChevronDown, ChevronUp,
-  Radio, Eye, Smile, Pin, Bot, Users, Music, Package, Globe,
+  Radio, Eye, Smile, Pin, Bot, Users, Music, Globe,
   BarChart3, QrCode, Fingerprint, Headphones, Wand2, Trash2
 } from "lucide-react";
 import { useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
@@ -42,7 +42,7 @@ const PRIME_FEATURES = [
   { icon: Clock,        text: "Отложенная отправка сообщений по расписанию",      color: "text-green-400",  bg: "bg-green-500/10"  },
   { icon: Bell,         text: "Приоритетные уведомления и поддержка 24/7",        color: "text-green-400",  bg: "bg-green-500/10"  },
   { icon: Shield,       text: "VIP-метка в группах и каналах",                   color: "text-yellow-400", bg: "bg-yellow-500/10" },
-  { icon: Gift,         text: "50 ⚡ Spark бонус при оформлении",                 color: "text-green-400",  bg: "bg-green-500/10"  },
+  { icon: Zap,          text: "50 ⚡ Spark бонус при оформлении",                 color: "text-green-400",  bg: "bg-green-500/10"  },
 ];
 
 const PLUS_EXCLUSIVE = [
@@ -56,7 +56,7 @@ const PLUS_EXCLUSIVE = [
   { icon: Video,        text: "Видео-аватар профиля",                                 color: "text-fuchsia-400",bg: "bg-fuchsia-500/10"},
   { icon: Layers,       text: "Эксклюзивный пак стикеров Prime+",                    color: "text-purple-400", bg: "bg-purple-500/10" },
   { icon: Shield,       text: "VIP+ метка в группах и каналах",                      color: "text-purple-400", bg: "bg-purple-500/10" },
-  { icon: Gift,         text: "100 ⚡ Spark бонус при оформлении",                    color: "text-fuchsia-400",bg: "bg-fuchsia-500/10"},
+  { icon: Zap,          text: "100 ⚡ Spark бонус при оформлении",                    color: "text-fuchsia-400",bg: "bg-fuchsia-500/10"},
   { icon: MessageCircle,text: "Приоритет в очереди AI-ассистента",                    color: "text-fuchsia-400",bg: "bg-fuchsia-500/10"},
   { icon: Radio,        text: "Голосовые сообщения без ограничений длины",            color: "text-violet-400", bg: "bg-violet-500/10" },
   { icon: Trash2,       text: "Просмотр удалённых сообщений — 48 часов",             color: "text-violet-400", bg: "bg-violet-500/10" },
@@ -66,7 +66,6 @@ const PLUS_EXCLUSIVE = [
   { icon: Bot,          text: "AI-генерация аватара: новый стиль каждый месяц",       color: "text-violet-400", bg: "bg-violet-500/10" },
   { icon: Users,        text: "Увеличенный лимит контактов до 10 000",                color: "text-violet-400", bg: "bg-violet-500/10" },
   { icon: Music,        text: "Кастомные звуки и рингтоны уведомлений",               color: "text-purple-400", bg: "bg-purple-500/10" },
-  { icon: Package,      text: "Ежемесячный эпический подарок бесплатно",              color: "text-fuchsia-400",bg: "bg-fuchsia-500/10"},
   { icon: Wand2,        text: "Эффекты отправки: конфетти, снег, огонь в чате",       color: "text-purple-400", bg: "bg-purple-500/10" },
   { icon: QrCode,       text: "QR-код профиля с кастомным дизайном Prime+",           color: "text-violet-400", bg: "bg-violet-500/10" },
   { icon: BarChart3,    text: "Детальная статистика трат Spark и активности",          color: "text-violet-400", bg: "bg-violet-500/10" },
@@ -86,7 +85,6 @@ const COMPARISON_ROWS = [
   { label: "Транскрипция голосовых",   prime: "—",               plus: "✓ AI" },
   { label: "Видео-аватар",             prime: "—",               plus: "✓" },
   { label: "Голосовые без лимита",     prime: "—",               plus: "✓" },
-  { label: "Ежемесячный подарок",      prime: "—",               plus: "Эпический 🎁" },
   { label: "Цвет имени",              prime: "—",               plus: "Градиент на выбор" },
   { label: "Закреп. сообщений",        prime: "1",               plus: "10" },
   { label: "Лимит контактов",          prime: "5 000",           plus: "10 000" },
@@ -221,124 +219,6 @@ function PrimeCountdown({ expiresAt, tier, onRenew }: { expiresAt: string; tier:
   );
 }
 
-// ─── Monthly Gift Claim ───────────────────────────────────────────────────────
-
-function MonthlyGiftClaim() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [status, setStatus] = useState<{ available: boolean; daysLeft: number; lastGiftAt: string | null } | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [claimed, setClaimed] = useState<any>(null);
-
-  useEffect(() => {
-    const token = sessionStorage.getItem("pulse-token");
-    fetch("/api/wallet/monthly-gift/status", { headers: token ? { Authorization: `Bearer ${token}` } : {} })
-      .then(r => r.json())
-      .then(data => { if (!data.error) setStatus(data); })
-      .catch(() => {});
-  }, []);
-
-  const handleClaim = async () => {
-    setLoading(true);
-    try {
-      const token = sessionStorage.getItem("pulse-token");
-      const res = await fetch("/api/wallet/monthly-gift", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast({ variant: "destructive", title: "Ошибка", description: data.error || "Не удалось получить подарок" });
-      } else {
-        setClaimed(data);
-        setStatus(prev => prev ? { ...prev, available: false, daysLeft: 30 } : prev);
-        queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
-        toast({ title: data.type === "gift" ? `Подарок получен! ${data.gift?.emoji ?? "🎁"}` : "Spark начислен!", description: data.type === "gift" ? `Вы получили: ${data.gift?.name}` : `+${data.amount} ⚡ на баланс` });
-      }
-    } catch {
-      toast({ variant: "destructive", title: "Ошибка соединения" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!status) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-2xl overflow-hidden border border-fuchsia-500/30 p-4"
-      style={{ background: "linear-gradient(135deg, rgba(217,70,239,0.12), rgba(168,85,247,0.06))" }}
-    >
-      <div className="absolute top-0 right-0 w-24 h-24 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none" />
-      <div className="flex items-start gap-3 relative z-10">
-        <motion.div
-          animate={status.available ? { scale: [1, 1.12, 1], rotate: [0, 5, -5, 0] } : {}}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border border-fuchsia-500/30 shrink-0"
-          style={{ background: "rgba(217,70,239,0.15)" }}
-        >
-          {claimed ? (claimed.type === "gift" ? (claimed.gift?.emoji ?? "🎁") : "⚡") : "🎁"}
-        </motion.div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <p className="text-sm font-bold text-foreground">Ежемесячный эпический подарок</p>
-            {status.available && !claimed && (
-              <motion.span animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
-                className="text-[9px] font-black px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 uppercase">
-                Доступен!
-              </motion.span>
-            )}
-          </div>
-          {claimed ? (
-            <p className="text-xs text-green-400 font-medium">
-              {claimed.type === "gift" ? `Получено: ${claimed.gift?.name} ✓` : `+${claimed.amount} ⚡ начислено ✓`}
-            </p>
-          ) : status.available ? (
-            <p className="text-xs text-muted-foreground">Ваш ежемесячный эпический подарок готов к получению</p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Следующий подарок через <span className="font-bold text-foreground">{status.daysLeft} дн.</span>
-            </p>
-          )}
-        </div>
-        {!claimed && status.available && (
-          <motion.button
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            onClick={handleClaim}
-            disabled={loading}
-            className="shrink-0 px-4 py-2 rounded-xl font-black text-xs text-white disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, #d946ef, #a855f7)", boxShadow: "0 0 14px rgba(217,70,239,0.4)" }}
-          >
-            {loading ? "..." : "Забрать"}
-          </motion.button>
-        )}
-        {!claimed && !status.available && (
-          <div className="shrink-0 flex flex-col items-center">
-            <span className="text-lg font-black text-muted-foreground">{status.daysLeft}</span>
-            <span className="text-[9px] text-muted-foreground">дн.</span>
-          </div>
-        )}
-      </div>
-      {!claimed && status.available && (
-        <div className="mt-3 flex gap-2 relative z-10">
-          {["💎", "🌸", "👑", "⭐", "🔥"].map((emoji, i) => (
-            <motion.div key={i}
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 2, repeat: Infinity, delay: i * 0.3, ease: "easeInOut" }}
-              className="w-8 h-8 rounded-xl border border-fuchsia-500/20 flex items-center justify-center text-sm"
-              style={{ background: "rgba(168,85,247,0.1)" }}
-            >
-              {emoji}
-            </motion.div>
-          ))}
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
 // ─── Feature row ─────────────────────────────────────────────────────────────
 
 function FeatureRow({ icon: Icon, text, color, bg }: { icon: React.ElementType; text: string; color: string; bg: string }) {
@@ -403,33 +283,7 @@ function PrimePlusPanel({ navigate, toast, queryClient }: {
   toast: (opts: any) => void;
   queryClient: any;
 }) {
-  const [giftStatus, setGiftStatus] = useState<"idle" | "claiming" | "claimed" | "cooldown">("idle");
-  const [giftMsg, setGiftMsg] = useState("");
   const [loungeLoading, setLoungeLoading] = useState(false);
-
-  const claimMonthlyGift = async () => {
-    setGiftStatus("claiming");
-    try {
-      const token = sessionStorage.getItem("pulse-token");
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch("/api/wallet/monthly-gift", { method: "POST", headers });
-      const data = await res.json();
-      if (res.ok) {
-        setGiftStatus("claimed");
-        setGiftMsg(`+${data.amount || 0} ⚡ и эпический подарок зачислены!`);
-        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-        toast({ title: "Ежемесячный подарок получен! 🎁", description: giftMsg });
-      } else if (res.status === 429) {
-        setGiftStatus("cooldown");
-        setGiftMsg(data.message || "Следующий подарок через месяц");
-      } else {
-        setGiftStatus("idle");
-      }
-    } catch {
-      setGiftStatus("idle");
-    }
-  };
 
   const openLounge = async () => {
     setLoungeLoading(true);
@@ -452,34 +306,6 @@ function PrimePlusPanel({ navigate, toast, queryClient }: {
 
   return (
     <div className="space-y-3">
-      {/* Monthly Epic Gift */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-2xl border border-purple-500/30 overflow-hidden p-4"
-        style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.08), rgba(217,70,239,0.04))" }}
-      >
-        <div className="flex items-center gap-3">
-          <motion.div
-            animate={{ rotate: [0, -5, 5, -5, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-2xl"
-            style={{ background: "linear-gradient(135deg, rgba(168,85,247,0.2), rgba(217,70,239,0.15))" }}
-          >
-            🎁
-          </motion.div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-black text-foreground">Ежемесячный эпический подарок</p>
-            <p className="text-xs text-muted-foreground">
-              Эксклюзивно для Prime+ — скоро в ближайшем обновлении
-            </p>
-          </div>
-          <span className="px-4 py-2 rounded-xl text-sm font-black shrink-0 bg-amber-500/15 text-amber-400 border border-amber-500/25">
-            Скоро
-          </span>
-        </div>
-      </motion.div>
-
       {/* Prime+ Lounge */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -602,10 +428,7 @@ export default function Prime() {
 
         {/* Prime+ exclusive live actions */}
         {isSubscribedPlus && (
-          <>
-            <PrimePlusPanel navigate={navigate} toast={toast} queryClient={queryClient} />
-            <MonthlyGiftClaim />
-          </>
+          <PrimePlusPanel navigate={navigate} toast={toast} queryClient={queryClient} />
         )}
 
         {/* Tab switcher */}
@@ -900,41 +723,6 @@ export default function Prime() {
                   <div className="px-3 py-2 text-center text-yellow-500 border-x border-border">Prime ⭐</div>
                   <div className="px-3 py-2 text-center text-purple-400">Prime+ 💎</div>
                 </div>
-              </div>
-
-              {/* Monthly gift highlight */}
-              <div className="relative rounded-2xl overflow-hidden border border-fuchsia-500/30 p-4"
-                style={{ background: "linear-gradient(135deg, rgba(217,70,239,0.1), rgba(168,85,247,0.05))" }}
-              >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-fuchsia-500/10 rounded-full blur-2xl pointer-events-none" />
-                <div className="flex items-center gap-3 relative z-10">
-                  <motion.div
-                    animate={{ scale: [1, 1.12, 1], rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border border-fuchsia-500/30 shrink-0"
-                    style={{ background: "rgba(217,70,239,0.15)" }}
-                  >
-                    🎁
-                  </motion.div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground">Ежемесячный эпический подарок</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Prime+ пользователи получают эпический подарок каждый месяц — бесплатно</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex gap-2 relative z-10">
-                  {["💎", "🌸", "👑", "⭐", "🔥"].map((emoji, i) => (
-                    <motion.div key={i}
-                      animate={{ y: [0, -4, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: i * 0.3, ease: "easeInOut" }}
-                      className="w-9 h-9 rounded-xl border border-fuchsia-500/20 flex items-center justify-center text-base"
-                      style={{ background: "rgba(168,85,247,0.1)" }}
-                    >
-                      {emoji}
-                    </motion.div>
-                  ))}
-                  <div className="w-9 h-9 rounded-xl border border-border flex items-center justify-center text-xs text-muted-foreground font-bold">+∞</div>
-                </div>
-                <p className="mt-2 text-[11px] text-purple-400 font-semibold relative z-10">✓ Доступно подписчикам Prime+ — используйте кнопку «Забрать» вверху страницы</p>
               </div>
 
               {/* Plan picker */}

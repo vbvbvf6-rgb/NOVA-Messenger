@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useGetMyStats, useGetMe } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
-import { GiftShowcase } from "@/components/GiftShowcase";
-import { GiftLeaderboard } from "@/components/GiftLeaderboard";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, Phone, Gift, Users, Clock, CalendarDays, Settings, BadgeCheck, Crown, Zap, QrCode, Sparkles, Activity, TrendingUp, Star, Share2, Copy, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
@@ -660,12 +659,6 @@ export default function Profile() {
 
             {/* Prime+: Animated Status */}
             {isPrimePlus && user && <AnimatedStatusPicker user={user} />}
-
-            {/* Gift Showcase */}
-            {user && <GiftShowcase userId={(user as any).id} />}
-
-            {/* Gift Leaderboard */}
-            {user && <GiftLeaderboard userId={(user as any).id} />}
 
             {/* Stats Section */}
             <div>
