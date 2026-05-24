@@ -237,6 +237,9 @@ export default function Admin() {
   const [scanResults, setScanResults] = useState<{ scanned: number; flagged: ScanFlagged[] } | null>(null);
   const [showScanModal, setShowScanModal] = useState(false);
   const [deletingScannedId, setDeletingScannedId] = useState<number | null>(null);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [addingBulk, setAddingBulk] = useState(false);
 
   // Support Bugs
   interface AdminBugReport {
@@ -1091,6 +1094,28 @@ export default function Admin() {
       }
     } catch { showToast("Ошибка соединения", "err"); }
     setScanning(false);
+  };
+
+  const handleBulkAdd = async () => {
+    if (!bulkText.trim()) return;
+    setAddingBulk(true);
+    try {
+      const res = await fetch("/api/admin/banwords/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getHeader() },
+        body: JSON.stringify({ words: bulkText }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`✅ Добавлено: ${data.added} · Уже было: ${data.skipped}`, "ok");
+        setBulkText("");
+        setBulkMode(false);
+        fetchBanwords();
+      } else {
+        showToast(data.error || "Ошибка", "err");
+      }
+    } catch { showToast("Ошибка соединения", "err"); }
+    setAddingBulk(false);
   };
 
   const handleDeleteScanned = async (id: number) => {
@@ -2694,21 +2719,64 @@ export default function Admin() {
                 )}
               </div>
               {/* Add form */}
-              <div className="p-3 border-b border-border flex gap-2">
-                <input
-                  value={newBanword}
-                  onChange={e => setNewBanword(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleAddBanword()}
-                  placeholder="Добавить слово вручную..."
-                  className="flex-1 text-sm bg-background border border-border rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-                />
-                <button
-                  onClick={handleAddBanword}
-                  disabled={addingBanword || !newBanword.trim()}
-                  className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-400 disabled:opacity-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Plus size={14} /> Добавить
-                </button>
+              <div className="p-3 border-b border-border space-y-2">
+                <div className="flex gap-1 p-0.5 rounded-xl bg-secondary w-fit">
+                  <button
+                    onClick={() => setBulkMode(false)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${!bulkMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    Одно слово
+                  </button>
+                  <button
+                    onClick={() => setBulkMode(true)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${bulkMode ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    До 1000 слов
+                  </button>
+                </div>
+                {!bulkMode ? (
+                  <div className="flex gap-2">
+                    <input
+                      value={newBanword}
+                      onChange={e => setNewBanword(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && handleAddBanword()}
+                      placeholder="Добавить слово вручную..."
+                      className="flex-1 text-sm bg-background border border-border rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+                    />
+                    <button
+                      onClick={handleAddBanword}
+                      disabled={addingBanword || !newBanword.trim()}
+                      className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-400 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                    >
+                      <Plus size={14} /> Добавить
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <textarea
+                      value={bulkText}
+                      onChange={e => setBulkText(e.target.value)}
+                      placeholder={"Вставьте слова через запятую, точку с запятой или с новой строки:\nплохо, матерно, грубо\nили каждое на новой строке\n(максимум 1000 слов за раз)"}
+                      rows={6}
+                      className="w-full text-sm bg-background border border-border rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors resize-none font-mono"
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        {bulkText.trim()
+                          ? `~${bulkText.split(/[\n,;]+/).filter(w => w.trim().length >= 2).length} слов`
+                          : "Разделитель: запятая, ; или новая строка"}
+                      </span>
+                      <button
+                        onClick={handleBulkAdd}
+                        disabled={addingBulk || !bulkText.trim()}
+                        className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-400 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                      >
+                        {addingBulk ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
+                        Добавить всё
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* List */}
               <div className="max-h-64 overflow-y-auto divide-y divide-border">

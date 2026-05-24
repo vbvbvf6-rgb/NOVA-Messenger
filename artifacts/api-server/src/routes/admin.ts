@@ -989,6 +989,36 @@ router.get("/admin/banwords", requireAdmin, async (req, res) => {
   }
 });
 
+router.post("/admin/banwords/bulk", requireAdmin, async (req, res) => {
+  try {
+    const raw = String(req.body.words ?? "");
+    const words = raw
+      .split(/[\n,;]+/)
+      .map(w => w.trim().toLowerCase())
+      .filter(w => w.length >= 2 && w.length <= 100);
+
+    if (words.length === 0) return res.status(400).json({ error: "Нет слов для добавления" });
+    if (words.length > 1000) return res.status(400).json({ error: "Максимум 1000 слов за раз" });
+
+    let added = 0;
+    let skipped = 0;
+    for (const word of words) {
+      try {
+        const result = await db.execute(
+          sql`INSERT INTO banwords (word, created_by) VALUES (${word}, ${req.currentUserId}) ON CONFLICT (word) DO NOTHING`
+        );
+        if ((result as any).rowCount > 0) added++;
+        else skipped++;
+      } catch { skipped++; }
+    }
+    invalidateBanwordsCache();
+    res.json({ added, skipped, total: words.length });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 router.post("/admin/banwords", requireAdmin, async (req, res) => {
   try {
     const word = String(req.body.word ?? "").trim().toLowerCase();
