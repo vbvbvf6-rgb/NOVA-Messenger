@@ -1334,6 +1334,9 @@ export default function Settings() {
   // Settings navigation — sidebar active section (null = show sidebar on mobile)
   const [activeSection, setActiveSection] = useState<string | null>(null);
 
+  // Events
+  const [showEvents, setShowEvents] = useState(() => lsb("pulse-show-events", false));
+
   // Chat Settings
   const [linkPreview, setLinkPreview] = useState(() => lsb("pulse-link-preview", true));
   const [sendOnEnter, setSendOnEnter] = useState(() => lsb("pulse-send-on-enter", true));
@@ -2212,6 +2215,17 @@ export default function Settings() {
           {/* ─── CHAT SETTINGS ─────────────────────────────── */}
           {displaySection === "chat-settings" && (
             <div className="max-w-2xl mx-auto space-y-6">
+              <Section title={lang==="ru"?"Интерфейс":"Interface"} icon={<Layers size={13}/>}>
+                <Row icon={<Calendar size={18}/>} color="bg-violet-500/10 text-violet-500"
+                  label={lang==="ru"?"События в меню":"Events in Sidebar"}
+                  desc={lang==="ru"?"Показывать раздел «События» в боковом меню":"Show the Events section in the sidebar"}
+                  right={<Switch checked={showEvents} onCheckedChange={v => {
+                    setShowEvents(v);
+                    setLs("pulse-show-events", v);
+                    window.dispatchEvent(new CustomEvent("pulse:events-toggle"));
+                    toast({ title: v ? (lang==="ru"?"События включены":"Events enabled") : (lang==="ru"?"События скрыты":"Events hidden") });
+                  }}/>}/>
+              </Section>
               <Section title={lang==="ru"?"Настройки чатов":"Chat Settings"} icon={<MessageSquare size={13}/>}>
                 <Row icon={<Link size={18}/>} color="bg-blue-500/10 text-blue-500"
                   label={lang==="ru"?"Предпросмотр ссылок":"Link Preview"}

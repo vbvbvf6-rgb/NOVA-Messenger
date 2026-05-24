@@ -27,6 +27,7 @@ import Admin from "@/pages/Admin";
 import Prime from "@/pages/Prime";
 
 import Leaderboard from "@/pages/Leaderboard";
+import Events from "@/pages/Events";
 import Support from "@/pages/Support";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -185,6 +186,7 @@ function MainAppInner({ onLogout, onSwitchAccount, onRemoveAccount, onOpenAddAcc
               <Route path="/prime" component={Prime} />
 
               <Route path="/leaderboard" component={Leaderboard} />
+              <Route path="/events" component={Events} />
               <Route path="/support" component={Support} />
               <Route path="/profile" component={Profile} />
               <Route path="/settings" component={Settings} />

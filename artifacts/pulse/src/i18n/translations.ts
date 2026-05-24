@@ -15,6 +15,7 @@ const translations = {
     "nav.prime": "Pulse Prime",
     "nav.admin": "Админ-панель",
     "nav.leaderboard": "Рейтинг",
+    "nav.events": "События",
 
     // User menu dropdown
     "menu.myProfile": "Мой профиль",
@@ -241,6 +242,7 @@ const translations = {
     "nav.prime": "Pulse Prime",
     "nav.admin": "Admin Panel",
     "nav.leaderboard": "Top Users",
+    "nav.events": "Events",
 
     // User menu dropdown
     "menu.myProfile": "My Profile",

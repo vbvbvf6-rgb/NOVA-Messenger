@@ -23,6 +23,7 @@ import {
   Sun,
   Moon,
   Search,
+  CalendarDays,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -118,25 +119,33 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
   const { data: me } = useGetMe();
   const { data: chats } = useGetChats();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showEvents, setShowEvents] = useState(() => localStorage.getItem("pulse-show-events") === "true");
 
   useEffect(() => {
     setIsAdmin((me as any)?.isAdmin === true);
   }, [me]);
+
+  useEffect(() => {
+    const handler = () => setShowEvents(localStorage.getItem("pulse-show-events") === "true");
+    window.addEventListener("pulse:events-toggle", handler);
+    return () => window.removeEventListener("pulse:events-toggle", handler);
+  }, []);
 
   const totalUnread = chats?.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) ?? 0;
   const initial = me?.displayName?.[0]?.toUpperCase() || "U";
   const isPremium = (me as any)?.hasPrime ?? false;
 
   const NAV_ITEMS: Array<{ href: string; icon: any; label: string; soon?: boolean }> = [
-    { href: "/",             icon: MessageCircle, label: t("nav.chats") },
-    { href: "/calls",        icon: Phone,         label: t("nav.calls") },
-    { href: "/feed",         icon: Rss,           label: t("nav.feed") },
-    { href: "/contacts",     icon: Users,         label: t("nav.contacts") },
-    { href: "/stories",      icon: History,       label: t("nav.stories") },
-    { href: "/wallet",       icon: Wallet,        label: t("nav.wallet") },
-    { href: "/leaderboard",  icon: Trophy,        label: t("nav.leaderboard") },
-    { href: "/profile",      icon: UserCircle,    label: t("nav.profile") },
-    { href: "/settings",     icon: Settings,      label: t("nav.settings") },
+    { href: "/",             icon: MessageCircle,  label: t("nav.chats") },
+    { href: "/calls",        icon: Phone,          label: t("nav.calls") },
+    { href: "/feed",         icon: Rss,            label: t("nav.feed") },
+    { href: "/contacts",     icon: Users,          label: t("nav.contacts") },
+    { href: "/stories",      icon: History,        label: t("nav.stories") },
+    ...(showEvents ? [{ href: "/events", icon: CalendarDays, label: t("nav.events") }] : []),
+    { href: "/wallet",       icon: Wallet,         label: t("nav.wallet") },
+    { href: "/leaderboard",  icon: Trophy,         label: t("nav.leaderboard") },
+    { href: "/profile",      icon: UserCircle,     label: t("nav.profile") },
+    { href: "/settings",     icon: Settings,       label: t("nav.settings") },
   ];
 
   const AccountsSection = (
