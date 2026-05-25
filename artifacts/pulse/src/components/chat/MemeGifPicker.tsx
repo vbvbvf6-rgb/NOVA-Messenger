@@ -22,16 +22,24 @@ const CATEGORIES: { label: string; emoji: string; sub: string }[] = [
   { label: "Животные",emoji: "🐾", sub: "AnimalsBeingDerps" },
 ];
 
-async function fetchMemes(subreddit: string, count = 20): Promise<Meme[]> {
-  const res = await fetch(`https://meme-api.com/gimme/${subreddit}/${count}`);
-  if (!res.ok) throw new Error("API error");
-  const data = await res.json();
-  const memes: Meme[] = (data.memes || []);
-  return memes.filter(m =>
-    m.url &&
-    !m.url.endsWith(".gif") &&
-    /\.(jpg|jpeg|png|webp)(\?.*)?$/i.test(m.url)
-  );
+const CACHE = new Map<string, Meme[]>();
+
+async function fetchMemes(subreddit: string, count = 12): Promise<Meme[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(`https://meme-api.com/gimme/${subreddit}/${count}`, { signal: controller.signal });
+    if (!res.ok) throw new Error("API error");
+    const data = await res.json();
+    const memes: Meme[] = (data.memes || []);
+    return memes.filter(m =>
+      m.url &&
+      !m.url.endsWith(".gif") &&
+      /\.(jpg|jpeg|png|webp)(\?.*)?$/i.test(m.url)
+    );
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 interface MemeGifPickerProps {
@@ -41,19 +49,26 @@ interface MemeGifPickerProps {
 
 export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
   const [categoryIdx, setCategoryIdx] = useState(0);
-  const [memes, setMemes] = useState<Meme[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [memes, setMemes] = useState<Meme[]>(() => CACHE.get(CATEGORIES[0].sub) ?? []);
+  const [loading, setLoading] = useState(() => !CACHE.has(CATEGORIES[0].sub));
   const [error, setError] = useState(false);
-  const [seed, setSeed] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const cat = CATEGORIES[categoryIdx];
 
-  const load = useCallback(async (sub: string) => {
+  const load = useCallback(async (sub: string, force = false) => {
+    if (!force && CACHE.has(sub)) {
+      setMemes(CACHE.get(sub)!);
+      setLoading(false);
+      setError(false);
+      return;
+    }
     setLoading(true);
     setError(false);
     setMemes([]);
     try {
       const results = await fetchMemes(sub);
+      CACHE.set(sub, results);
       setMemes(results);
     } catch {
       setError(true);
@@ -63,8 +78,8 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
   }, []);
 
   useEffect(() => {
-    load(cat.sub);
-  }, [categoryIdx, seed]);
+    load(cat.sub, refreshKey > 0);
+  }, [categoryIdx, refreshKey]);
 
   return (
     <motion.div
@@ -74,12 +89,11 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
       transition={{ type: "spring", damping: 26, stiffness: 320 }}
       className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-[22px] shadow-2xl overflow-hidden z-50"
     >
-      {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-secondary/40">
         <span className="text-base shrink-0">😂</span>
         <span className="text-[13px] font-black text-foreground flex-1">Мемы</span>
         <button
-          onClick={() => setSeed(s => s + 1)}
+          onClick={() => setRefreshKey(k => k + 1)}
           disabled={loading}
           className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
           title="Обновить"
@@ -94,7 +108,6 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
         </button>
       </div>
 
-      {/* Category tabs */}
       <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-3 py-2 bg-secondary/20 border-b border-border/50">
         {CATEGORIES.map((c, i) => (
           <button
@@ -113,7 +126,6 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
         ))}
       </div>
 
-      {/* Grid */}
       <div className="overflow-y-auto scrollbar-none" style={{ maxHeight: "280px" }}>
         {loading ? (
           <div className="flex flex-col items-center justify-center h-32 gap-2">
@@ -125,7 +137,7 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
             <AlertCircle size={24} className="text-rose-400" />
             <p className="text-[12px] text-muted-foreground font-medium">Не удалось загрузить</p>
             <button
-              onClick={() => setSeed(s => s + 1)}
+              onClick={() => setRefreshKey(k => k + 1)}
               className="text-[11px] font-black text-primary hover:text-primary/80 transition-colors"
             >
               Попробовать снова
@@ -136,7 +148,7 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
             <span className="text-2xl">🤷</span>
             <p className="text-[12px] text-muted-foreground font-medium">Мемов не нашлось</p>
             <button
-              onClick={() => setSeed(s => s + 1)}
+              onClick={() => setRefreshKey(k => k + 1)}
               className="text-[11px] font-black text-primary"
             >
               Обновить
@@ -145,7 +157,7 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
         ) : (
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${categoryIdx}-${seed}`}
+              key={`${categoryIdx}-${refreshKey}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -172,13 +184,11 @@ export function MemeGifPicker({ onSelect, onClose }: MemeGifPickerProps) {
                       (e.currentTarget as HTMLImageElement).src = meme.url;
                     }}
                   />
-                  {/* Hover overlay with title */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
                     <p className="text-white text-[9px] font-bold leading-tight line-clamp-2">
                       {meme.title}
                     </p>
                   </div>
-                  {/* Upvotes badge */}
                   {meme.ups > 0 && (
                     <div className="absolute top-1 right-1 bg-black/50 text-white text-[8px] font-black px-1 py-0.5 rounded-md leading-none">
                       ▲{meme.ups >= 1000 ? `${(meme.ups / 1000).toFixed(1)}k` : meme.ups}

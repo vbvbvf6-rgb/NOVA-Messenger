@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -102,6 +103,88 @@ function AccountRow({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+function MobileAccountFooter({
+  me, initial, isPremium, savedAccounts, currentUserId, canAddAccount,
+  switchAccount, removeAccount, openAddAccount, logout,
+}: {
+  me: any; initial: string; isPremium: boolean;
+  savedAccounts: SavedAccount[]; currentUserId: number | null; canAddAccount: boolean;
+  switchAccount: (id: number) => void; removeAccount: (id: number) => void;
+  openAddAccount: () => void; logout: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="w-full px-3 pt-3 mt-auto border-t border-border">
+      <button
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-secondary/50 hover:bg-secondary border border-border/50 hover:border-border transition-all focus:outline-none"
+      >
+        <div className="relative shrink-0">
+          <div
+            className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden", isPremium && "ring-2 ring-violet-500 ring-offset-2 ring-offset-card")}
+            style={{ backgroundColor: me?.avatarColor || "#3B82F6" }}
+          >
+            {me?.avatarUrl ? <img src={me.avatarUrl} alt="" className="w-full h-full object-cover" /> : initial}
+          </div>
+          {savedAccounts.length > 1 && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-bold flex items-center justify-center shadow-sm border-2 border-card">
+              {savedAccounts.length}
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-sm font-bold truncate text-foreground leading-tight">{me?.displayName || "..."}</p>
+          <p className="text-xs text-muted-foreground truncate">@{me?.username || "..."}</p>
+        </div>
+        <MoreHorizontal size={16} className={cn("text-muted-foreground shrink-0 transition-transform", expanded && "rotate-90")} />
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-2 space-y-1">
+              {savedAccounts.map(acc => (
+                <AccountRow
+                  key={acc.userId}
+                  account={acc}
+                  isActive={acc.userId === currentUserId}
+                  onSwitch={() => { setExpanded(false); switchAccount(acc.userId); }}
+                  onRemove={() => removeAccount(acc.userId)}
+                />
+              ))}
+              {canAddAccount && (
+                <button
+                  onClick={() => { setExpanded(false); openAddAccount(); }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-primary hover:bg-primary/10 transition-colors text-sm font-semibold"
+                >
+                  <UserPlus size={15} />
+                  Добавить аккаунт
+                  {savedAccounts.length > 0 && (
+                    <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{savedAccounts.length}/3</span>
+                  )}
+                </button>
+              )}
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-destructive hover:bg-destructive/10 transition-colors text-sm font-semibold"
+              >
+                <LogOut size={15} />
+                Выйти
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -422,27 +505,18 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
           )}
         </nav>
 
-        <div className="w-full px-3 pt-3 mt-auto border-t border-border">
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-secondary/30">
-            <div
-              className={cn("w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden shrink-0", isPremium && "ring-2 ring-violet-500 ring-offset-2 ring-offset-card")}
-              style={{ backgroundColor: me?.avatarColor || "#3B82F6" }}
-            >
-              {me?.avatarUrl ? <img src={me.avatarUrl} alt="" className="w-full h-full object-cover" /> : initial}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold truncate text-foreground leading-tight">{me?.displayName || "..."}</p>
-              <p className="text-xs text-muted-foreground truncate">@{me?.username || "..."}</p>
-            </div>
-            <button
-              onClick={() => { onMobileClose(); logout(); }}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all shrink-0"
-              title="Выйти"
-            >
-              <LogOut size={16} />
-            </button>
-          </div>
-        </div>
+        <MobileAccountFooter
+          me={me}
+          initial={initial}
+          isPremium={isPremium}
+          savedAccounts={savedAccounts}
+          currentUserId={currentUserId}
+          canAddAccount={canAddAccount}
+          switchAccount={(id) => { switchAccount(id); onMobileClose(); }}
+          removeAccount={removeAccount}
+          openAddAccount={() => { openAddAccount(); onMobileClose(); }}
+          logout={() => { onMobileClose(); logout(); }}
+        />
       </div>
     </>
   );
