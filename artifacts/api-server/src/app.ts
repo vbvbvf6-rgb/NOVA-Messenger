@@ -1,10 +1,16 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
-import pinoHttp from "pino-http";
+import * as pinoHttpModule from "pino-http";
 import http from "node:http";
 import path from "node:path";
-import rateLimit from "express-rate-limit";
+import { rateLimit } from "express-rate-limit";
 import jwt from "jsonwebtoken";
+
+// pino-http ships as a CJS module; under bundler moduleResolution the
+// default export may be wrapped – unwrap it so we get the callable function.
+const pinoHttp: typeof pinoHttpModule.default =
+  (pinoHttpModule as unknown as { default: typeof pinoHttpModule.default }).default ??
+  (pinoHttpModule as unknown as typeof pinoHttpModule.default);
 import router from "./routes";
 import botApiRouter from "./routes/botapi";
 import { logger } from "./lib/logger";
