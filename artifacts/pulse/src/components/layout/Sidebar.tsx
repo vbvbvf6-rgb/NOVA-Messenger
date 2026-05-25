@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SavedAccount } from "@/lib/accounts";
+import PulseLogo from "@/components/PulseLogo";
 
 function VerifiedBadge() {
   return (
@@ -182,10 +183,8 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
   const DesktopSidebar = (
     <div className="hidden md:flex flex-col h-[100dvh] w-[240px] bg-card border-r border-border py-4 shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       <div className="flex items-center gap-2 px-4 mb-5">
-        <div className="w-9 h-9 rounded-[12px] bg-gradient-to-br from-primary to-violet-700 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.35)] shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="white" />
-          </svg>
+        <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]">
+          <PulseLogo size={36} />
         </div>
         <span className="font-black text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground flex-1">Pulse</span>
         <button
@@ -354,10 +353,8 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
         style={{ transform: mobileSidebarOpen ? "translateX(0)" : "translateX(-100%)" }}
       >
         <div className="flex items-center gap-2 px-4 mb-5">
-          <div className="w-9 h-9 rounded-[12px] bg-gradient-to-br from-primary to-violet-700 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.35)] shrink-0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M13 2L4.5 13.5H11L10 22L19.5 10.5H13L13 2Z" fill="white" />
-            </svg>
+          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]">
+            <PulseLogo size={36} />
           </div>
           <span className="font-black text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground flex-1">Pulse</span>
           <button onClick={onMobileClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
