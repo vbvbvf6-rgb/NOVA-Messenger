@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { maybeResetQuests } from "@/utils/questTracker";
+import { useQuery } from "@tanstack/react-query";
+import { useGetMe } from "@workspace/api-client-react";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 type Tab = "quests" | "events" | "leaderboard";
@@ -36,25 +38,25 @@ interface ApiEvent {
   createdAt?: string;
 }
 
-interface LeaderEntry {
-  rank: number;
-  name: string;
-  avatar: string;
-  score: number;
-  delta: number;
-  isMe?: boolean;
+function LeaderAvatar({ user, size = 44 }: { user: any; size?: number }) {
+  const bg = user.avatar_color || user.avatarColor || "#555";
+  const name = user.display_name || user.displayName || user.username || "?";
+  return user.avatar_url || user.avatarUrl ? (
+    <img
+      src={user.avatar_url || user.avatarUrl}
+      alt={name}
+      style={{ width: size, height: size }}
+      className="rounded-2xl object-cover shrink-0"
+    />
+  ) : (
+    <div
+      style={{ width: size, height: size, backgroundColor: bg }}
+      className="rounded-2xl flex items-center justify-center text-white font-black shrink-0 select-none"
+    >
+      <span style={{ fontSize: size * 0.38 }}>{name[0]?.toUpperCase()}</span>
+    </div>
+  );
 }
-
-/* ─── Static leaderboard (demo) ──────────────────────────────────────── */
-const LEADERBOARD: LeaderEntry[] = [
-  { rank: 1, name: "Артём К.",   avatar: "🦁", score: 4820, delta: +120 },
-  { rank: 2, name: "Мария С.",   avatar: "🦊", score: 4310, delta: +85  },
-  { rank: 3, name: "Дмитрий В.", avatar: "🐺", score: 3975, delta: -40  },
-  { rank: 4, name: "Ты",         avatar: "⭐", score: 2640, delta: +210, isMe: true },
-  { rank: 5, name: "Алина П.",   avatar: "🐱", score: 2580, delta: +55  },
-  { rank: 6, name: "Никита Р.",  avatar: "🦅", score: 2190, delta: -15  },
-  { rank: 7, name: "Ксения М.",  avatar: "🦋", score: 1870, delta: +30  },
-];
 
 /* ─── Storage helpers ────────────────────────────────────────────────── */
 function loadCompleted(): Set<string> {
@@ -109,6 +111,20 @@ export default function Events() {
   const [questFilter, setQuestFilter] = useState<"all" | "daily" | "weekly" | "special">("all");
   const [apiEvents, setApiEvents] = useState<ApiEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const { data: me } = useGetMe();
+  const { data: leaderboard = [], isLoading: lbLoading } = useQuery<any[]>({
+    queryKey: ["events-leaderboard"],
+    queryFn: async () => {
+      const token = sessionStorage.getItem("pulse-token");
+      const r = await fetch("/api/leaderboard?sort=balance", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!r.ok) return [];
+      return r.json();
+    },
+    refetchInterval: 60000,
+    enabled: tab === "leaderboard",
+  });
 
   /* On mount: reset expired daily/weekly quests */
   useEffect(() => {
@@ -661,115 +677,150 @@ export default function Events() {
             {/* ══════════ LEADERBOARD TAB ══════════ */}
             {tab === "leaderboard" && (
               <motion.div key="lb" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
-
-                {/* Podium top-3 */}
-                <div className="relative bg-gradient-to-b from-violet-500/10 to-transparent border border-violet-500/15 rounded-2xl p-4 pb-6">
-                  <div className="text-center mb-4">
-                    <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Таблица лидеров</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Обновляется каждые 24 ч</p>
+                {lbLoading ? (
+                  <div className="space-y-2">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="h-16 rounded-2xl bg-card border border-border animate-pulse" />
+                    ))}
                   </div>
-                  <div className="flex items-end justify-center gap-3">
-                    {/* 2nd */}
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="text-2xl">{LEADERBOARD[1].avatar}</div>
-                      <div className="w-14 h-14 rounded-2xl bg-secondary/80 flex flex-col items-center justify-center border border-border">
-                        <Medal size={16} className="text-slate-400 mb-0.5" />
-                        <span className="text-[10px] font-black text-slate-400">2</span>
-                      </div>
-                      <p className="text-[10px] font-bold text-muted-foreground text-center leading-tight max-w-[52px] truncate">{LEADERBOARD[1].name}</p>
-                      <span className="text-[10px] text-muted-foreground">{LEADERBOARD[1].score.toLocaleString()}</span>
-                    </div>
-                    {/* 1st */}
-                    <div className="flex flex-col items-center gap-1.5 -mt-4">
-                      <div className="text-3xl">{LEADERBOARD[0].avatar}</div>
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex flex-col items-center justify-center shadow-[0_4px_20px_rgba(245,158,11,0.4)]">
-                        <Crown size={18} className="text-white mb-0.5" />
-                        <span className="text-xs font-black text-white">1</span>
-                      </div>
-                      <p className="text-[10px] font-bold text-foreground text-center leading-tight max-w-[60px] truncate">{LEADERBOARD[0].name}</p>
-                      <span className="text-[10px] text-amber-400 font-bold">{LEADERBOARD[0].score.toLocaleString()}</span>
-                    </div>
-                    {/* 3rd */}
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className="text-2xl">{LEADERBOARD[2].avatar}</div>
-                      <div className="w-14 h-14 rounded-2xl bg-secondary/80 flex flex-col items-center justify-center border border-border">
-                        <Medal size={16} className="text-amber-700 mb-0.5" />
-                        <span className="text-[10px] font-black text-amber-700">3</span>
-                      </div>
-                      <p className="text-[10px] font-bold text-muted-foreground text-center leading-tight max-w-[52px] truncate">{LEADERBOARD[2].name}</p>
-                      <span className="text-[10px] text-muted-foreground">{LEADERBOARD[2].score.toLocaleString()}</span>
-                    </div>
+                ) : leaderboard.length === 0 ? (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <Trophy size={40} className="mx-auto mb-3 opacity-20" />
+                    <p className="font-bold">Пока никого нет</p>
+                    <p className="text-sm mt-1">Пополни баланс — попади в топ!</p>
                   </div>
-                </div>
-
-                {/* Full list */}
-                <div className="space-y-1.5">
-                  {LEADERBOARD.map((entry, i) => (
-                    <motion.div
-                      key={entry.rank}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.06 }}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
-                        entry.isMe
-                          ? "bg-primary/8 border-primary/30 shadow-[0_0_20px_rgba(139,92,246,0.08)]"
-                          : "bg-card border-border"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0",
-                        entry.rank === 1 ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white" :
-                        entry.rank === 2 ? "bg-slate-400/20 text-slate-400" :
-                        entry.rank === 3 ? "bg-amber-700/20 text-amber-700" :
-                        "bg-secondary text-muted-foreground"
-                      )}>
-                        {entry.rank}
-                      </div>
-                      <div className="text-xl shrink-0">{entry.avatar}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-sm font-bold truncate", entry.isMe && "text-primary")}>
-                          {entry.name} {entry.isMe && <span className="text-[10px] font-normal opacity-60">(ты)</span>}
-                        </p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Zap size={9} className="text-amber-400 fill-amber-400" />
-                          <span className="text-[11px] font-bold text-amber-400">{entry.score.toLocaleString()}</span>
+                ) : (
+                  <>
+                    {/* Podium top-3 */}
+                    {leaderboard.length >= 3 && (
+                      <div className="relative bg-gradient-to-b from-violet-500/10 to-transparent border border-violet-500/15 rounded-2xl p-4 pb-6">
+                        <div className="text-center mb-4">
+                          <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Таблица лидеров</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">Обновляется каждую минуту</p>
+                        </div>
+                        <div className="flex items-end justify-center gap-3">
+                          {/* 2nd */}
+                          <div className="flex flex-col items-center gap-1.5">
+                            <LeaderAvatar user={leaderboard[1]} size={44} />
+                            <div className="w-14 h-10 rounded-2xl bg-secondary/80 flex flex-col items-center justify-center border border-border">
+                              <Medal size={14} className="text-slate-400 mb-0.5" />
+                              <span className="text-[10px] font-black text-slate-400">2</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-muted-foreground text-center leading-tight max-w-[56px] truncate">
+                              {leaderboard[1].display_name || leaderboard[1].username}
+                            </p>
+                            <span className="text-[10px] text-muted-foreground">{Number(leaderboard[1].balance ?? 0).toLocaleString()} ⚡</span>
+                          </div>
+                          {/* 1st */}
+                          <div className="flex flex-col items-center gap-1.5 -mt-4">
+                            <LeaderAvatar user={leaderboard[0]} size={52} />
+                            <div className="w-16 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex flex-col items-center justify-center shadow-[0_4px_20px_rgba(245,158,11,0.4)]">
+                              <Crown size={16} className="text-white mb-0.5" />
+                              <span className="text-xs font-black text-white">1</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-foreground text-center leading-tight max-w-[64px] truncate">
+                              {leaderboard[0].display_name || leaderboard[0].username}
+                            </p>
+                            <span className="text-[10px] text-amber-400 font-bold">{Number(leaderboard[0].balance ?? 0).toLocaleString()} ⚡</span>
+                          </div>
+                          {/* 3rd */}
+                          <div className="flex flex-col items-center gap-1.5">
+                            <LeaderAvatar user={leaderboard[2]} size={44} />
+                            <div className="w-14 h-10 rounded-2xl bg-secondary/80 flex flex-col items-center justify-center border border-border">
+                              <Medal size={14} className="text-amber-700 mb-0.5" />
+                              <span className="text-[10px] font-black text-amber-700">3</span>
+                            </div>
+                            <p className="text-[10px] font-bold text-muted-foreground text-center leading-tight max-w-[56px] truncate">
+                              {leaderboard[2].display_name || leaderboard[2].username}
+                            </p>
+                            <span className="text-[10px] text-muted-foreground">{Number(leaderboard[2].balance ?? 0).toLocaleString()} ⚡</span>
+                          </div>
                         </div>
                       </div>
-                      <span className={cn(
-                        "text-xs font-bold",
-                        entry.delta > 0 ? "text-emerald-500" : entry.delta < 0 ? "text-red-400" : "text-muted-foreground"
-                      )}>
-                        {entry.delta > 0 ? `+${entry.delta}` : entry.delta === 0 ? "—" : entry.delta}
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
+                    )}
 
-                {/* My rank card */}
-                <div className="bg-card border border-border rounded-2xl p-4">
-                  <p className="text-xs text-muted-foreground mb-2 font-semibold">Твой прогресс на этой неделе</p>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">До 3-го места</span>
-                        <span className="font-bold text-foreground">{(LEADERBOARD[2].score - 2640).toLocaleString()} ⚡</span>
-                      </div>
-                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-primary to-violet-400 rounded-full"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(2640 / LEADERBOARD[2].score) * 100}%` }}
-                          transition={{ duration: 0.8, ease: "easeOut" }}
-                        />
-                      </div>
+                    {/* Full list */}
+                    <div className="space-y-1.5">
+                      {leaderboard.map((user: any, i: number) => {
+                        const rank = i + 1;
+                        const isMe = me && user.id === (me as any).id;
+                        const score = Number(user.balance ?? 0);
+                        return (
+                          <motion.div
+                            key={user.id}
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.04 }}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all",
+                              isMe
+                                ? "bg-primary/8 border-primary/30 shadow-[0_0_20px_rgba(139,92,246,0.08)]"
+                                : "bg-card border-border"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0",
+                              rank === 1 ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white" :
+                              rank === 2 ? "bg-slate-400/20 text-slate-400" :
+                              rank === 3 ? "bg-amber-700/20 text-amber-700" :
+                              "bg-secondary text-muted-foreground"
+                            )}>
+                              {rank}
+                            </div>
+                            <LeaderAvatar user={user} size={36} />
+                            <div className="flex-1 min-w-0">
+                              <p className={cn("text-sm font-bold truncate", isMe && "text-primary")}>
+                                {user.display_name || user.username}
+                                {isMe && <span className="ml-1.5 text-[10px] font-normal opacity-60">(ты)</span>}
+                              </p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Zap size={9} className="text-amber-400 fill-amber-400" />
+                                <span className="text-[11px] font-bold text-amber-400">{score.toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
                     </div>
-                    <div className="text-xs text-muted-foreground text-right">
-                      <p className="font-black text-foreground text-base">#{4}</p>
-                      <p>место</p>
-                    </div>
-                  </div>
-                </div>
+
+                    {/* My rank card */}
+                    {me && (() => {
+                      const myIdx = leaderboard.findIndex((u: any) => u.id === (me as any).id);
+                      const myScore = myIdx >= 0 ? Number(leaderboard[myIdx]?.balance ?? 0) : Number((me as any).balance ?? 0);
+                      const top3Score = leaderboard[2] ? Number(leaderboard[2].balance ?? 0) : 0;
+                      const pct = top3Score > 0 ? Math.min(100, (myScore / top3Score) * 100) : 0;
+                      return (
+                        <div className="bg-card border border-border rounded-2xl p-4">
+                          <p className="text-xs text-muted-foreground mb-2 font-semibold">Твой прогресс</p>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-muted-foreground">До топ-3</span>
+                                <span className="font-bold text-foreground">
+                                  {top3Score > myScore ? `${(top3Score - myScore).toLocaleString()} ⚡` : "Ты в топ-3! 🎉"}
+                                </span>
+                              </div>
+                              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                                <motion.div
+                                  className="h-full bg-gradient-to-r from-primary to-violet-400 rounded-full"
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${pct}%` }}
+                                  transition={{ duration: 0.8, ease: "easeOut" }}
+                                />
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground text-right">
+                              <p className="font-black text-foreground text-base">
+                                {myIdx >= 0 ? `#${myIdx + 1}` : "—"}
+                              </p>
+                              <p>место</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
               </motion.div>
             )}
 
