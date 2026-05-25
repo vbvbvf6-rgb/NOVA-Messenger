@@ -163,7 +163,7 @@ export default function Login({ onLogin }: LoginProps) {
   const getStepTitle = () => {
     if (step === "2fa") return "Верификация";
     if (step === "qr") return "QR вход";
-    return "Pulse";
+    return "Aether";
   };
 
   const getStepSubtitle = () => {
@@ -445,7 +445,7 @@ export default function Login({ onLogin }: LoginProps) {
                 ) : (
                   <>
                     <p className="text-sm text-muted-foreground font-medium text-center mb-4 leading-relaxed">
-                      Откройте Pulse на другом устройстве и отсканируйте код
+                      Откройте Aether на другом устройстве и отсканируйте код
                     </p>
 
                     <div
@@ -525,7 +525,7 @@ export default function Login({ onLogin }: LoginProps) {
           transition={{ delay: 0.6 }}
           className="text-center text-[11px] text-muted-foreground/40 font-medium mt-6 pb-4"
         >
-          Pulse Messenger · Ваши данные надёжно защищены
+          Aether Messenger · Ваши данные надёжно защищены
         </motion.p>
       </motion.div>
     </div>

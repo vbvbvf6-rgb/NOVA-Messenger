@@ -51,7 +51,7 @@ interface BotRecord {
 }
 
 const makePulseBotPy = (host: string) => `"""
-pulse_bot.py  —  Python SDK для Pulse Messenger Bot API
+pulse_bot.py  —  Python SDK для Aether Messenger Bot API
 ════════════════════════════════════════════════════════
 
 Установка зависимости:
@@ -123,11 +123,11 @@ def row(*buttons) -> list:
 # ══════════════════════════════════════════════════════════
 
 class Bot:
-    """Клиент Pulse Bot API.
+    """Клиент Aether Bot API.
 
     Args:
-        token: Токен бота из Pulse BotFather
-        base_url: URL API (по умолчанию — Pulse сервер)
+        token: Токен бота из Aether BotFather
+        base_url: URL API (по умолчанию — Aether сервер)
     """
 
     def __init__(self, token: str, base_url: str = BASE_URL):
@@ -281,7 +281,7 @@ class Bot:
     def set_webhook(self, url: str, secret_token: Optional[str] = None):
         """Установить URL для webhook.
 
-        После этого Pulse будет отправлять POST-запросы на ваш URL
+        После этого Aether будет отправлять POST-запросы на ваш URL
         при каждом новом обновлении. Polling при этом работать не будет.
         """
         kwargs: dict = {"url": url}
@@ -881,7 +881,7 @@ export default function Bots() {
                 <Bot size={28} className="text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-foreground">Pulse BotFather</h1>
+                <h1 className="text-2xl font-black text-foreground">Aether BotFather</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">Платформа для разработчиков ботов</p>
               </div>
             </div>
@@ -936,7 +936,7 @@ export default function Bots() {
                     <Bot size={32} className="text-muted-foreground opacity-50" />
                   </div>
                   <p className="font-bold text-foreground text-lg">Ботов пока нет</p>
-                  <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">Создай своего первого бота и начни автоматизировать чаты в Pulse</p>
+                  <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">Создай своего первого бота и начни автоматизировать чаты в Aether</p>
                   <div className="flex items-center justify-center gap-3 mt-5">
                     <button
                       onClick={() => setShowCreate(true)}
@@ -1316,7 +1316,7 @@ bot.send_message(chat_id, "Выбери:", reply_markup=kb)`}</pre>
                   <span className="text-xs bg-violet-500/15 text-violet-400 px-2 py-0.5 rounded-full">Продвинутый</span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Вместо polling Pulse может отправлять обновления на ваш сервер мгновенно.
+                  Вместо polling Aether может отправлять обновления на ваш сервер мгновенно.
                   Нужен публичный HTTPS-сервер (например, ngrok для разработки).
                 </p>
                 <div className="bg-[#0d1117] rounded-xl p-4 overflow-x-auto">

@@ -12,7 +12,7 @@ const translations = {
     "nav.wallet": "Кошелёк",
     "nav.profile": "Профиль",
     "nav.settings": "Настройки",
-    "nav.prime": "Pulse Prime",
+    "nav.prime": "Aether Prime",
     "nav.admin": "Админ-панель",
     "nav.leaderboard": "Рейтинг",
     "nav.events": "События",
@@ -174,7 +174,7 @@ const translations = {
     // Settings — Logout
     "settings.logout": "Выйти из аккаунта",
     "settings.logoutConfirmTitle": "Выход из аккаунта",
-    "settings.logoutConfirmDesc": "Вы уверены, что хотите выйти из Pulse?",
+    "settings.logoutConfirmDesc": "Вы уверены, что хотите выйти из Aether?",
 
     // Auto-delete
     "autodelete.title": "Автоудаление сообщений",
@@ -239,7 +239,7 @@ const translations = {
     "nav.wallet": "Wallet",
     "nav.profile": "Profile",
     "nav.settings": "Settings",
-    "nav.prime": "Pulse Prime",
+    "nav.prime": "Aether Prime",
     "nav.admin": "Admin Panel",
     "nav.leaderboard": "Top Users",
     "nav.events": "Events",
@@ -401,7 +401,7 @@ const translations = {
     // Settings — Logout
     "settings.logout": "Log Out",
     "settings.logoutConfirmTitle": "Log Out",
-    "settings.logoutConfirmDesc": "Are you sure you want to log out of Pulse?",
+    "settings.logoutConfirmDesc": "Are you sure you want to log out of Aether?",
 
     // Auto-delete
     "autodelete.title": "Auto-Delete Messages",

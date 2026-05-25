@@ -370,7 +370,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
         const last = msgs?.[msgs.length - 1];
         if (last && last.senderId !== Number(sessionStorage.getItem("pulse-user-id") || "1")) {
           const chatData = queryClient.getQueryData<any>([`/api/chats/${chatId}`]) ?? null;
-          const chatName = (chatData as any)?.otherUser?.displayName ?? (chatData as any)?.name ?? "Pulse";
+          const chatName = (chatData as any)?.otherUser?.displayName ?? (chatData as any)?.name ?? "Aether";
           const senderName = last.sender?.displayName || chatName;
           const body = last.type === "image" ? "📷 Фото" : last.type === "audio" ? "🎤 Голосовое" : last.type === "sticker" ? "🎨 Стикер" : last.text || "";
           notify(`${senderName}`, { body, url: `/`, tag: `chat-${chatId}` });
@@ -1276,7 +1276,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               )}
             </div>
             <p className="text-[13px] text-muted-foreground leading-relaxed bg-secondary/60 rounded-2xl px-5 py-3.5">
-              Это бот — автоматическая программа в Pulse.<br />Нажми кнопку ниже, чтобы начать.
+              Это бот — автоматическая программа в Aether.<br />Нажми кнопку ниже, чтобы начать.
             </p>
             <motion.button
               whileHover={{ scale: 1.04 }}

@@ -428,13 +428,15 @@ export function ChatList() {
     return true;
   });
 
-  const sorted = filtered?.slice().sort((a: Chat, b: Chat) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    const aTime = a.lastMessage?.createdAt || (a as any).createdAt || "";
-    const bTime = b.lastMessage?.createdAt || (b as any).createdAt || "";
-    return new Date(bTime).getTime() - new Date(aTime).getTime();
-  });
+  const sorted = filtered
+    ?.filter((chat: Chat) => !(chat.otherUser as any)?.isBot)
+    .slice().sort((a: Chat, b: Chat) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      const aTime = a.lastMessage?.createdAt || (a as any).createdAt || "";
+      const bTime = b.lastMessage?.createdAt || (b as any).createdAt || "";
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
+    });
 
   return (
     <div className="w-full md:w-[380px] lg:w-[420px] flex flex-col h-[100dvh] bg-background border-r border-border shrink-0 z-20">

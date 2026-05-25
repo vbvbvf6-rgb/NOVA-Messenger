@@ -88,7 +88,7 @@ function ReferralLeaderboard({ me }: { me: any }) {
   const handleShare = () => {
     if (!myCode?.link) return;
     if (navigator.share) {
-      navigator.share({ title: "Присоединяйся к Pulse!", text: `Используй мой код: ${myCode.code}`, url: myCode.link }).catch(() => {});
+      navigator.share({ title: "Присоединяйся к Aether!", text: `Используй мой код: ${myCode.code}`, url: myCode.link }).catch(() => {});
     } else {
       handleCopyLink();
     }
@@ -110,7 +110,7 @@ function ReferralLeaderboard({ me }: { me: any }) {
               </div>
               <div>
                 <h3 className="font-black text-base text-foreground">Ваш реферальный код</h3>
-                <p className="text-xs text-muted-foreground">Пригласите друзей в Pulse</p>
+                <p className="text-xs text-muted-foreground">Пригласите друзей в Aether</p>
               </div>
               {myCode.invited > 0 && (
                 <span className="ml-auto text-[11px] font-black px-2.5 py-1 rounded-full bg-green-500/15 text-green-400 border border-green-500/25">

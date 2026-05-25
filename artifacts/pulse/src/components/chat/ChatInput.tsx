@@ -101,7 +101,13 @@ const BOT_COMMANDS = [
 ];
 
 const GENERAL_COMMANDS = [
-  { command: "/memer", description: "Отправить GIF-мем 🎭" },
+  { command: "/gif",      description: "Отправить GIF-анимацию 🎭" },
+  { command: "/poll",     description: "Создать опрос 📊" },
+  { command: "/schedule", description: "Запланировать сообщение ⏰" },
+  { command: "/shrug",    description: "Вставить ¯\\_(ツ)_/¯" },
+  { command: "/flip",     description: "Перевернуть стол (╯°□°)╯" },
+  { command: "/unflip",   description: "Поставить стол обратно ┬─┬" },
+  { command: "/memer",    description: "Случайный мем 🎭" },
 ];
 
 export interface ChatInputProps {
@@ -575,7 +581,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
     e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
     if (val.trim()) sendTypingEvent("text");
     if (!editMessage) localStorage.setItem(draftKey, val);
-    if (val === "/memer") {
+    if (val === "/memer" || val === "/gif") {
       setShowMemeGifPicker(true);
     } else if (showMemeGifPicker) {
       setShowMemeGifPicker(false);
@@ -798,9 +804,21 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                   key={cmd.command}
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    if (cmd.command === "/memer") {
+                    if (cmd.command === "/memer" || cmd.command === "/gif") {
                       setText("");
                       setShowMemeGifPicker(true);
+                    } else if (cmd.command === "/poll") {
+                      setText("");
+                      setShowPollCreator(true);
+                    } else if (cmd.command === "/schedule") {
+                      setText("");
+                      setShowScheduler(true);
+                    } else if (cmd.command === "/shrug") {
+                      setText("¯\\_(ツ)_/¯");
+                    } else if (cmd.command === "/flip") {
+                      setText("(╯°□°)╯︵ ┻━┻");
+                    } else if (cmd.command === "/unflip") {
+                      setText("┬─┬ノ(ᵒ 'ᵒノ)");
                     } else {
                       setText(cmd.command + " ");
                     }

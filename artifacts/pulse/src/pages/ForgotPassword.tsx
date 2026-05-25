@@ -129,7 +129,7 @@ export default function ForgotPassword() {
             className="text-center"
           >
             <h1 className="text-4xl font-black text-foreground tracking-tight leading-none mb-2">
-              {step === "success" ? "Готово!" : step === "question" ? "Проверка" : "Pulse"}
+              {step === "success" ? "Готово!" : step === "question" ? "Проверка" : "Aether"}
             </h1>
             <p className="text-muted-foreground text-[15px] font-medium">
               {step === "success"
@@ -429,7 +429,7 @@ export default function ForgotPassword() {
           transition={{ delay: 0.6 }}
           className="text-center text-[11px] text-muted-foreground/40 font-medium mt-6"
         >
-          Pulse Messenger · Ваши данные надёжно защищены
+          Aether Messenger · Ваши данные надёжно защищены
         </motion.p>
       </motion.div>
     </div>

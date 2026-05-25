@@ -540,7 +540,7 @@ export default function Support() {
               <Bug size={18} className="text-red-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold">Репорт бага</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Помогите нам улучшить Pulse. Каждый репорт рассматривается нашей командой разработчиков.</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Помогите нам улучшить Aether. Каждый репорт рассматривается нашей командой разработчиков.</p>
               </div>
             </div>
           )}

@@ -186,7 +186,7 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
         <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]">
           <PulseLogo size={36} />
         </div>
-        <span className="font-black text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground flex-1">Pulse</span>
+        <span className="font-black text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground flex-1">Aether</span>
         <button
           onClick={onOpenPalette}
           title="Поиск (Ctrl+K)"
@@ -356,7 +356,7 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
           <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]">
             <PulseLogo size={36} />
           </div>
-          <span className="font-black text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground flex-1">Pulse</span>
+          <span className="font-black text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-foreground to-muted-foreground flex-1">Aether</span>
           <button onClick={onMobileClose} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all">
             <X size={18} />
           </button>

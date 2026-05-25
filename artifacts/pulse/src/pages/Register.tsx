@@ -250,7 +250,7 @@ export default function Register({ onLogin }: RegisterProps) {
         className="w-full max-w-sm relative z-10 py-4"
       >
         <div className="flex flex-col items-center mb-6 sm:mb-10">
-          <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight mb-2">Pulse</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight mb-2">Aether</h1>
           <p className="text-muted-foreground text-sm font-medium">
             {step === "verify-email" ? "Подтверждение email" : "Новый аккаунт"}
           </p>
@@ -364,7 +364,7 @@ export default function Register({ onLogin }: RegisterProps) {
               </div>
               <h2 className="font-black text-2xl text-foreground mb-3">Доступ закрыт</h2>
               <p className="text-sm font-medium text-muted-foreground mb-6 leading-relaxed">
-                Вам <span className="text-foreground">{calculatedAge} {calculatedAge === 1 ? "год" : "лет"}</span>. Pulse предназначен для пользователей старше 13 лет.
+                Вам <span className="text-foreground">{calculatedAge} {calculatedAge === 1 ? "год" : "лет"}</span>. Aether предназначен для пользователей старше 13 лет.
               </p>
               <button
                 onClick={() => { setDobDay(""); setDobMonth(""); setDobYear(""); setStep("age-gate"); }}

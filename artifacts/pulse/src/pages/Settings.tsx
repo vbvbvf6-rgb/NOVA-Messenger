@@ -831,27 +831,27 @@ function FaqSection({ lang }: { lang: string }) {
   const items = lang === "ru" ? [
     { q: "Как создать группу или канал?", a: "Нажмите иконку карандаша в верхнем углу списка чатов → «Создать группу» или «Создать канал». Добавьте участников и задайте название." },
     { q: "Как включить двухфакторную аутентификацию?", a: "Настройки → Конфиденциальность и безопасность → Двухфакторная аутентификация. Отсканируйте QR-код в любом приложении-аутентификаторе (Google Authenticator, Authy)." },
-    { q: "Что такое Pulse Prime и Prime+?", a: "Prime — платная подписка с золотым кольцом, значком ⭐, эксклюзивными темами и 2× Spark. Prime+ добавляет алмазное кольцо, 3× Spark, ежемесячный эпический подарок, видео-аватар и закрытый Prime+ Lounge." },
+    { q: "Что такое Aether Prime и Prime+?", a: "Prime — платная подписка с золотым кольцом, значком ⭐, эксклюзивными темами и 2× Spark. Prime+ добавляет алмазное кольцо, 3× Spark, ежемесячный эпический подарок, видео-аватар и закрытый Prime+ Lounge." },
     { q: "Как работают исчезающие сообщения?", a: "В чате → ⋯ меню → «Исчезающие сообщения». Выберите таймер (5с, 1м, 1ч, 1д, 1нед). Сообщения автоматически удаляются после прочтения по истечении времени." },
-    { q: "Что такое Spark ⚡?", a: "Spark — внутренняя валюта Pulse. Её можно заработать через ежедневные бонусы и задания, или купить в Кошельке. Spark тратится на подарки и подписку Prime." },
+    { q: "Что такое Spark ⚡?", a: "Spark — внутренняя валюта Aether. Её можно заработать через ежедневные бонусы и задания, или купить в Кошельке. Spark тратится на подарки и подписку Prime." },
     { q: "Как установить PIN-блокировку экрана?", a: "Настройки → Конфиденциальность и безопасность → Блокировка экрана. Задайте 4–8 значный PIN-код. Приложение заблокируется через 1 минуту бездействия." },
     { q: "Как отправить подарок?", a: "Откройте любой чат → нажмите иконку 🎁 в поле ввода. Выберите подарок по редкости и стоимости, добавьте сообщение. Подарок можно отправить анонимно." },
     { q: "Как работают истории?", a: "Истории видны 24 часа. Нажмите на аватар в верхней панели, чтобы посмотреть. Создать историю: значок камеры в истории друга или из профиля." },
     { q: "Как найти человека?", a: "Поиск по нику в глобальном поиске (лупа) — введите @username. В разделе «Контакты» можно добавить пользователей и управлять списком." },
-    { q: "Как сменить тему оформления?", a: "Настройки → Мой аккаунт → Темы. Тёмная/светлая тема — иконка луны вверху. Pulse Prime открывает 8+ эксклюзивных тем (Obsidian, Midnight, Forest и др.)." },
+    { q: "Как сменить тему оформления?", a: "Настройки → Мой аккаунт → Темы. Тёмная/светлая тема — иконка луны вверху. Aether Prime открывает 8+ эксклюзивных тем (Obsidian, Midnight, Forest и др.)." },
     { q: "Как удалить сообщение?", a: "Долгое нажатие на сообщение → «Удалить». Можно удалить только у себя или у всех (в течение 48 часов)." },
     { q: "Как работают реакции на сообщения?", a: "Долгое нажатие на сообщение → выберите эмодзи из панели реакций. Prime+ позволяет ставить двойные реакции." },
   ] : [
     { q: "How to create a group or channel?", a: "Tap the pencil icon at the top of the chat list → 'Create Group' or 'Create Channel'. Add members and set a name." },
     { q: "How to enable Two-Factor Authentication?", a: "Settings → Privacy & Security → Two-Factor Authentication. Scan the QR code with any authenticator app (Google Authenticator, Authy)." },
-    { q: "What is Pulse Prime and Prime+?", a: "Prime is a paid subscription with a gold ring, ⭐ badge, exclusive themes and 2× Spark. Prime+ adds a diamond ring, 3× Spark, monthly epic gift, video avatar and exclusive Prime+ Lounge." },
+    { q: "What is Aether Prime and Prime+?", a: "Prime is a paid subscription with a gold ring, ⭐ badge, exclusive themes and 2× Spark. Prime+ adds a diamond ring, 3× Spark, monthly epic gift, video avatar and exclusive Prime+ Lounge." },
     { q: "How do disappearing messages work?", a: "In any chat → ⋯ menu → 'Disappearing Messages'. Choose a timer (5s, 1m, 1h, 1d, 1wk). Messages delete automatically after being read when the timer expires." },
-    { q: "What is Spark ⚡?", a: "Spark is Pulse's in-app currency. Earn it through daily bonuses and tasks, or buy it in the Wallet. Spend Spark on gifts and Prime subscriptions." },
+    { q: "What is Spark ⚡?", a: "Spark is Aether's in-app currency. Earn it through daily bonuses and tasks, or buy it in the Wallet. Spend Spark on gifts and Prime subscriptions." },
     { q: "How to set a screen lock PIN?", a: "Settings → Privacy & Security → Screen Lock. Set a 4–8 digit PIN. The app locks after 1 minute of inactivity." },
     { q: "How to send a gift?", a: "Open any chat → tap the 🎁 icon in the input area. Choose a gift by rarity and cost, add a message. Gifts can be sent anonymously." },
     { q: "How do stories work?", a: "Stories are visible for 24 hours. Tap an avatar in the top bar to view. Create a story from your profile or the stories bar." },
     { q: "How to find someone?", a: "Use global search (magnifier) and type @username. In 'Contacts' you can add users and manage your contact list." },
-    { q: "How to change the theme?", a: "Settings → My Account → Themes. Toggle dark/light with the moon icon at the top. Pulse Prime unlocks 8+ exclusive themes (Obsidian, Midnight, Forest, etc.)." },
+    { q: "How to change the theme?", a: "Settings → My Account → Themes. Toggle dark/light with the moon icon at the top. Aether Prime unlocks 8+ exclusive themes (Obsidian, Midnight, Forest, etc.)." },
     { q: "How to delete a message?", a: "Long-press a message → 'Delete'. You can delete for yourself only, or for everyone (within 48 hours)." },
     { q: "How do message reactions work?", a: "Long-press a message → choose an emoji from the reaction panel. Prime+ allows double reactions." },
   ];
@@ -939,7 +939,7 @@ function FeaturesSection({ lang, navigate }: { lang: string; navigate: (path: st
     },
     {
       emoji: "⭐",
-      title: "Pulse Prime",
+      title: "Aether Prime",
       desc: lang === "ru" ? "Два уровня подписки с золотым и алмазным кольцами, эксклюзивными темами, мультипликаторами Spark и закрытым сообществом." : "Two subscription tiers with gold and diamond rings, exclusive themes, Spark multipliers and a closed community.",
       items: lang === "ru" ? ["Золотое/алмазное кольцо", "Эксклюзивные темы", "2× или 3× Spark", "Prime+ Lounge"] : ["Gold/diamond ring", "Exclusive themes", "2× or 3× Spark", "Prime+ Lounge"],
       link: "/prime",
@@ -989,7 +989,7 @@ function SupportSection({ lang, user, t, currentStatusOpt, onNavigate }: { lang:
 
   const copyDebugInfo = () => {
     const info = [
-      `Pulse Messenger v2.0.0`,
+      `Aether Messenger v2.0.0`,
       `User: @${user?.username} (ID: ${user?.id})`,
       `Browser: ${navigator.userAgent}`,
       `Platform: ${navigator.platform}`,
@@ -1021,7 +1021,7 @@ function SupportSection({ lang, user, t, currentStatusOpt, onNavigate }: { lang:
               <Zap size={26} className="text-white fill-white"/>
             </div>
             <div>
-              <p className="font-black text-base">Pulse Messenger</p>
+              <p className="font-black text-base">Aether Messenger</p>
               <p className="text-xs text-muted-foreground">Version 2.0.0 — Production</p>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="w-2 h-2 rounded-full bg-green-500"/>
@@ -1049,7 +1049,7 @@ function SupportSection({ lang, user, t, currentStatusOpt, onNavigate }: { lang:
       <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
         {[
           { icon: <MessageSquare size={14} className="text-primary"/>, bg: "bg-primary/15", title: lang === "ru" ? "Служба поддержки" : "Support Team", desc: lang === "ru" ? "Задать вопрос или сообщить о проблеме" : "Ask a question or report an issue", href: "/support" },
-          { icon: <AlertTriangle size={14} className="text-red-400"/>, bg: "bg-red-500/15", title: lang === "ru" ? "Сообщить об ошибке" : "Report a Bug", desc: lang === "ru" ? "Помогите нам улучшить Pulse" : "Help us improve Pulse", href: "/support" },
+          { icon: <AlertTriangle size={14} className="text-red-400"/>, bg: "bg-red-500/15", title: lang === "ru" ? "Сообщить об ошибке" : "Report a Bug", desc: lang === "ru" ? "Помогите нам улучшить Aether" : "Help us improve Aether", href: "/support" },
           { icon: <Shield size={14} className="text-green-400"/>, bg: "bg-green-500/15", title: lang === "ru" ? "Конфиденциальность" : "Privacy Policy", desc: lang === "ru" ? "Политика конфиденциальности и GDPR" : "Privacy policy and data handling", href: "/support" },
           { icon: <HelpCircle size={14} className="text-blue-400"/>, bg: "bg-blue-500/15", title: lang === "ru" ? "Часто задаваемые вопросы" : "FAQ", desc: lang === "ru" ? "Ответы на популярные вопросы" : "Answers to common questions", onClick: "faq" },
         ].map((item, i) => (
@@ -1301,7 +1301,7 @@ export default function Settings() {
       });
       if (res.ok) {
         queryClient.invalidateQueries({ queryKey: ["/api/users/me"] });
-        toast({ title: lang === "ru" ? "Подписка отменена" : "Subscription cancelled", description: lang === "ru" ? "Pulse Prime деактивирован." : "Pulse Prime has been deactivated." });
+        toast({ title: lang === "ru" ? "Подписка отменена" : "Subscription cancelled", description: lang === "ru" ? "Aether Prime деактивирован." : "Aether Prime has been deactivated." });
       } else {
         toast({ title: t("common.error"), variant: "destructive" });
       }
@@ -1641,7 +1641,7 @@ export default function Settings() {
           {/* Group 3: Premium */}
           <NavGroup>
             <NavItem id="prime" icon={<Crown size={16}/>} color="bg-gradient-to-br from-amber-400 to-orange-500"
-              label="Pulse Prime"
+              label="Aether Prime"
               badge={(user as any)?.hasPrime ? (lang==="ru"?"Активен":"Active") : undefined}
               badgeAmber={(user as any)?.hasPrime}
               active={displaySection} onClick={setActiveSection}/>
@@ -1653,8 +1653,8 @@ export default function Settings() {
 
           {/* Group 4: Help */}
           <NavGroup>
-            <NavItem id="faq"      icon={<HelpCircle size={16}/>} color="bg-teal-500"   label="Pulse FAQ"                                    active={displaySection} onClick={setActiveSection}/>
-            <NavItem id="features" icon={<Layers size={16}/>}     color="bg-cyan-600"   label={lang==="ru"?"Возможности Pulse":"Pulse Features"} active={displaySection} onClick={setActiveSection}/>
+            <NavItem id="faq"      icon={<HelpCircle size={16}/>} color="bg-teal-500"   label="Aether FAQ"                                   active={displaySection} onClick={setActiveSection}/>
+            <NavItem id="features" icon={<Layers size={16}/>}     color="bg-cyan-600"   label={lang==="ru"?"Возможности Aether":"Aether Features"} active={displaySection} onClick={setActiveSection}/>
             <NavItem id="support"  icon={<Shield size={16}/>}     color="bg-green-600"  label={lang==="ru"?"Поддержка":"Support"}             active={displaySection} onClick={setActiveSection}/>
           </NavGroup>
 
@@ -1697,10 +1697,10 @@ export default function Settings() {
             : displaySection === "speakers"      ? (lang==="ru"?"Динамики и камера":"Speakers & Camera")
             : displaySection === "battery"       ? (lang==="ru"?"Батарея и анимации":"Battery & Animations")
             : displaySection === "language"      ? (lang==="ru"?"Язык":"Language")
-            : displaySection === "prime"         ? "Pulse Prime"
+            : displaySection === "prime"         ? "Aether Prime"
 
-            : displaySection === "faq"           ? "Pulse FAQ"
-            : displaySection === "features"      ? (lang==="ru"?"Возможности Pulse":"Pulse Features")
+            : displaySection === "faq"           ? "Aether FAQ"
+            : displaySection === "features"      ? (lang==="ru"?"Возможности Aether":"Aether Features")
             : displaySection === "support"       ? (lang==="ru"?"Поддержка":"Support")
             : ""}
           </h2>
@@ -2048,8 +2048,8 @@ export default function Settings() {
                     </p>
                     <div className="space-y-2">
                       {[
-                        { id: "classic", label: lang==="ru"?"Классический":"Classic", desc: lang==="ru"?"Стандартный звук Pulse":"Standard Pulse tone", icon: "🔔" },
-                        { id: "pulse", label: "Pulse Beat", desc: lang==="ru"?"Двойной тон":"Double tone", icon: "💫" },
+                        { id: "classic", label: lang==="ru"?"Классический":"Classic", desc: lang==="ru"?"Стандартный звук Aether":"Standard Aether tone", icon: "🔔" },
+                        { id: "pulse", label: "Aether Beat", desc: lang==="ru"?"Двойной тон":"Double tone", icon: "💫" },
                         { id: "chime", label: lang==="ru"?"Перезвон":"Chime", desc: lang==="ru"?"Мелодичный звон":"Melodic chime", icon: "🎵" },
                         { id: "soft", label: lang==="ru"?"Мягкий":"Soft", desc: lang==="ru"?"Тихий и спокойный":"Quiet and calm", icon: "🌙" },
                         { id: "space", label: "Space Echo", desc: "Prime+", icon: "🚀", prime: true },
@@ -2138,7 +2138,7 @@ export default function Settings() {
                   right={<Switch checked={readReceipts} onCheckedChange={v => { setReadReceipts(v); setLs("pulse-privacy-read-receipts", v); updateMe.mutate({ data: { readReceiptsEnabled: v } as any }, { onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/users/me"] }) }); toast({ title: t("common.saved") }); }}/>}/>
                 <Row icon={<User size={18}/>} color="bg-green-500/10 text-green-500"
                   label={t("settings.showOnlineStatus")}
-                  desc={(user as any)?.hasPrime ? t("settings.showOnlineStatusDesc") : (lang==="ru"?"Только для Pulse Prime участников":"Pulse Prime members only")}
+                  desc={(user as any)?.hasPrime ? t("settings.showOnlineStatusDesc") : (lang==="ru"?"Только для Aether Prime участников":"Aether Prime members only")}
                   right={(user as any)?.hasPrime
                     ? <Switch checked={showOnlineStatusToggle} onCheckedChange={v => { setShowOnlineStatusToggle(v); setLs("pulse-privacy-show-online", v); updateMe.mutate({ data: { showOnlineStatus: v } as any }, { onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/users/me"] }) }); }}/>
                     : <a href="/prime" className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-colors"><Crown size={9}/> Prime</a>}/>
@@ -2394,7 +2394,7 @@ export default function Settings() {
           {displaySection === "prime" && (
             <div className="max-w-2xl mx-auto space-y-6">
               {(user as any)?.hasPrime ? (
-                <Section title="Pulse Prime" icon={<Crown size={13}/>}>
+                <Section title="Aether Prime" icon={<Crown size={13}/>}>
                   <div className="p-4">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0"><Crown size={20} className="text-white"/></div>
@@ -2433,7 +2433,7 @@ export default function Settings() {
                   <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center mx-auto mb-5 shadow-2xl shadow-amber-500/30">
                     <Crown size={36} className="text-white"/>
                   </div>
-                  <h3 className="text-2xl font-black mb-2">Pulse Prime</h3>
+                  <h3 className="text-2xl font-black mb-2">Aether Prime</h3>
                   <p className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto">{lang==="ru"?"Разблокируйте эксклюзивные темы, скрытый статус и другие привилегии.":"Unlock exclusive themes, hidden status, and other perks."}</p>
                   <a href="/prime" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl font-bold shadow-lg hover:opacity-90 transition-opacity">
                     <Crown size={18}/> {lang==="ru"?"Получить Prime":"Get Prime"}
