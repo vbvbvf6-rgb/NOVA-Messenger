@@ -6,6 +6,7 @@
 
 @custom-variant dark (&:is(html.dark *));
 @custom-variant light (&:is(html.light *));
+@custom-variant landscape (@media (max-width: 767px) and (orientation: landscape));
 
 @theme inline {
   --color-background: hsl(var(--background));
@@ -253,4 +254,26 @@ html.light .wallet-hero {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* ─── Landscape phone layout optimizations ──────────────────────────────── */
+/* Targets phones ≤ 767 px wide in landscape — where BottomNav is still visible */
+@media (max-width: 767px) and (orientation: landscape) {
+  /* Trim the oversized pb-24 (96 px) on page scroll areas.
+     56 px gives the compact BottomNav + safe-area enough clearance. */
+  main .flex-1.overflow-y-auto {
+    padding-bottom: max(3.5rem, env(safe-area-inset-bottom, 3.5rem));
+  }
+
+  /* ChatList scroll area specifically (has extra specificity classes) */
+  main .flex-1.overflow-y-auto.overflow-x-hidden {
+    padding-bottom: max(3.5rem, env(safe-area-inset-bottom, 3.5rem));
+  }
+
+  /* Login page — allow top-anchored scroll instead of broken centered overflow */
+  .login-landscape {
+    align-items: flex-start !important;
+    padding-top: env(safe-area-inset-top, 1.5rem);
+    padding-top: max(1.5rem, env(safe-area-inset-top, 1.5rem));
+  }
 }

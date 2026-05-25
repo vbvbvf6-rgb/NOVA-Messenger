@@ -184,7 +184,7 @@ export default function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-y-auto">
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 landscape:items-start landscape:pt-6 relative overflow-y-auto login-landscape">
       <div
         className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] rounded-full blur-[120px] opacity-40 pointer-events-none"
         style={{ background: "radial-gradient(circle, hsl(16 100% 50% / 0.18), transparent 70%)" }}

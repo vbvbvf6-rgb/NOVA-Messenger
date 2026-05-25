@@ -898,7 +898,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                       </button>
                     </div>
                   )}
-                  <div className="p-3 grid grid-cols-4 gap-2 max-h-[240px] overflow-y-auto scrollbar-none">
+                  <div className="p-3 grid grid-cols-4 gap-2 max-h-[240px] landscape:max-h-[120px] overflow-y-auto scrollbar-none">
                     {(stickerTab === "prime" && isPrimePlus ? PRIME_STICKERS : STICKERS).map(s => (
                       <button
                         key={s.id}
@@ -913,7 +913,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                 </div>
               ) : (
                 /* Emoji grid — rendered as native <span> for correct flag & all emoji support */
-                <div className="p-3 grid grid-cols-8 gap-0.5 max-h-[240px] overflow-y-auto scrollbar-none">
+                <div className="p-3 grid grid-cols-8 gap-0.5 max-h-[240px] landscape:max-h-[120px] overflow-y-auto scrollbar-none">
                   {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
                     <button key={i} onClick={() => insertEmoji(emoji)}
                       className="hover:bg-secondary rounded-xl p-1.5 transition-colors flex items-center justify-center hover:scale-110 active:scale-95">

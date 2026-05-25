@@ -42,7 +42,7 @@ export function BottomNav({ onOpenPalette, onOpenSidebar }: BottomNavProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-[3px] flex-1 py-2 min-h-[52px] transition-all active:scale-95",
+                "relative flex flex-col items-center justify-center gap-[3px] flex-1 py-2 min-h-[52px] landscape:py-0.5 landscape:min-h-[40px] transition-all active:scale-95",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
@@ -59,7 +59,7 @@ export function BottomNav({ onOpenPalette, onOpenSidebar }: BottomNavProps) {
                   </div>
                 )}
               </div>
-              <span className={cn("text-[10px] font-semibold leading-none transition-colors", isActive ? "text-primary" : "text-muted-foreground/60")}>
+              <span className={cn("text-[10px] font-semibold leading-none transition-colors landscape:hidden", isActive ? "text-primary" : "text-muted-foreground/60")}>
                 {item.label}
               </span>
             </Link>
@@ -68,10 +68,10 @@ export function BottomNav({ onOpenPalette, onOpenSidebar }: BottomNavProps) {
 
         <button
           onClick={onOpenSidebar}
-          className="relative flex flex-col items-center justify-center gap-[3px] flex-1 py-2 min-h-[52px] transition-all active:scale-95 text-muted-foreground"
+          className="relative flex flex-col items-center justify-center gap-[3px] flex-1 py-2 min-h-[52px] landscape:py-0.5 landscape:min-h-[40px] transition-all active:scale-95 text-muted-foreground"
         >
           <Menu size={24} strokeWidth={1.8} />
-          <span className="text-[10px] font-semibold leading-none text-muted-foreground/60">Ещё</span>
+          <span className="text-[10px] font-semibold leading-none text-muted-foreground/60 landscape:hidden">Ещё</span>
         </button>
       </div>
     </nav>
