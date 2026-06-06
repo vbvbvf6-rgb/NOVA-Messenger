@@ -1,2 +1,5 @@
 - [App rebranding](rebrand-nova.md) — App renamed from "Pulse"/"Aether" to "Nova"; internal localStorage/sessionStorage keys intentionally keep "pulse-" prefix to avoid logging out existing users.
 - [PWA offline updates](pwa-update-flow.md) — SW no longer auto-calls skipWaiting(); instead waits for user to confirm via toast banner; hook in src/hooks/useServiceWorkerUpdate.ts + PwaUpdateBanner in App.tsx.
+- [Drizzle-kit push in production](drizzle-prod-push.md) — drizzle-kit push is interactive and hangs forever; use `yes 2>/dev/null | pnpm run push-force` with `timeout 90` in start-prod.sh. The correct flag is `--force`, not `--accept-data-loss`.
+- [Seed bulk upsert](seed-optimization.md) — gift catalog must use single bulk `INSERT ... ON CONFLICT (name) DO UPDATE`; requires `unique()` on `gift_items.name` in schema. Direct SQL used to add constraint: `ALTER TABLE gift_items ADD CONSTRAINT gift_items_name_unique UNIQUE (name)`.
+- [SSE reconnect pattern](sse-reconnect.md) — both AppContext and ChatWindow SSE use exponential backoff (1s→2s→4s→…→30s max); reset retryCount on "open" event; ChatWindow SSE now uses token auth via `_token` param, same as AppContext.

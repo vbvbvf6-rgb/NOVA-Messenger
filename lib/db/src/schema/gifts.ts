@@ -5,7 +5,7 @@ import { usersTable } from "./users";
 
 export const giftItemsTable = pgTable("gift_items", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
+  name: text("name").notNull().unique(),
   emoji: text("emoji").notNull(),
   animationType: text("animation_type").notNull().default("sparkle"),
   rarity: text("rarity").notNull().default("common"),

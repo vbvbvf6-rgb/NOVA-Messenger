@@ -10,7 +10,12 @@
   },
   "private": true,
   "devDependencies": {
-    "typescript": "~5.9.2",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "@types/compression": "^1.8.1",
+    "compression": "^1.8.1",
+    "connect-timeout": "^1.9.1"
   }
 }

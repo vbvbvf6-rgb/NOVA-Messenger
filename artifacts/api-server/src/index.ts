@@ -25,6 +25,30 @@ if (Number.isNaN(port) || port <= 0) {
 const httpServer = createServer(app);
 initSocketIO(httpServer);
 
+// ── Global error handlers ──────────────────────────────────────────────────
+process.on("uncaughtException", (err) => {
+  logger.error({ err }, "Uncaught exception — server will continue running");
+});
+process.on("unhandledRejection", (reason) => {
+  logger.error({ reason }, "Unhandled promise rejection");
+});
+
+// ── Graceful shutdown ──────────────────────────────────────────────────────
+let isShuttingDown = false;
+const shutdown = (signal: string) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  logger.info({ signal }, "Graceful shutdown initiated");
+  httpServer.close(() => {
+    logger.info("HTTP server closed");
+    process.exit(0);
+  });
+  // Force-kill if close takes too long
+  setTimeout(() => { logger.warn("Forced exit after timeout"); process.exit(1); }, 10_000).unref();
+};
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
 runSeed().catch((err) => logger.error({ err }, "Seed failed"));
 
 httpServer.listen(port, () => {

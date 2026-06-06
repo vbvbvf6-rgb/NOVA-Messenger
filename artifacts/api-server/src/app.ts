@@ -25,9 +25,35 @@ declare global {
 
 export const JWT_SECRET = process.env.JWT_SECRET || "pulse-messenger-jwt-secret-please-change-in-production";
 
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  console.warn("[WARN] JWT_SECRET is not set — using default insecure key. Set JWT_SECRET in production!");
+}
+
 const app: Express = express();
 
 app.set("trust proxy", 1);
+
+// ── Security headers ──────────────────────────────────────────────────────
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
+// ── Request timeout (60s) — prevents hanging connections ──────────────────
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Skip timeout for SSE endpoints — they are long-lived by design
+  if (req.path.endsWith("/events")) return next();
+  const timer = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(503).json({ error: "Request timeout" });
+    }
+  }, 60_000);
+  res.on("finish", () => clearTimeout(timer));
+  res.on("close", () => clearTimeout(timer));
+  next();
+});
 
 app.use(
   pinoHttp({
