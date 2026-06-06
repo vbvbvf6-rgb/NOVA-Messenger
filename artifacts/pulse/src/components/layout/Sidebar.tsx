@@ -250,8 +250,8 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
   const DesktopSidebar = (
     <div className="hidden md:flex flex-col h-[100dvh] w-[260px] bg-card border-r border-border/50 shrink-0 relative z-20">
       <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10 border border-primary/20 text-primary relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
+        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-primary via-orange-500 to-amber-400 shadow-lg shadow-primary/30 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-white/10 pointer-events-none" />
           <PulseLogo size={22} />
         </div>
         <span className="font-black text-2xl tracking-tight text-foreground flex-1">Nova</span>

@@ -111,6 +111,15 @@ export default function Events() {
   const [questFilter, setQuestFilter] = useState<"all" | "daily" | "weekly" | "special">("all");
   const [apiEvents, setApiEvents] = useState<ApiEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [streakDays, setStreakDays] = useState<number>(1);
+  const SPIN_SYMBOLS = ["💎", "⭐", "🍀", "🎰", "💰", "🎁", "🔥", "⚡"];
+  const [spinning, setSpinning] = useState(false);
+  const [spinSlots, setSpinSlots] = useState(["⭐", "💎", "🎁"]);
+  const [spinReward, setSpinReward] = useState<number | null>(null);
+  const [hasSpunToday, setHasSpunToday] = useState(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return localStorage.getItem("nova-spin-date") === today;
+  });
   const { data: me } = useGetMe();
   const { data: leaderboard = [], isLoading: lbLoading } = useQuery<any[]>({
     queryKey: ["events-leaderboard"],
@@ -143,6 +152,26 @@ export default function Events() {
     return () => window.removeEventListener("pulse:quest-progress", handler);
   }, []);
 
+  /* Daily streak + spark reward on login */
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const lastLogin = localStorage.getItem("nova-last-login");
+    const storedStreak = Number(localStorage.getItem("nova-streak") || "0");
+    if (lastLogin === today) {
+      setStreakDays(storedStreak || 1);
+      return;
+    }
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const newStreak = lastLogin === yesterday ? storedStreak + 1 : 1;
+    localStorage.setItem("nova-last-login", today);
+    localStorage.setItem("nova-streak", String(newStreak));
+    setStreakDays(newStreak);
+    const currentSparks = Number(localStorage.getItem("pulse-sparks") || "0");
+    const newSparks = currentSparks + 1;
+    localStorage.setItem("pulse-sparks", String(newSparks));
+    setSparks(newSparks);
+  }, []);
+
   /* Fetch real platform events from API */
   useEffect(() => {
     const token = sessionStorage.getItem("pulse-token");
@@ -164,7 +193,7 @@ export default function Events() {
       icon: <MessageCircle size={18} />,
       title: "Отправь 5 сообщений",
       desc: "Напиши что-нибудь в любом чате",
-      reward: 50, rewardIcon: "⚡",
+      reward: 42, rewardIcon: "⚡",
       progress: progress["q1"] ?? 0, total: 5,
       completed: completed.has("q1"),
       color: "from-sky-500 to-blue-600",
@@ -174,7 +203,7 @@ export default function Events() {
       icon: <Phone size={18} />,
       title: "Совершить звонок",
       desc: "Позвони любому контакту",
-      reward: 75, rewardIcon: "⚡",
+      reward: 63, rewardIcon: "⚡",
       progress: progress["q2"] ?? 0, total: 1,
       completed: completed.has("q2"),
       color: "from-green-500 to-emerald-600",
@@ -184,7 +213,7 @@ export default function Events() {
       icon: <Heart size={18} />,
       title: "Поставь 3 реакции",
       desc: "Отреагируй на сообщения друзей",
-      reward: 40, rewardIcon: "⚡",
+      reward: 34, rewardIcon: "⚡",
       progress: progress["q3"] ?? 0, total: 3,
       completed: completed.has("q3"),
       color: "from-rose-500 to-pink-600",
@@ -194,7 +223,7 @@ export default function Events() {
       icon: <Send size={18} />,
       title: "Отправить подарок",
       desc: "Порадуй кого-нибудь из контактов",
-      reward: 60, rewardIcon: "⚡",
+      reward: 51, rewardIcon: "⚡",
       progress: progress["q4"] ?? 0, total: 1,
       completed: completed.has("q4"),
       color: "from-amber-500 to-orange-600",
@@ -204,7 +233,7 @@ export default function Events() {
       icon: <UserPlus size={18} />,
       title: "Добавить 3 контакта",
       desc: "Расширь свою сеть за неделю",
-      reward: 200, rewardIcon: "⚡",
+      reward: 170, rewardIcon: "⚡",
       progress: progress["q5"] ?? 0, total: 3,
       completed: completed.has("q5"),
       color: "from-violet-500 to-indigo-600",
@@ -214,7 +243,7 @@ export default function Events() {
       icon: <Phone size={18} />,
       title: "5 звонков за неделю",
       desc: "Общайся голосом с разными людьми",
-      reward: 300, rewardIcon: "⚡",
+      reward: 255, rewardIcon: "⚡",
       progress: progress["q6"] ?? 0, total: 5,
       completed: completed.has("q6"),
       color: "from-teal-500 to-cyan-600",
@@ -224,7 +253,7 @@ export default function Events() {
       icon: <Trophy size={18} />,
       title: "Войти 7 дней подряд",
       desc: "Не прерывай серию заходов",
-      reward: 500, rewardIcon: "⚡",
+      reward: 425, rewardIcon: "⚡",
       progress: progress["q7"] ?? 0, total: 7,
       completed: completed.has("q7"),
       color: "from-yellow-500 to-amber-600",
@@ -234,7 +263,7 @@ export default function Events() {
       icon: <Swords size={18} />,
       title: "Принять участие в событии",
       desc: "Зарегистрируйся на любое событие",
-      reward: 400, rewardIcon: "⚡",
+      reward: 340, rewardIcon: "⚡",
       progress: joined.size > 0 ? 1 : 0, total: 1,
       completed: completed.has("q8") || joined.size > 0,
       color: "from-fuchsia-500 to-purple-600",
@@ -244,7 +273,7 @@ export default function Events() {
       icon: <Crown size={18} />,
       title: "Топ-10 таблицы лидеров",
       desc: "Попади в десятку лучших игроков",
-      reward: 1000, rewardIcon: "⚡",
+      reward: 850, rewardIcon: "⚡",
       progress: progress["q9"] ?? 0, total: 1,
       completed: completed.has("q9"),
       color: "from-orange-400 to-red-600",
@@ -276,7 +305,41 @@ export default function Events() {
     });
   }
 
-  const streakDays = 3;
+  function doSpin() {
+    if (spinning || hasSpunToday) return;
+    setSpinning(true);
+    setSpinReward(null);
+    let count = 0;
+    const interval = setInterval(() => {
+      setSpinSlots([
+        SPIN_SYMBOLS[Math.floor(Math.random() * SPIN_SYMBOLS.length)],
+        SPIN_SYMBOLS[Math.floor(Math.random() * SPIN_SYMBOLS.length)],
+        SPIN_SYMBOLS[Math.floor(Math.random() * SPIN_SYMBOLS.length)],
+      ]);
+      count++;
+      if (count >= 20) {
+        clearInterval(interval);
+        const a = SPIN_SYMBOLS[Math.floor(Math.random() * SPIN_SYMBOLS.length)];
+        const b = SPIN_SYMBOLS[Math.floor(Math.random() * SPIN_SYMBOLS.length)];
+        const c = SPIN_SYMBOLS[Math.floor(Math.random() * SPIN_SYMBOLS.length)];
+        setSpinSlots([a, b, c]);
+        let reward: number;
+        if (a === b && b === c) reward = Math.floor(Math.random() * 100) + 100;
+        else if (a === b || b === c || a === c) reward = Math.floor(Math.random() * 50) + 30;
+        else reward = Math.floor(Math.random() * 20) + 5;
+        setSpinReward(reward);
+        setSpinning(false);
+        setHasSpunToday(true);
+        const today = new Date().toISOString().slice(0, 10);
+        localStorage.setItem("nova-spin-date", today);
+        setSparks(prev => {
+          const newSparks = prev + reward;
+          localStorage.setItem("pulse-sparks", String(newSparks));
+          return newSparks;
+        });
+      }
+    }, 80);
+  }
 
   return (
     <div className="flex flex-col w-full h-full bg-background overflow-hidden">
@@ -303,7 +366,7 @@ export default function Events() {
               className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-full"
             >
               <Zap size={13} className="text-amber-400 fill-amber-400" />
-              <span className="text-sm font-black text-amber-400">{sparks.toLocaleString()}</span>
+              <span className="text-sm font-black text-amber-400">{((me as any)?.balance !== undefined ? (me as any).balance : sparks).toLocaleString()}</span>
             </motion.div>
           </div>
 
@@ -336,6 +399,52 @@ export default function Events() {
             {/* ══════════ QUESTS TAB ══════════ */}
             {tab === "quests" && (
               <motion.div key="quests" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
+
+                {/* Daily Spin */}
+                <div className="bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-indigo-500/10 border border-violet-500/20 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center shadow-sm">
+                        <Sparkles size={17} className="text-violet-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-foreground">Ежедневный спин</p>
+                        <p className="text-xs text-muted-foreground">{hasSpunToday ? "Вернись завтра" : "Крути и выигрывай ⚡"}</p>
+                      </div>
+                    </div>
+                    <AnimatePresence>
+                      {spinReward !== null && (
+                        <motion.div
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          className="px-2.5 py-1 bg-amber-500/20 rounded-full border border-amber-500/30"
+                        >
+                          <span className="text-xs font-black text-amber-400">+{spinReward} ⚡</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <div className="flex gap-2 justify-center">
+                    {spinSlots.map((symbol, i) => (
+                      <motion.div
+                        key={i}
+                        animate={spinning ? { y: [0, -5, 0] } : {}}
+                        transition={{ duration: 0.12, repeat: Infinity, delay: i * 0.04 }}
+                        className="w-[72px] h-[68px] rounded-2xl bg-background border border-border shadow-inner flex items-center justify-center text-3xl select-none"
+                      >
+                        {symbol}
+                      </motion.div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={doSpin}
+                    disabled={spinning || hasSpunToday}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold text-sm shadow-lg shadow-violet-500/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {spinning ? "🎰 Крутится..." : hasSpunToday ? "✓ Использовано сегодня" : "🎰 Крутить"}
+                  </button>
+                </div>
 
                 {/* Streak banner */}
                 <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-orange-500/20 via-amber-500/10 to-yellow-500/5 border border-orange-500/20 p-4">
@@ -661,8 +770,8 @@ export default function Events() {
                               >
                                 {joined.has(event.id) ? "✓ Участвую" : "Участвовать"}
                               </button>
-                              <div className="px-3 py-2 rounded-xl border border-border text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                                <Zap size={10} className="fill-amber-400" />+100 ⚡
+                              <div className="px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-[10px] font-bold text-amber-400 flex items-center gap-1">
+                                <Zap size={10} className="fill-amber-400" />Бонус
                               </div>
                             </div>
                           </div>

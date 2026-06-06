@@ -176,7 +176,7 @@ export default function Login({ onLogin }: LoginProps) {
   const getStepTitle = () => {
     if (step === "2fa") return "Верификация";
     if (step === "qr") return "QR вход";
-    return "Pulse";
+    return "Nova";
   };
 
   const getStepSubtitle = () => {
@@ -189,9 +189,10 @@ export default function Login({ onLogin }: LoginProps) {
     <div className="min-h-[100dvh] w-full flex items-center justify-center bg-background relative overflow-hidden p-4 sm:p-8 login-landscape">
       {/* Dynamic Background */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/10 rounded-full blur-[120px] opacity-60 animate-[pulseGlow_8s_ease-in-out_infinite_alternate]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-500/5 rounded-full blur-[100px] opacity-50" />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMSIvPjwvc3ZnPg==')] opacity-20" />
+        <div className="absolute top-[-15%] left-[-5%] w-[55%] h-[55%] bg-primary/15 rounded-full blur-[140px] opacity-70 animate-[pulseGlow_7s_ease-in-out_infinite_alternate]" />
+        <div className="absolute bottom-[-15%] right-[-10%] w-[65%] h-[65%] bg-violet-500/8 rounded-full blur-[120px] opacity-60 animate-[pulseGlow_9s_ease-in-out_infinite_alternate-reverse]" />
+        <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-amber-500/6 rounded-full blur-[80px] opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/30" />
       </div>
 
       <motion.div
@@ -205,10 +206,10 @@ export default function Login({ onLogin }: LoginProps) {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.1 }}
-            className="w-20 h-20 rounded-2xl bg-card border border-border flex items-center justify-center shadow-xl shadow-primary/10 mb-6 relative overflow-hidden"
+            className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary via-orange-500 to-amber-500 flex items-center justify-center shadow-2xl shadow-primary/40 mb-6 relative overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
-            <PulseLogo size={42} />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/10 pointer-events-none" />
+            <PulseLogo size={48} />
           </motion.div>
 
           <motion.div
@@ -217,10 +218,10 @@ export default function Login({ onLogin }: LoginProps) {
             transition={{ delay: 0.2 }}
             className="text-center"
           >
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground mb-2">
+            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-foreground mb-2">
               {getStepTitle()}
             </h1>
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-[0.15em]">
+            <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
               {getStepSubtitle()}
             </p>
           </motion.div>
@@ -230,7 +231,7 @@ export default function Login({ onLogin }: LoginProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="bg-card/80 backdrop-blur-xl border border-white/10 dark:border-white/5 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/5"
+          className="bg-card/90 backdrop-blur-xl border border-border/50 rounded-3xl p-6 sm:p-8 shadow-[0_20px_60px_rgba(0,0,0,0.08)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
         >
           <AnimatePresence mode="wait">
             {step === "credentials" && (
@@ -327,7 +328,7 @@ export default function Login({ onLogin }: LoginProps) {
                   </motion.button>
                 </form>
 
-                <div className="mt-6 pt-6 border-t border-border/50">
+                <div className="mt-6 pt-6 border-t border-border/50 space-y-3">
                   <motion.button
                     type="button"
                     onClick={startQrLogin}
@@ -338,6 +339,12 @@ export default function Login({ onLogin }: LoginProps) {
                     <QrCode size={18} className="text-primary" />
                     Войти по QR-коду
                   </motion.button>
+                  <Link
+                    href="/register"
+                    className="w-full py-3.5 rounded-2xl bg-primary/5 hover:bg-primary/10 text-primary font-bold text-[14px] flex items-center justify-center gap-2 transition-colors border border-primary/25 hover:border-primary/40"
+                  >
+                    Зарегистрироваться
+                  </Link>
                 </div>
               </motion.div>
             )}
