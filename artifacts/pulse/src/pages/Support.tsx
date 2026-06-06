@@ -494,7 +494,7 @@ export default function Support() {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <div className="max-w-2xl mx-auto p-4 pb-24 md:pb-6 space-y-4">
 
           {/* Tabs */}
           <div className="flex gap-1 bg-secondary/50 rounded-2xl p-1">

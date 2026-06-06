@@ -238,9 +238,11 @@ export default function Register({ onLogin }: RegisterProps) {
 
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-y-auto">
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-[10%] right-[10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] left-[10%] w-[40%] h-[40%] bg-orange-600/10 rounded-full blur-[120px]" />
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-15%] left-[-5%] w-[55%] h-[55%] bg-primary/15 rounded-full blur-[140px] opacity-70 animate-[pulseGlow_7s_ease-in-out_infinite_alternate]" />
+        <div className="absolute bottom-[-15%] right-[-10%] w-[65%] h-[65%] bg-violet-500/8 rounded-full blur-[120px] opacity-60 animate-[pulseGlow_9s_ease-in-out_infinite_alternate-reverse]" />
+        <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-amber-500/6 rounded-full blur-[80px] opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/30" />
       </div>
 
       <motion.div
@@ -249,11 +251,27 @@ export default function Register({ onLogin }: RegisterProps) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-sm relative z-10 py-4"
       >
-        <div className="flex flex-col items-center mb-6 sm:mb-10">
-          <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight mb-2">Nova</h1>
-          <p className="text-muted-foreground text-sm font-medium">
-            {step === "verify-email" ? "Подтверждение email" : "Новый аккаунт"}
-          </p>
+        <div className="flex flex-col items-center mb-8">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.1 }}
+            className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary via-orange-500 to-amber-500 flex items-center justify-center shadow-2xl shadow-primary/40 mb-5 relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/10 pointer-events-none" />
+            <PulseLogo size={38} />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-center"
+          >
+            <h1 className="text-4xl font-black tracking-tight text-foreground mb-1.5">Nova</h1>
+            <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+              {step === "verify-email" ? "Подтверждение email" : "Новый аккаунт"}
+            </p>
+          </motion.div>
         </div>
 
         <AnimatePresence mode="wait">

@@ -32,68 +32,74 @@ export function BottomNav({ onOpenPalette, onOpenSidebar }: BottomNavProps) {
       className="flex md:hidden fixed bottom-0 inset-x-0 z-50 pointer-events-none"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="mx-3 mb-3 flex-1 bg-card/80 dark:bg-card/90 backdrop-blur-2xl border border-border/60 dark:border-white/8 rounded-[22px] flex items-stretch justify-around px-1 pointer-events-auto shadow-[0_8px_32px_rgba(0,0,0,0.10)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
-        {NAV_ITEMS.map((item) => {
-          const isActive = item.href === "/"
-            ? location === "/"
-            : location.startsWith(item.href);
+      <div
+        className="mx-3 mb-3 flex-1 pointer-events-auto"
+        style={{
+          background: "hsl(var(--card) / 0.88)",
+          backdropFilter: "blur(40px) saturate(200%)",
+          WebkitBackdropFilter: "blur(40px) saturate(200%)",
+          border: "1px solid hsl(var(--foreground) / 0.07)",
+          borderRadius: "24px",
+          boxShadow: "0 12px 48px hsl(0 0% 0% / 0.18), 0 2px 8px hsl(0 0% 0% / 0.08), inset 0 1px 0 hsl(var(--foreground) / 0.05)",
+        }}
+      >
+        <div className="flex items-stretch justify-around px-1 py-1">
+          {NAV_ITEMS.map((item) => {
+            const isActive = item.href === "/"
+              ? location === "/"
+              : location.startsWith(item.href);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "relative flex flex-col items-center justify-center gap-1 flex-1 py-2.5 min-h-[58px] landscape:py-1 landscape:min-h-[42px] transition-all duration-200 group rounded-[18px] my-1.5 mx-0.5",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground active:scale-95"
-              )}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="bottomNavActive"
-                  className="absolute inset-0 bg-primary/10 rounded-[18px]"
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                />
-              )}
-              <div className="relative z-10">
-                <item.icon
-                  size={22}
-                  strokeWidth={isActive ? 2.5 : 1.8}
-                  className={cn(
-                    "transition-all duration-200",
-                    isActive ? "scale-110" : "group-active:scale-90"
-                  )}
-                  fill={isActive ? "currentColor" : "none"}
-                />
-                {item.badge > 0 && (
-                  <div className={cn(
-                    "absolute -top-1.5 -right-2 min-w-[17px] h-[17px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border-[1.5px]",
-                    isActive
-                      ? "bg-primary text-white border-card"
-                      : "bg-primary text-white border-card"
-                  )}>
-                    {item.badge > 99 ? "99+" : item.badge}
-                  </div>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-1 flex-1 py-2.5 min-h-[62px] landscape:py-1 landscape:min-h-[44px] rounded-[20px] my-1 mx-0.5 transition-colors duration-150",
+                  isActive ? "text-primary" : "text-muted-foreground active:opacity-70"
                 )}
-              </div>
-              <span className={cn(
-                "text-[10px] font-bold leading-none transition-all duration-200 relative z-10 landscape:hidden",
-                isActive ? "text-primary" : "text-muted-foreground/70"
-              )}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="bnActive"
+                    className="absolute inset-0 rounded-[20px]"
+                    style={{ background: "hsl(var(--primary) / 0.12)" }}
+                    transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                  />
+                )}
 
-        <button
-          onClick={onOpenSidebar}
-          className="relative flex flex-col items-center justify-center gap-1 flex-1 py-2.5 min-h-[58px] landscape:py-1 landscape:min-h-[42px] transition-all duration-200 group rounded-[18px] my-1.5 mx-0.5 text-muted-foreground active:scale-95 hover:bg-secondary/50"
-        >
-          <Menu size={22} strokeWidth={1.8} className="group-active:scale-90 transition-transform" />
-          <span className="text-[10px] font-bold leading-none text-muted-foreground/70 landscape:hidden">Ещё</span>
-        </button>
+                <div className="relative z-10">
+                  <item.icon
+                    size={23}
+                    strokeWidth={isActive ? 2.5 : 1.75}
+                    className="transition-transform duration-150"
+                    style={{ transform: isActive ? "scale(1.08)" : "scale(1)" }}
+                    fill={isActive ? "currentColor" : "none"}
+                  />
+                  {item.badge > 0 && (
+                    <span className="absolute -top-2 -right-2.5 min-w-[17px] h-[17px] px-0.5 rounded-full bg-primary text-white text-[9px] font-black flex items-center justify-center border-2 border-card leading-none">
+                      {item.badge > 99 ? "99+" : item.badge}
+                    </span>
+                  )}
+                </div>
+
+                <span className={cn(
+                  "text-[10.5px] font-semibold leading-none relative z-10 landscape:hidden tracking-tight",
+                  isActive ? "text-primary" : "text-muted-foreground/60"
+                )}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+
+          <button
+            onClick={onOpenSidebar}
+            className="relative flex flex-col items-center justify-center gap-1 flex-1 py-2.5 min-h-[62px] landscape:py-1 landscape:min-h-[44px] rounded-[20px] my-1 mx-0.5 text-muted-foreground active:opacity-70 transition-colors duration-150"
+          >
+            <Menu size={23} strokeWidth={1.75} />
+            <span className="text-[10.5px] font-semibold leading-none text-muted-foreground/60 landscape:hidden tracking-tight">Ещё</span>
+          </button>
+        </div>
       </div>
     </nav>
   );

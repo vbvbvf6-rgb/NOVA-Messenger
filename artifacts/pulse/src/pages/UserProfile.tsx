@@ -431,7 +431,7 @@ export default function UserProfile() {
           </button>
           <Skeleton className="h-5 w-32" />
         </header>
-        <div className="flex-1 overflow-y-auto p-6 max-w-2xl mx-auto w-full space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6 max-w-2xl mx-auto w-full space-y-6">
           <div className="flex flex-col items-center gap-4">
             <Skeleton className="w-28 h-28 rounded-full" />
             <Skeleton className="h-7 w-40" />
@@ -502,7 +502,7 @@ export default function UserProfile() {
       </header>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="max-w-2xl mx-auto w-full p-4 md:p-6 space-y-4">
+        <div className="max-w-2xl mx-auto w-full p-4 md:p-6 pb-24 md:pb-6 space-y-4">
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

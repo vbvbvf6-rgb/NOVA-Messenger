@@ -634,7 +634,7 @@ export function ChatList() {
                   className={cn(
                     "w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all text-left group border",
                     isSelected
-                      ? "bg-secondary border-border shadow-sm"
+                      ? "bg-primary/8 border-primary/20"
                       : "bg-transparent border-transparent hover:bg-secondary/50 hover:border-border/50"
                   )}
                 >
@@ -743,7 +743,7 @@ export function ChatList() {
                         {chat.unreadCount > 0 && (
                           <div className={cn(
                             "text-[11px] font-black px-2 py-0.5 rounded-full min-w-[22px] text-center leading-none",
-                            chat.isMuted ? "bg-secondary text-muted-foreground border border-border" : "bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(139,92,246,0.3)]"
+                            chat.isMuted ? "bg-secondary text-muted-foreground border border-border" : "bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(234,88,12,0.4)]"
                           )}>
                             {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
                           </div>

@@ -13,10 +13,12 @@ export default function Home() {
 
   // ── swipe state ──────────────────────────────────────────────────────────
   const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
   const touchStartTime = useRef(0);
   const [dragX, setDragX] = useState(0);        // current drag offset
   const [closing, setClosing] = useState(false); // animate-out in progress
   const dragging = useRef(false);
+  const swipeDecided = useRef(false); // whether we've decided h vs v
 
   const closeChat = useCallback(() => {
     setClosing(true);
@@ -28,24 +30,40 @@ export default function Home() {
   }, [setSelectedChatId]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Only start tracking when touch begins near the left edge (first 40px)
-    // or anywhere — we allow full-width swipe
     touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
     touchStartTime.current = Date.now();
-    dragging.current = true;
+    dragging.current = false;
+    swipeDecided.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!dragging.current) return;
     const dx = e.touches[0].clientX - touchStartX.current;
-    if (dx > 0) {
-      setDragX(dx);
+    const dy = e.touches[0].clientY - touchStartY.current;
+
+    // First, decide if this is a horizontal or vertical gesture
+    if (!swipeDecided.current) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return; // not enough movement yet
+      swipeDecided.current = true;
+      // If vertical movement dominates, don't intercept — let the page scroll
+      if (Math.abs(dy) > Math.abs(dx)) {
+        dragging.current = false;
+        return;
+      }
+      dragging.current = true;
     }
+
+    if (!dragging.current) return;
+    if (dx > 0) setDragX(dx);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!dragging.current) return;
+    if (!dragging.current) {
+      swipeDecided.current = false;
+      return;
+    }
     dragging.current = false;
+    swipeDecided.current = false;
 
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dt = Date.now() - touchStartTime.current;

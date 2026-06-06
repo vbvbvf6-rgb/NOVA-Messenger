@@ -343,7 +343,7 @@ export default function Events() {
 
   return (
     <div className="flex flex-col w-full h-full bg-background overflow-hidden">
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-8">
+      <div className="flex-1 overflow-y-auto scrollbar-none pb-24 md:pb-8">
 
         {/* ── Header ── */}
         <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-xl border-b border-border px-4 pt-3 pb-0">
