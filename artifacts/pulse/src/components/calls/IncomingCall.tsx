@@ -28,30 +28,26 @@ export function IncomingCall() {
     <AnimatePresence>
       <motion.div
         key="incoming"
-        initial={{ opacity: 0, y: "100%", scale: 0.95 }}
+        initial={{ opacity: 0, y: 60, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: "100%", scale: 0.95 }}
+        exit={{ opacity: 0, y: 60, scale: 0.95 }}
         transition={{ type: "spring", stiffness: 380, damping: 32 }}
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] w-[92%] max-w-sm"
       >
-        <div
-          className="relative rounded-[28px] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.12)]"
-          style={{
-            background: `linear-gradient(145deg, ${avatarBg}15 0%, #ffffff 60%)`,
-            borderTop: `1px solid ${avatarBg}40`,
-            borderLeft: `1px solid ${avatarBg}20`,
-            borderRight: `1px solid ${avatarBg}10`,
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
-          }}
-        >
-          {/* Glow strip */}
+        <div className="relative rounded-[28px] overflow-hidden bg-card border border-border shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+          {/* Colored accent strip at top */}
           <div
             className="absolute top-0 left-0 right-0 h-[2px]"
             style={{ background: `linear-gradient(90deg, transparent, ${avatarBg}cc, transparent)` }}
           />
+          {/* Subtle color tint overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none rounded-[28px]"
+            style={{ background: `radial-gradient(ellipse at 20% 0%, ${avatarBg}20 0%, transparent 60%)` }}
+          />
 
-          <div className="px-6 pt-6 pb-5 flex items-center gap-5">
-            {/* Avatar + pulse */}
+          <div className="relative px-6 pt-6 pb-5 flex items-center gap-5">
+            {/* Avatar + pulse animation */}
             <div className="relative shrink-0">
               <motion.div
                 className="absolute inset-[-8px] rounded-full"
@@ -96,11 +92,11 @@ export function IncomingCall() {
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 px-6 pb-6">
+          <div className="relative flex gap-3 px-6 pb-6">
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => declineCall()}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-colors font-semibold text-sm"
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-red-500/15 text-red-400 hover:bg-red-500 hover:text-white transition-colors font-semibold text-sm border border-red-500/20"
             >
               <PhoneOff size={18} />
               Отклонить
@@ -109,7 +105,7 @@ export function IncomingCall() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => acceptCall()}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-green-500 text-white hover:bg-green-400 transition-colors font-semibold text-sm shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-green-500 text-white hover:bg-green-400 transition-colors font-semibold text-sm shadow-[0_0_20px_rgba(34,197,94,0.35)]"
             >
               {isVideo ? <Video size={18} /> : <Phone size={18} />}
               Принять

@@ -101,17 +101,17 @@ function InviteModal({ onClose }: { onClose: () => void }) {
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 380, damping: 32 }}
-        className="relative w-full max-w-sm bg-white rounded-t-3xl overflow-hidden shadow-2xl z-10"
+        className="relative w-full max-w-sm bg-card rounded-t-3xl overflow-hidden shadow-2xl z-10 border-t border-border"
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-black/10" />
+          <div className="w-10 h-1 rounded-full bg-foreground/10" />
         </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3">
           <h3 className="text-foreground font-bold text-lg">Пригласить участника</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground">
             <X size={16} />
           </button>
         </div>
@@ -183,7 +183,7 @@ function ParticipantTile({
 
   const bg = user?.avatarColor || "#333";
   return (
-    <div className="relative rounded-2xl overflow-hidden bg-neutral-100 aspect-video flex items-center justify-center">
+    <div className="relative rounded-2xl overflow-hidden bg-neutral-900 aspect-video flex items-center justify-center">
       {stream ? (
         <video ref={videoRef} autoPlay playsInline muted={muted} className="w-full h-full object-cover" />
       ) : (
@@ -192,7 +192,7 @@ function ParticipantTile({
         </div>
       )}
       {user && (
-        <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-full text-white text-xs font-medium">
+        <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full text-white text-xs font-medium">
           {user.displayName}
         </div>
       )}
@@ -205,7 +205,6 @@ export function ActiveCall() {
     activeCall, currentUserId, hangUp,
     localStream, remoteStream, remoteStreams,
     isScreenSharing, startScreenShare, stopScreenShare,
-    inviteToCall,
   } = useAppContext();
 
   const [duration, setDuration] = useState(0);
@@ -215,6 +214,7 @@ export function ActiveCall() {
   const [isPipExpanded, setIsPipExpanded] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   const [callError, setCallError] = useState<string | null>(null);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -254,27 +254,47 @@ export function ActiveCall() {
     }
   }, [localStream]);
 
-  // Remote audio — always use the dedicated <audio> element so it works for both
-  // audio and video calls, and so the speaker toggle is reliable.
+  // Remote audio — always use the dedicated <audio> element for both call types
   useEffect(() => {
     const audio = remoteAudioRef.current;
-    if (!audio || !remoteStream) return;
-    audio.srcObject = remoteStream;
-    audio.play().catch(() => {});
+    if (!audio) return;
+    if (remoteStream) {
+      audio.srcObject = remoteStream;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Autoplay blocked — show unlock button
+          setAudioUnlocked(false);
+        });
+      }
+      setAudioUnlocked(true);
+    } else {
+      audio.srcObject = null;
+    }
   }, [remoteStream]);
 
   // Remote video (video tracks only — audio is handled by the audio element above)
   useEffect(() => {
     const video = remoteVideoRef.current;
-    if (!video || !remoteStream) return;
-    video.srcObject = remoteStream;
-    video.play().catch(() => {});
+    if (!video) return;
+    if (remoteStream) {
+      video.srcObject = remoteStream;
+      video.play().catch(() => {});
+    } else {
+      video.srcObject = null;
+    }
   }, [remoteStream]);
 
-  // Speaker toggle — actually mute/unmute the audio element
+  // Speaker toggle
   useEffect(() => {
     if (remoteAudioRef.current) remoteAudioRef.current.muted = isSpeakerOff;
   }, [isSpeakerOff]);
+
+  const handleUnlockAudio = () => {
+    const audio = remoteAudioRef.current;
+    if (!audio) return;
+    audio.play().then(() => setAudioUnlocked(true)).catch(() => {});
+  };
 
   const handleToggleMute = () => {
     if (localStream) localStream.getAudioTracks().forEach((t) => { t.enabled = isMuted; });
@@ -289,7 +309,7 @@ export function ActiveCall() {
   const handleFlipCamera = () => {
     if (localStream) {
       const vt = localStream.getVideoTracks()[0];
-      if (vt && "facingMode" in vt.getSettings()) {
+      if (vt) {
         const current = vt.getSettings().facingMode;
         vt.applyConstraints({ facingMode: current === "environment" ? "user" : "environment" }).catch(() => {});
       }
@@ -315,10 +335,13 @@ export function ActiveCall() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
-          style={{ background: `radial-gradient(ellipse at 50% 30%, ${avatarBg}22 0%, #f5f7fa 70%)` }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-background"
         >
-          <div className="relative mb-8">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: `radial-gradient(ellipse at 50% 30%, ${avatarBg}30 0%, transparent 65%)` }}
+          />
+          <div className="relative mb-8 z-10">
             <PulseRings color={avatarBg} />
             <motion.div
               animate={{ scale: [1, 1.03, 1] }}
@@ -333,22 +356,22 @@ export function ActiveCall() {
               )}
             </motion.div>
           </div>
-          <h2 className="text-foreground text-3xl font-bold mb-2">{callee?.displayName}</h2>
+          <h2 className="text-foreground text-3xl font-bold mb-2 z-10">{callee?.displayName}</h2>
           <motion.p
             animate={{ opacity: [1, 0.4, 1] }}
             transition={{ duration: 1.4, repeat: Infinity }}
-            className="text-muted-foreground text-lg mb-16"
+            className="text-muted-foreground text-lg mb-16 z-10"
           >
             {activeCall.type === "video" ? "Видеозвонок…" : "Звоним…"}
           </motion.p>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={hangUp}
-            className="w-20 h-20 rounded-full bg-red-500 text-white flex items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.3)] hover:bg-red-600 transition-colors"
+            className="z-10 w-20 h-20 rounded-full bg-red-500 text-white flex items-center justify-center shadow-[0_0_40px_rgba(239,68,68,0.3)] hover:bg-red-600 transition-colors"
           >
             <PhoneOff size={30} />
           </motion.button>
-          <p className="text-muted-foreground/60 text-sm mt-4">Нажмите чтобы отменить</p>
+          <p className="text-muted-foreground/60 text-sm mt-4 z-10">Нажмите чтобы отменить</p>
         </motion.div>
       </AnimatePresence>
     );
@@ -368,6 +391,7 @@ export function ActiveCall() {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex flex-col overflow-hidden"
         >
+          {/* Connection error banner */}
           {callError && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -379,13 +403,29 @@ export function ActiveCall() {
               <button onClick={() => setCallError(null)} className="ml-1 opacity-60 hover:opacity-100">✕</button>
             </motion.div>
           )}
+
+          {/* Audio unlock banner — shown when browser blocks autoplay */}
+          {!audioUnlocked && remoteStream && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-16 left-1/2 -translate-x-1/2 z-10"
+            >
+              <button
+                onClick={handleUnlockAudio}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-lg"
+              >
+                <Volume2 size={14} /> Включить звук
+              </button>
+            </motion.div>
+          )}
+
           {/* ── VIDEO CALL ── */}
           {isVideo ? (
             <>
               {/* Remote video / group grid / placeholder */}
-              <div className="absolute inset-0 bg-neutral-900">
+              <div className="absolute inset-0 bg-neutral-950">
                 {isGroup ? (
-                  /* Group video grid */
                   <div className={`w-full h-full grid gap-1 p-1 ${remoteStreams.size === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
                     {[...remoteStreams.entries()].map(([uid, stream]) => (
                       <ParticipantTile key={uid} stream={stream} />
@@ -400,11 +440,12 @@ export function ActiveCall() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div
-                    className="w-full h-full flex flex-col items-center justify-center gap-5"
-                    style={{ background: `radial-gradient(circle at 50% 40%, ${avatarBg}33 0%, #f8fafc 70%)` }}
-                  >
-                    <motion.div className="relative" animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 3, repeat: Infinity }}>
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-5 bg-background">
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ background: `radial-gradient(circle at 50% 40%, ${avatarBg}25 0%, transparent 60%)` }}
+                    />
+                    <motion.div className="relative z-10" animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 3, repeat: Infinity }}>
                       <PulseRings color={avatarBg} />
                       <div
                         className="w-32 h-32 rounded-full flex items-center justify-center text-white font-bold text-5xl relative z-10 overflow-hidden shadow-2xl"
@@ -417,14 +458,14 @@ export function ActiveCall() {
                         )}
                       </div>
                     </motion.div>
-                    <p className="text-muted-foreground text-sm tracking-wide animate-pulse">Ожидание видео…</p>
+                    <p className="text-muted-foreground text-sm tracking-wide animate-pulse z-10">Ожидание видео…</p>
                   </div>
                 )}
               </div>
 
               {/* Top bar */}
-              <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 pt-safe pt-5 pointer-events-none z-10">
-                <div className="bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-mono text-sm tabular-nums">
+              <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 pt-[env(safe-area-inset-top,0px)] pt-5 pointer-events-none z-10">
+                <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-mono text-sm tabular-nums">
                   {formatDuration(duration)}
                 </div>
                 <div className="flex items-center gap-2">
@@ -434,7 +475,7 @@ export function ActiveCall() {
                       Демонстрация экрана
                     </div>
                   )}
-                  <div className="bg-black/50 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium">
+                  <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium">
                     {isGroup ? `${remoteStreams.size + 1} участника` : otherUser?.displayName}
                   </div>
                 </div>
@@ -447,7 +488,7 @@ export function ActiveCall() {
                 dragMomentum={false}
                 dragConstraints={{ top: 0, left: 0, right: 0, bottom: 0 }}
                 dragElastic={0.08}
-                style={{ position: "absolute", top: 64, right: 16, zIndex: 20 }}
+                style={{ position: "absolute", top: 72, right: 16, zIndex: 20 }}
                 animate={{ width: isPipExpanded ? 160 : 100, height: isPipExpanded ? 220 : 140 }}
                 className="cursor-grab active:cursor-grabbing"
               >
@@ -481,13 +522,14 @@ export function ActiveCall() {
             </>
           ) : (
             /* ── AUDIO CALL ── */
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center"
-              style={{ background: `radial-gradient(ellipse at 50% 30%, ${avatarBg}22 0%, #f5f7fa 65%)` }}
-            >
-              <div className="absolute inset-0 opacity-[0.03]"
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background">
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{ background: `radial-gradient(ellipse at 50% 30%, ${avatarBg}25 0%, transparent 65%)` }}
+              />
+              <div className="absolute inset-0 opacity-[0.025]"
                 style={{
-                  backgroundImage: "linear-gradient(rgba(0,0,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.3) 1px, transparent 1px)",
+                  backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
                   backgroundSize: "40px 40px",
                 }}
               />
@@ -496,7 +538,7 @@ export function ActiveCall() {
               {isGroup && (
                 <div className="flex -space-x-3 mb-6 z-10">
                   {[...remoteStreams.keys()].slice(0, 5).map((uid) => (
-                    <div key={uid} className="w-12 h-12 rounded-full border-2 border-neutral-900 bg-neutral-600 flex items-center justify-center text-white text-lg font-bold overflow-hidden">
+                    <div key={uid} className="w-12 h-12 rounded-full border-2 border-background bg-secondary flex items-center justify-center text-foreground text-lg font-bold overflow-hidden">
                       {uid}
                     </div>
                   ))}
@@ -508,7 +550,7 @@ export function ActiveCall() {
                 <motion.div
                   animate={{ scale: [1, 1.02, 1] }}
                   transition={{ duration: 4, repeat: Infinity }}
-                  className="w-36 h-36 rounded-full flex items-center justify-center text-white font-bold text-6xl relative z-10 overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.6)]"
+                  className="w-36 h-36 rounded-full flex items-center justify-center text-white font-bold text-6xl relative z-10 overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.4)]"
                   style={{ backgroundColor: avatarBg }}
                 >
                   {otherUser?.avatarUrl ? (
@@ -535,14 +577,17 @@ export function ActiveCall() {
 
           {/* ── CONTROL BAR ── */}
           <div className="absolute bottom-0 left-0 right-0 z-30">
-            <div className="mx-auto max-w-sm px-4 pb-[env(safe-area-inset-bottom,2.5rem)] [.landscape_&]:pb-3 pt-4 flex flex-col items-center gap-2">
-              {/* Secondary row: screen share + invite */}
+            {/* Semi-transparent bg for control bar */}
+            <div className={`absolute inset-0 ${isVideo ? "bg-black/40 backdrop-blur-md" : ""}`} />
+            <div className="relative mx-auto max-w-sm px-4 pb-[env(safe-area-inset-bottom,2.5rem)] pt-4 flex flex-col items-center gap-3">
+              {/* Secondary row: screen share + invite + speaker (video) */}
               <div className="flex items-center gap-3">
                 {/* Screen share (video calls only) */}
                 {isVideo && (
                   <ControlBtn
                     active={isScreenSharing}
                     activeColor="blue"
+                    isVideo={isVideo}
                     onClick={isScreenSharing ? stopScreenShare : startScreenShare}
                     label={isScreenSharing ? "Остановить показ экрана" : "Показать экран"}
                   >
@@ -554,26 +599,31 @@ export function ActiveCall() {
                 <ControlBtn
                   active={false}
                   activeColor="blue"
+                  isVideo={isVideo}
                   onClick={() => setShowInvite(true)}
                   label="Пригласить участника"
                 >
                   <UserPlus size={20} />
+                </ControlBtn>
+
+                {/* Speaker toggle (both audio and video calls) */}
+                <ControlBtn
+                  active={isSpeakerOff}
+                  activeColor="red"
+                  isVideo={isVideo}
+                  onClick={() => setIsSpeakerOff((p) => !p)}
+                  label={isSpeakerOff ? "Включить динамик" : "Выключить динамик"}
+                >
+                  {isSpeakerOff ? <VolumeX size={20} /> : <Volume2 size={20} />}
                 </ControlBtn>
               </div>
 
               {/* Main row */}
               <div className="flex items-center justify-center gap-4">
                 {/* Mute */}
-                <ControlBtn active={isMuted} activeColor="red" onClick={handleToggleMute} label={isMuted ? "Включить микр." : "Выключить микр."}>
+                <ControlBtn active={isMuted} activeColor="red" isVideo={isVideo} onClick={handleToggleMute} label={isMuted ? "Включить микр." : "Выключить микр."}>
                   {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
                 </ControlBtn>
-
-                {/* Speaker (audio only) */}
-                {!isVideo && (
-                  <ControlBtn active={isSpeakerOff} activeColor="red" onClick={() => setIsSpeakerOff((p) => !p)} label="Динамик">
-                    {isSpeakerOff ? <VolumeX size={22} /> : <Volume2 size={22} />}
-                  </ControlBtn>
-                )}
 
                 {/* End call */}
                 <motion.button
@@ -588,20 +638,23 @@ export function ActiveCall() {
                 {/* Camera toggle (video) */}
                 {isVideo && (
                   <>
-                    <ControlBtn active={isVideoOff} activeColor="red" onClick={handleToggleVideo} label={isVideoOff ? "Включить камеру" : "Выключить камеру"}>
+                    <ControlBtn active={isVideoOff} activeColor="red" isVideo={isVideo} onClick={handleToggleVideo} label={isVideoOff ? "Включить камеру" : "Выключить камеру"}>
                       {isVideoOff ? <CameraOff size={22} /> : <Camera size={22} />}
                     </ControlBtn>
 
-                    <ControlBtn active={false} activeColor="blue" onClick={handleFlipCamera} label="Перевернуть камеру">
+                    <ControlBtn active={false} activeColor="blue" isVideo={isVideo} onClick={handleFlipCamera} label="Перевернуть камеру">
                       <FlipHorizontal size={22} />
                     </ControlBtn>
                   </>
                 )}
+
+                {/* Mute button for audio-only: keep it in this row (no cam buttons) */}
+                {/* Speaker for audio-only call is already in secondary row */}
               </div>
             </div>
           </div>
 
-          {/* Remote audio — always present for both audio and video calls */}
+          {/* Remote audio — always present, handles both audio and video calls */}
           <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: "none" }} />
         </motion.div>
       </AnimatePresence>
@@ -615,24 +668,28 @@ export function ActiveCall() {
 }
 
 function ControlBtn({
-  children, active, activeColor, onClick, label,
+  children, active, activeColor, isVideo, onClick, label,
 }: {
   children: React.ReactNode;
   active: boolean;
   activeColor: "red" | "blue";
+  isVideo: boolean;
   onClick: () => void;
   label: string;
 }) {
   const activeClass = activeColor === "red"
-    ? "bg-red-500/20 text-red-500"
-    : "bg-blue-500/20 text-blue-500";
+    ? "bg-red-500/30 text-red-400"
+    : "bg-blue-500/30 text-blue-400";
+  const inactiveClass = isVideo
+    ? "bg-white/15 text-white hover:bg-white/25"
+    : "bg-secondary text-foreground hover:bg-secondary/80";
 
   return (
     <motion.button
       whileTap={{ scale: 0.9 }}
       onClick={onClick}
       title={label}
-      className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${active ? activeClass : "bg-black/5 text-foreground hover:bg-black/10"}`}
+      className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${active ? activeClass : inactiveClass}`}
     >
       {children}
     </motion.button>
