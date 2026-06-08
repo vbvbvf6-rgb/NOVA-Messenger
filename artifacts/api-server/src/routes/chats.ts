@@ -308,12 +308,14 @@ router.put("/chats/:chatId", async (req, res) => {
         .set({ isMuted: body.isMuted })
         .where(and(eq(chatMembersTable.chatId, chatId), eq(chatMembersTable.userId, uid)));
     }
-    if (body.name !== undefined || body.description !== undefined || body.avatarUrl !== undefined) {
-      const updateData: Record<string, unknown> = {};
-      if (body.name !== undefined) updateData.name = body.name;
-      if (body.description !== undefined) updateData.description = body.description;
-      if (body.avatarUrl !== undefined) updateData.avatarUrl = body.avatarUrl;
-      await db.update(chatsTable).set(updateData).where(eq(chatsTable.id, chatId));
+    const hasChatUpdate = [body.name, body.description, body.avatarUrl, (body as any).slowMode, (body as any).whoCanSend, (body as any).isPublic].some(v => v !== undefined);
+    if (hasChatUpdate) {
+      if (body.name !== undefined) await db.execute(sql`UPDATE chats SET name = ${body.name} WHERE id = ${chatId}`);
+      if (body.description !== undefined) await db.execute(sql`UPDATE chats SET description = ${body.description} WHERE id = ${chatId}`);
+      if (body.avatarUrl !== undefined) await db.execute(sql`UPDATE chats SET avatar_url = ${body.avatarUrl} WHERE id = ${chatId}`);
+      if ((body as any).slowMode !== undefined) await db.execute(sql`UPDATE chats SET slow_mode = ${(body as any).slowMode} WHERE id = ${chatId}`);
+      if ((body as any).whoCanSend !== undefined) await db.execute(sql`UPDATE chats SET who_can_send = ${(body as any).whoCanSend} WHERE id = ${chatId}`);
+      if ((body as any).isPublic !== undefined) await db.execute(sql`UPDATE chats SET is_public = ${(body as any).isPublic} WHERE id = ${chatId}`);
     }
 
     const chat = await buildChat(chatId, uid);
@@ -390,6 +392,29 @@ router.post("/chats/:chatId/members", async (req, res) => {
   }
 });
 
+router.patch("/chats/:chatId/members/:memberId", async (req, res) => {
+  try {
+    const chatId = Number(req.params.chatId);
+    const memberId = Number(req.params.memberId);
+    const uid = req.currentUserId;
+    const { role } = req.body as { role: string };
+    if (!["member","admin"].includes(role)) return res.status(400).json({ error: "Invalid role" });
+    const myMember = await db.query.chatMembersTable.findFirst({
+      where: and(eq(chatMembersTable.chatId, chatId), eq(chatMembersTable.userId, uid)),
+    });
+    if (!myMember || (myMember.role !== "owner" && myMember.role !== "admin")) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    await db.update(chatMembersTable).set({ role }).where(
+      and(eq(chatMembersTable.chatId, chatId), eq(chatMembersTable.userId, memberId))
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.delete("/chats/:chatId/members/:memberId", async (req, res) => {
   try {
     const chatId = Number(req.params.chatId);
@@ -398,6 +423,53 @@ router.delete("/chats/:chatId/members/:memberId", async (req, res) => {
       and(eq(chatMembersTable.chatId, chatId), eq(chatMembersTable.userId, memberId))
     );
     res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/chats/:chatId/invite", async (req, res) => {
+  try {
+    const chatId = Number(req.params.chatId);
+    const uid = req.currentUserId;
+    const myMember = await db.query.chatMembersTable.findFirst({
+      where: and(eq(chatMembersTable.chatId, chatId), eq(chatMembersTable.userId, uid)),
+    });
+    if (!myMember) return res.status(403).json({ error: "Forbidden" });
+    let row = await db.query.chatsTable.findFirst({ where: eq(chatsTable.id, chatId) });
+    if (!row) return res.status(404).json({ error: "Not found" });
+    let token = (row as any).invite_token;
+    if (!token) {
+      token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+      await db.execute(sql`UPDATE chats SET invite_token = ${token} WHERE id = ${chatId}`);
+    }
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : "http://localhost:5000";
+    res.json({ link: `${baseUrl}/invite/${token}`, token });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/chats/:chatId/invite/reset", async (req, res) => {
+  try {
+    const chatId = Number(req.params.chatId);
+    const uid = req.currentUserId;
+    const myMember = await db.query.chatMembersTable.findFirst({
+      where: and(eq(chatMembersTable.chatId, chatId), eq(chatMembersTable.userId, uid)),
+    });
+    if (!myMember || (myMember.role !== "owner" && myMember.role !== "admin")) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    await db.execute(sql`UPDATE chats SET invite_token = ${token} WHERE id = ${chatId}`);
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : "http://localhost:5000";
+    res.json({ link: `${baseUrl}/invite/${token}`, token });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

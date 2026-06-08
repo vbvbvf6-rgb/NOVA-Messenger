@@ -12,6 +12,10 @@ export const chatsTable = pgTable("chats", {
   avatarColor: text("avatar_color").notNull().default("#3B82F6"),
   autoDeleteTimer: integer("auto_delete_timer"),
   pinnedMessageId: integer("pinned_message_id"),
+  slowMode: integer("slow_mode").default(0),
+  whoCanSend: text("who_can_send").default("all"),
+  isPublic: boolean("is_public").default(false),
+  inviteToken: text("invite_token"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

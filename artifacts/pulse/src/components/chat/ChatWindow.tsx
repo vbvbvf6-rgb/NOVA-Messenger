@@ -1591,12 +1591,12 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             displayName={chat.name || ""}
             avatarUrl={chat.avatarUrl}
             avatarColor={chat.avatarColor || "#333"}
+            description={(chat as any).description}
+            slowMode={(chat as any).slowMode}
+            whoCanSend={(chat as any).whoCanSend}
+            isPublic={(chat as any).isPublic}
             onClose={() => setShowInfoPanel(false)}
-            onDeleteChat={() => setShowDeleteDialog(true)}
-            onSetAutoDelete={() => setShowAutoDeleteMenu(true)}
-            autoDeleteTimer={autoDeleteTimer}
-            onTogglePin={handleTogglePin}
-            isPinned={chat.isPinned}
+            onDeleteChat={() => { setSelectedChatId(null); setShowInfoPanel(false); }}
             onToggleMute={handleToggleMute}
             isMuted={chat.isMuted}
           />
