@@ -31,11 +31,16 @@ interface Quest {
 interface ApiEvent {
   id: number;
   title: string;
-  description: string;
-  startsAt?: string;
-  endsAt?: string;
+  description?: string;
+  start_at?: string;
+  end_at?: string;
   isActive?: boolean;
   createdAt?: string;
+  event_type?: string;
+  cost?: number;
+  conditions?: string;
+  participant_count?: number;
+  banner_color?: string;
 }
 
 function LeaderAvatar({ user, size = 44 }: { user: any; size?: number }) {
@@ -172,18 +177,27 @@ export default function Events() {
     setSparks(newSparks);
   }, []);
 
-  /* Fetch real platform events from API */
+  /* Fetch real platform events from API + sync joined from DB */
   useEffect(() => {
     const token = sessionStorage.getItem("pulse-token");
     if (!token) return;
     setEventsLoading(true);
-    fetch("/api/platform-events", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.ok ? r.json() : [])
-      .then((data: ApiEvent[]) => setApiEvents(Array.isArray(data) ? data : []))
-      .catch(() => setApiEvents([]))
-      .finally(() => setEventsLoading(false));
+
+    Promise.all([
+      fetch("/api/platform-events", { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/platform-events/joined", { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([events, joinedIds]) => {
+      setApiEvents(Array.isArray(events) ? events : []);
+      if (Array.isArray(joinedIds) && joinedIds.length > 0) {
+        setJoined(prev => {
+          const next = new Set([...prev, ...joinedIds.map(Number)]);
+          saveJoined(next);
+          return next;
+        });
+      }
+    }).finally(() => setEventsLoading(false));
   }, []);
 
   /* Build quest list with persisted progress */
@@ -286,13 +300,47 @@ export default function Events() {
     setTimeout(() => setClaimAnim(null), 1200);
   }
 
-  function toggleJoin(id: number) {
+  async function toggleJoin(id: number) {
+    const isJoined = joined.has(id);
+    const token = sessionStorage.getItem("pulse-token");
+
+    // Optimistic update
     setJoined(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
       saveJoined(next);
       return next;
     });
+
+    if (!token) return;
+    try {
+      const endpoint = isJoined ? `/api/platform-events/${id}/leave` : `/api/platform-events/${id}/join`;
+      const r = await fetch(endpoint, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) {
+        // Revert on failure
+        setJoined(prev => {
+          const next = new Set(prev);
+          if (isJoined) next.add(id); else next.delete(id);
+          saveJoined(next);
+          return next;
+        });
+        if (r.status === 402) {
+          const data = await r.json().catch(() => ({}));
+          alert(data.error || "Недостаточно искр");
+        }
+      }
+    } catch {
+      // Revert on network error
+      setJoined(prev => {
+        const next = new Set(prev);
+        if (isJoined) next.add(id); else next.delete(id);
+        saveJoined(next);
+        return next;
+      });
+    }
   }
 
   function doSpin() {
@@ -691,9 +739,9 @@ export default function Events() {
                             >
                               <div className="absolute top-3 right-3 text-2xl opacity-60">{eventEmoji(event.id)}</div>
                               <p className="font-black text-base leading-tight mb-2 pr-8">{event.title}</p>
-                              {event.startsAt && (
+                              {event.start_at && (
                                 <div className="flex items-center gap-1.5 text-xs opacity-80 mb-3">
-                                  <Clock size={11} />{formatEventDate(event.startsAt)}
+                                  <Clock size={11} />{formatEventDate(event.start_at)}
                                 </div>
                               )}
                               <button
@@ -731,23 +779,38 @@ export default function Events() {
                               </div>
                             </div>
 
-                            {(event.startsAt || event.endsAt) && (
+                            {(event.start_at || event.end_at) && (
                               <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground flex-wrap">
-                                {event.startsAt && (
+                                {event.start_at && (
                                   <span className="flex items-center gap-1.5">
                                     <Clock size={12} className="text-primary/70" />
-                                    Начало: {formatEventDate(event.startsAt)}
+                                    Начало: {formatEventDate(event.start_at)}
                                   </span>
                                 )}
-                                {event.endsAt && (
+                                {event.end_at && (
                                   <span className="flex items-center gap-1.5">
                                     <Clock size={12} className="text-rose-400/70" />
-                                    Конец: {formatEventDate(event.endsAt)}
+                                    Конец: {formatEventDate(event.end_at)}
                                   </span>
                                 )}
                               </div>
                             )}
 
+                            {event.conditions && (() => {
+                              try {
+                                const conds = typeof event.conditions === "string" ? JSON.parse(event.conditions) : event.conditions;
+                                if (Array.isArray(conds) && conds.length > 0) return (
+                                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                    {conds.map((c: string, ci: number) => (
+                                      <span key={ci} className="flex items-center gap-1 text-[10px] font-semibold bg-secondary text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+                                        <Lock size={8} />{c}
+                                      </span>
+                                    ))}
+                                  </div>
+                                );
+                              } catch {}
+                              return null;
+                            })()}
                             <div className="flex items-center gap-2 mt-3">
                               <button
                                 onClick={() => toggleJoin(event.id)}
@@ -755,14 +818,25 @@ export default function Events() {
                                   "flex-1 py-2 rounded-xl text-xs font-bold transition-all",
                                   joined.has(event.id)
                                     ? "bg-primary/10 text-primary border border-primary/20"
-                                    : "bg-primary text-primary-foreground hover:opacity-90 shadow-[0_2px_10px_rgba(139,92,246,0.25)]"
+                                    : event.event_type === "giveaway"
+                                      ? "bg-amber-500 text-white hover:opacity-90 shadow-[0_2px_10px_rgba(245,158,11,0.25)]"
+                                      : "bg-primary text-primary-foreground hover:opacity-90 shadow-[0_2px_10px_rgba(139,92,246,0.25)]"
                                 )}
                               >
-                                {joined.has(event.id) ? "✓ Участвую" : "Участвовать"}
+                                {joined.has(event.id) ? "✓ Участвую" : event.event_type === "giveaway"
+                                  ? `🎁 Участвовать${(event.cost || 0) > 0 ? ` · ${event.cost} ⚡` : ""}`
+                                  : "Участвовать"}
                               </button>
-                              <div className="px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                                <Zap size={10} className="fill-amber-400" />Бонус
-                              </div>
+                              {(event.participant_count || 0) > 0 && (
+                                <div className="px-3 py-2 rounded-xl border border-secondary bg-secondary text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                                  <Users size={10} />{event.participant_count}
+                                </div>
+                              )}
+                              {!(event.participant_count || 0) && (
+                                <div className="px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-[10px] font-bold text-amber-400 flex items-center gap-1">
+                                  <Zap size={10} className="fill-amber-400" />Бонус
+                                </div>
+                              )}
                             </div>
                           </div>
                         </motion.div>

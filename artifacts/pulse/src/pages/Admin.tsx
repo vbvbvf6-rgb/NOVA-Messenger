@@ -396,6 +396,22 @@ export default function Admin() {
   const [eventActive, setEventActive] = useState(true);
   const [eventEmoji, setEventEmoji] = useState("🎉");
   const [eventSaving, setEventSaving] = useState(false);
+  const [eventKind, setEventKind] = useState<"event" | "giveaway">("event");
+  const [eventCost, setEventCost] = useState(0);
+  const [eventConditions, setEventConditions] = useState("");
+  // Announcement
+  const [showAnnouncementPanel, setShowAnnouncementPanel] = useState(false);
+  const [announcementMsg, setAnnouncementMsg] = useState("");
+  const [announcementSaving, setAnnouncementSaving] = useState(false);
+  const [currentAnnouncement, setCurrentAnnouncement] = useState<string | null>(null);
+  const fetchCurrentAnnouncement = async () => {
+    try {
+      const r = await fetch("/api/announcement", { headers: getHeader() });
+      const d = await r.json();
+      setCurrentAnnouncement(d?.message || null);
+      if (d?.message) setAnnouncementMsg(d.message);
+    } catch {}
+  };
 
   const EVENT_TYPES = [
     { emoji: "🎉", label: "Праздник", color: "#f59e0b" },
@@ -452,10 +468,15 @@ export default function Admin() {
       setEventStartAt(ev.startAt ? ev.startAt.slice(0, 16) : "");
       setEventEndAt(ev.endAt ? ev.endAt.slice(0, 16) : "");
       setEventActive(ev.isActive);
+      setEventKind((ev as any).eventType === "giveaway" ? "giveaway" : "event");
+      setEventCost((ev as any).cost || 0);
+      const conds = (ev as any).conditions;
+      setEventConditions(conds ? (typeof conds === "string" ? conds : JSON.stringify(conds)) : "");
     } else {
       setEditingEvent(null);
       setEventEmoji("🎉"); setEventTitle(""); setEventDesc(""); setEventImage("");
       setEventColor("#f59e0b"); setEventStartAt(""); setEventEndAt(""); setEventActive(true);
+      setEventKind("event"); setEventCost(0); setEventConditions("");
     }
     setShowEventForm(true);
   };
@@ -465,10 +486,16 @@ export default function Admin() {
     setEventSaving(true);
     const fullTitle = `${eventEmoji} ${eventTitle.trim()}`;
     try {
+      const condParsed = eventConditions.trim()
+        ? eventConditions.trim().split("\n").map(s => s.trim()).filter(Boolean)
+        : null;
       const payload = {
         title: fullTitle, description: eventDesc.trim() || null,
         imageUrl: eventImage.trim() || null, bannerColor: eventColor,
         startAt: eventStartAt || null, endAt: eventEndAt || null, isActive: eventActive,
+        eventType: eventKind,
+        cost: eventKind === "giveaway" ? eventCost : 0,
+        conditions: condParsed ? JSON.stringify(condParsed) : null,
       };
       const url = editingEvent ? `/api/admin/platform-events/${editingEvent.id}` : "/api/admin/platform-events";
       const method = editingEvent ? "PATCH" : "POST";
@@ -1780,6 +1807,79 @@ export default function Admin() {
           )}
         </div>
 
+        {/* Announcement Banner */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <button
+            onClick={() => { setShowAnnouncementPanel(v => !v); if (!showAnnouncementPanel) fetchCurrentAnnouncement(); }}
+            className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <span className="text-amber-400 text-base">📢</span>
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm">Объявление</p>
+                <p className="text-xs text-muted-foreground">Баннер для всех пользователей</p>
+              </div>
+            </div>
+            {showAnnouncementPanel ? <ChevronDown size={16} className="text-muted-foreground" /> : <ChevronRight size={16} className="text-muted-foreground" />}
+          </button>
+          {showAnnouncementPanel && (
+            <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+              {currentAnnouncement && (
+                <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                  <span className="text-amber-400 text-xs font-bold shrink-0">Текущее:</span>
+                  <p className="text-xs text-foreground leading-relaxed flex-1">{currentAnnouncement}</p>
+                </div>
+              )}
+              <textarea
+                value={announcementMsg}
+                onChange={e => setAnnouncementMsg(e.target.value)}
+                placeholder="Текст объявления (будет показан всем пользователям)..."
+                rows={3}
+                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-amber-500 transition-colors resize-none"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (!announcementMsg.trim()) return showToast("Введите текст", "err");
+                    setAnnouncementSaving(true);
+                    try {
+                      const r = await fetch("/api/admin/announcement", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", ...getHeader() },
+                        body: JSON.stringify({ message: announcementMsg.trim() }),
+                      });
+                      if (r.ok) { showToast("✅ Объявление опубликовано", "ok"); setCurrentAnnouncement(announcementMsg.trim()); }
+                      else { const d = await r.json(); showToast(d.error || "Ошибка", "err"); }
+                    } catch { showToast("Ошибка соединения", "err"); }
+                    setAnnouncementSaving(false);
+                  }}
+                  disabled={announcementSaving}
+                  className="flex-1 py-2 rounded-xl bg-amber-500 text-white text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50"
+                >
+                  {announcementSaving ? "Публикую..." : "📢 Опубликовать"}
+                </button>
+                {currentAnnouncement && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await fetch("/api/admin/announcement", { method: "DELETE", headers: getHeader() });
+                        showToast("🗑️ Объявление удалено", "ok");
+                        setCurrentAnnouncement(null);
+                        setAnnouncementMsg("");
+                      } catch { showToast("Ошибка", "err"); }
+                    }}
+                    className="px-4 py-2 rounded-xl border border-border text-xs text-muted-foreground hover:bg-secondary transition-colors"
+                  >
+                    Удалить
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Broadcast Push + Chat Management */}
         <div className="grid md:grid-cols-2 gap-4">
           {/* Broadcast Push Notification */}
@@ -2014,6 +2114,34 @@ export default function Admin() {
                         className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-violet-500 transition-colors" />
                     </div>
                   </div>
+                  {/* Event kind + giveaway cost */}
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <label className="text-[10px] text-muted-foreground mb-1 block">Категория</label>
+                      <div className="flex gap-1.5">
+                        {([{ v: "event", label: "Событие" }, { v: "giveaway", label: "Розыгрыш" }] as const).map(k => (
+                          <button key={k.v} type="button" onClick={() => setEventKind(k.v)}
+                            className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${eventKind === k.v ? "bg-violet-500 text-white border-violet-500" : "border-border text-muted-foreground hover:text-foreground"}`}>
+                            {k.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {eventKind === "giveaway" && (
+                      <div className="w-28">
+                        <label className="text-[10px] text-muted-foreground mb-1 block">Стоимость (⚡)</label>
+                        <input type="number" min={0} value={eventCost} onChange={e => setEventCost(Number(e.target.value))}
+                          className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-violet-500 transition-colors" />
+                      </div>
+                    )}
+                  </div>
+                  <textarea
+                    value={eventConditions}
+                    onChange={e => setEventConditions(e.target.value)}
+                    placeholder={"Условия участия (по одному на строку, напр.:\nАктивный пользователь\nPrime подписка)"}
+                    rows={2}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-violet-500 transition-colors resize-none"
+                  />
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <label className="text-xs text-muted-foreground">Цвет:</label>

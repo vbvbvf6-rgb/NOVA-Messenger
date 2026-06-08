@@ -24,14 +24,8 @@ router.get("/platform-events", async (req, res) => {
       .where(
         and(
           eq(platformEventsTable.isActive, true),
-          or(
-            isNull(platformEventsTable.startAt),
-            lte(platformEventsTable.startAt, now)
-          ),
-          or(
-            isNull(platformEventsTable.endAt),
-            gte(platformEventsTable.endAt, now)
-          )
+          or(isNull(platformEventsTable.startAt), lte(platformEventsTable.startAt, now)),
+          or(isNull(platformEventsTable.endAt), gte(platformEventsTable.endAt, now))
         )
       )
       .orderBy(desc(platformEventsTable.createdAt));
@@ -42,15 +36,108 @@ router.get("/platform-events", async (req, res) => {
   }
 });
 
+// Get joined event IDs for current user
+router.get("/platform-events/joined", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const rows = await db.execute(sql`SELECT event_id FROM event_participants WHERE user_id = ${uid}`);
+    res.json((rows.rows as any[]).map(r => r.event_id));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Join an event (deduct sparks if cost > 0)
+router.post("/platform-events/:id/join", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const eventId = Number(req.params.id);
+
+    const evtRows = await db.execute(sql`SELECT * FROM platform_events WHERE id = ${eventId} LIMIT 1`);
+    const event = evtRows.rows[0] as any;
+    if (!event) return res.status(404).json({ error: "Событие не найдено" });
+
+    const cost = Number(event.cost || 0);
+    if (cost > 0) {
+      const userRow = await db.execute(sql`SELECT balance FROM users WHERE id = ${uid} LIMIT 1`);
+      const balance = Number((userRow.rows[0] as any)?.balance || 0);
+      if (balance < cost) return res.status(402).json({ error: "Недостаточно искр", balance, cost });
+      await db.execute(sql`UPDATE users SET balance = balance - ${cost} WHERE id = ${uid}`);
+    }
+
+    await db.execute(sql`
+      INSERT INTO event_participants (event_id, user_id) VALUES (${eventId}, ${uid})
+      ON CONFLICT (event_id, user_id) DO NOTHING
+    `);
+    await db.execute(sql`
+      UPDATE platform_events SET participant_count = COALESCE(participant_count,0) + 1 WHERE id = ${eventId}
+    `);
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Leave an event
+router.post("/platform-events/:id/leave", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const eventId = Number(req.params.id);
+    const r = await db.execute(sql`DELETE FROM event_participants WHERE event_id = ${eventId} AND user_id = ${uid}`);
+    if ((r.rowCount || 0) > 0) {
+      await db.execute(sql`
+        UPDATE platform_events SET participant_count = GREATEST(0, COALESCE(participant_count,0) - 1) WHERE id = ${eventId}
+      `);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get active system announcement (public)
+router.get("/announcement", async (req, res) => {
+  try {
+    const r = await db.execute(sql`SELECT * FROM system_announcements WHERE is_active = true ORDER BY created_at DESC LIMIT 1`);
+    res.json(r.rows[0] || null);
+  } catch { res.json(null); }
+});
+
+// Admin: set/update announcement
+router.post("/admin/announcement", async (req, res) => {
+  try {
+    if (!(await isAdminUser(req.currentUserId))) return res.status(403).json({ error: "Доступ запрещён" });
+    const { message } = req.body;
+    if (!message?.trim()) return res.status(400).json({ error: "Сообщение обязательно" });
+    await db.execute(sql`UPDATE system_announcements SET is_active = false`);
+    const r = await db.execute(sql`
+      INSERT INTO system_announcements (message, is_active, created_by)
+      VALUES (${message.trim()}, true, ${req.currentUserId}) RETURNING *
+    `);
+    res.json(r.rows[0]);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Admin: clear announcement
+router.delete("/admin/announcement", async (req, res) => {
+  try {
+    if (!(await isAdminUser(req.currentUserId))) return res.status(403).json({ error: "Доступ запрещён" });
+    await db.execute(sql`UPDATE system_announcements SET is_active = false`);
+    res.status(204).send();
+  } catch { res.status(500).json({ error: "Internal server error" }); }
+});
+
 router.get("/admin/platform-events", async (req, res) => {
   try {
-    if (!(await isAdminUser(req.currentUserId))) {
-      return res.status(403).json({ error: "Доступ запрещён" });
-    }
-    const events = await db
-      .select()
-      .from(platformEventsTable)
-      .orderBy(desc(platformEventsTable.createdAt));
+    if (!(await isAdminUser(req.currentUserId))) return res.status(403).json({ error: "Доступ запрещён" });
+    const events = await db.select().from(platformEventsTable).orderBy(desc(platformEventsTable.createdAt));
     res.json(events);
   } catch (err) {
     req.log.error(err);
@@ -60,10 +147,8 @@ router.get("/admin/platform-events", async (req, res) => {
 
 router.post("/admin/platform-events", async (req, res) => {
   try {
-    if (!(await isAdminUser(req.currentUserId))) {
-      return res.status(403).json({ error: "Доступ запрещён" });
-    }
-    const { title, description, imageUrl, bannerColor, startAt, endAt, isActive } = req.body;
+    if (!(await isAdminUser(req.currentUserId))) return res.status(403).json({ error: "Доступ запрещён" });
+    const { title, description, imageUrl, bannerColor, startAt, endAt, isActive, eventType, cost, conditions } = req.body;
     if (!title?.trim()) return res.status(400).json({ error: "Заголовок обязателен" });
 
     const [event] = await db.insert(platformEventsTable).values({
@@ -75,7 +160,10 @@ router.post("/admin/platform-events", async (req, res) => {
       endAt: endAt ? new Date(endAt) : null,
       isActive: isActive !== undefined ? Boolean(isActive) : true,
       createdBy: req.currentUserId,
-    }).returning();
+      eventType: eventType || "event",
+      cost: cost ? Number(cost) : 0,
+      conditions: conditions ? (typeof conditions === "string" ? conditions : JSON.stringify(conditions)) : null,
+    } as any).returning();
     res.status(201).json(event);
   } catch (err) {
     req.log.error(err);
@@ -85,11 +173,9 @@ router.post("/admin/platform-events", async (req, res) => {
 
 router.patch("/admin/platform-events/:id", async (req, res) => {
   try {
-    if (!(await isAdminUser(req.currentUserId))) {
-      return res.status(403).json({ error: "Доступ запрещён" });
-    }
+    if (!(await isAdminUser(req.currentUserId))) return res.status(403).json({ error: "Доступ запрещён" });
     const id = Number(req.params.id);
-    const { title, description, imageUrl, bannerColor, startAt, endAt, isActive } = req.body;
+    const { title, description, imageUrl, bannerColor, startAt, endAt, isActive, eventType, cost, conditions } = req.body;
 
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (title !== undefined) updates.title = title.trim();
@@ -99,6 +185,10 @@ router.patch("/admin/platform-events/:id", async (req, res) => {
     if (startAt !== undefined) updates.startAt = startAt ? new Date(startAt) : null;
     if (endAt !== undefined) updates.endAt = endAt ? new Date(endAt) : null;
     if (isActive !== undefined) updates.isActive = Boolean(isActive);
+    if (eventType !== undefined) updates.eventType = eventType;
+    if (cost !== undefined) updates.cost = Number(cost);
+    if (conditions !== undefined) updates.conditions = conditions
+      ? (typeof conditions === "string" ? conditions : JSON.stringify(conditions)) : null;
 
     const [event] = await db.update(platformEventsTable).set(updates).where(eq(platformEventsTable.id, id)).returning();
     if (!event) return res.status(404).json({ error: "Event not found" });
@@ -111,9 +201,7 @@ router.patch("/admin/platform-events/:id", async (req, res) => {
 
 router.delete("/admin/platform-events/:id", async (req, res) => {
   try {
-    if (!(await isAdminUser(req.currentUserId))) {
-      return res.status(403).json({ error: "Доступ запрещён" });
-    }
+    if (!(await isAdminUser(req.currentUserId))) return res.status(403).json({ error: "Доступ запрещён" });
     const id = Number(req.params.id);
     await db.delete(platformEventsTable).where(eq(platformEventsTable.id, id));
     res.status(204).send();

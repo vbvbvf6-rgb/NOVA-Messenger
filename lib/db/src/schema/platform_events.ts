@@ -1,4 +1,4 @@
-import { pgTable, serial, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, boolean, timestamp, integer, jsonb, unique } from "drizzle-orm/pg-core";
 
 export const platformEventsTable = pgTable("platform_events", {
   id: serial("id").primaryKey(),
@@ -12,4 +12,17 @@ export const platformEventsTable = pgTable("platform_events", {
   createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  eventType: text("event_type").default("event"),
+  cost: integer("cost").default(0),
+  conditions: text("conditions"),
+  participantCount: integer("participant_count").default(0),
 });
+
+export const eventParticipantsTable = pgTable("event_participants", {
+  id: serial("id").primaryKey(),
+  eventId: integer("event_id").notNull(),
+  userId: integer("user_id").notNull(),
+  joinedAt: timestamp("joined_at").defaultNow(),
+}, (t) => ({
+  uniq: unique("event_participants_unique").on(t.eventId, t.userId),
+}));

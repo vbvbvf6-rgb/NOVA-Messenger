@@ -1646,9 +1646,7 @@ export default function Settings() {
               badgeAmber={(user as any)?.hasPrime}
               active={displaySection} onClick={setActiveSection}/>
 
-            <NavItem id="gift"  icon={<Gift size={16}/>}  color="bg-gradient-to-br from-pink-500 to-rose-600"
-              label={lang==="ru"?"Отправить подарок":"Send a Gift"} href="/gifts"
-              active={displaySection} onClick={setActiveSection}/>
+
           </NavGroup>
 
           {/* Group 4: Help */}

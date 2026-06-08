@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Trophy, Users, Crown, BadgeCheck, Medal, MessageSquare, Zap } from "lucide-react";
+import { Trophy, Users, Crown, BadgeCheck, Medal, Zap } from "lucide-react";
 import { useGetMe } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type Tab = "referral" | "messages" | "balance";
+type Tab = "referral" | "balance";
 
 const TOKEN_KEY = "pulse-token";
 const getToken = () => sessionStorage.getItem(TOKEN_KEY);
@@ -280,7 +280,6 @@ function StatsLeaderboard({ tab, me }: { tab: Tab; me: any }) {
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: "referral", label: "Рефералы", icon: <Users size={14} /> },
-  { key: "messages", label: "Сообщения", icon: <MessageSquare size={14} /> },
   { key: "balance", label: "Баланс", icon: <Zap size={14} /> },
 ];
 

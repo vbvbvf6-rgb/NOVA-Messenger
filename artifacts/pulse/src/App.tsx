@@ -10,7 +10,7 @@ import { AddAccountDialog } from "@/components/layout/AddAccountDialog";
 import { getSavedAccounts, saveAccount, removeAccount, SavedAccount } from "@/lib/accounts";
 import { ScreenLock } from "@/components/ScreenLock";
 import { motion } from "framer-motion";
-import { Clock, LogOut, ShieldCheck } from "lucide-react";
+import { Clock, LogOut, ShieldCheck, Megaphone, X } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 import { useServiceWorkerUpdate } from "@/hooks/useServiceWorkerUpdate";
@@ -128,6 +128,51 @@ function GlobalNotificationListener() {
   return null;
 }
 
+function AnnouncementBanner() {
+  const [announcement, setAnnouncement] = useState<{ id: number; message: string } | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem("pulse-token");
+    if (!token) return;
+    fetch("/api/announcement", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.id && data?.message) {
+          const dismissKey = `nova-dismissed-ann-${data.id}`;
+          if (!localStorage.getItem(dismissKey)) {
+            setAnnouncement(data);
+            setVisible(true);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!visible || !announcement) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -24 }}
+      className="fixed top-0 left-0 right-0 z-[200] bg-primary text-primary-foreground px-4 py-2.5 flex items-center gap-3 shadow-xl"
+    >
+      <Megaphone size={15} className="shrink-0" />
+      <p className="text-sm font-medium flex-1 leading-snug">{announcement.message}</p>
+      <button
+        onClick={() => {
+          localStorage.setItem(`nova-dismissed-ann-${announcement.id}`, "1");
+          setVisible(false);
+        }}
+        className="shrink-0 p-1 rounded-full hover:bg-white/20 transition-colors"
+      >
+        <X size={14} />
+      </button>
+    </motion.div>
+  );
+}
+
 function PwaUpdateBanner() {
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   const { toast } = useToast();
@@ -202,6 +247,7 @@ function MainAppInner({ onLogout, onSwitchAccount, onRemoveAccount, onOpenAddAcc
       <TooltipProvider>
         <GlobalNotificationListener />
         <PwaUpdateBanner />
+        <AnnouncementBanner />
         <ScreenLock>
           <AppLayout>
             <Switch>
@@ -286,17 +332,51 @@ function App() {
 
   const [userId, setUserId] = useState<number | null>(() => {
     const stored = sessionStorage.getItem("pulse-user-id");
-    if (!stored) return null;
+
+    // Fresh window/tab (sessionStorage is empty) — auto-restore from saved accounts
+    if (!stored) {
+      const accounts = getSavedAccounts();
+      if (accounts.length > 0 && accounts[0].token) {
+        const acc = accounts[0];
+        sessionStorage.setItem("pulse-token", acc.token);
+        sessionStorage.setItem("pulse-user-id", String(acc.userId));
+        sessionStorage.setItem("pulse-user", JSON.stringify({
+          id: acc.userId,
+          displayName: acc.displayName,
+          username: acc.username,
+          avatarUrl: acc.avatarUrl,
+          avatarColor: acc.avatarColor,
+        }));
+        sessionStorage.setItem("pulse-tab-owned", "1");
+        return acc.userId;
+      }
+      return null;
+    }
 
     // Detect inherited sessionStorage (tab opened via Ctrl+click / duplicate).
     // After explicit login or account switch we set "pulse-tab-owned" so the
     // app knows this tab legitimately owns this session.
-    // If pulse-tab-owned is absent, the session was inherited — clear it so
-    // the tab starts fresh at the login screen.
+    // If pulse-tab-owned is absent, the session was inherited — clear it and
+    // try to restore from saved accounts.
     if (!sessionStorage.getItem("pulse-tab-owned")) {
       sessionStorage.removeItem("pulse-user-id");
       sessionStorage.removeItem("pulse-user");
       sessionStorage.removeItem("pulse-token");
+      const accounts = getSavedAccounts();
+      if (accounts.length > 0 && accounts[0].token) {
+        const acc = accounts[0];
+        sessionStorage.setItem("pulse-token", acc.token);
+        sessionStorage.setItem("pulse-user-id", String(acc.userId));
+        sessionStorage.setItem("pulse-user", JSON.stringify({
+          id: acc.userId,
+          displayName: acc.displayName,
+          username: acc.username,
+          avatarUrl: acc.avatarUrl,
+          avatarColor: acc.avatarColor,
+        }));
+        sessionStorage.setItem("pulse-tab-owned", "1");
+        return acc.userId;
+      }
       return null;
     }
 

@@ -3,7 +3,7 @@ import { emojiToTwemojiUrl } from "@/lib/twemoji";
 import { useSendMessage, useGetMe, getGetMessagesQueryKey, getGetChatsQueryKey, Message } from "@workspace/api-client-react";
 import type { P2PChannel } from "@/hooks/useP2PChannel";
 import { useQueryClient } from "@tanstack/react-query";
-import { Paperclip, Mic, SendHorizontal, X, Square, Trash2, Images, Reply, Pencil, Clock, BarChart2, Plus, Minus, Wand2, CalendarClock, Hourglass, Sticker } from "lucide-react";
+import { Paperclip, Mic, SendHorizontal, X, Square, Trash2, Images, Reply, Pencil, Clock, BarChart2, Plus, Minus, Wand2, CalendarClock, Hourglass, Sticker, Smile } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MemeGifPicker } from "./MemeGifPicker";
 import { useToast } from "@/hooks/use-toast";
@@ -1203,7 +1203,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
           )}
         </AnimatePresence>
 
-        <div className={`p-1.5 bg-card border rounded-[28px] transition-all flex items-end gap-1.5 shadow-sm focus-within:shadow-md focus-within:border-primary/50 ${editMessage ? "border-primary/50 bg-primary/5" : "border-border"}`}>
+        <div className={`p-1.5 bg-card border rounded-[28px] transition-all flex items-center gap-1.5 shadow-sm focus-within:shadow-md focus-within:border-primary/50 ${editMessage ? "border-primary/50 bg-primary/5" : "border-border"}`}>
           
           <AnimatePresence mode="wait">
             {isRecording ? (
@@ -1243,15 +1243,15 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                 key="input"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onSubmit={handleSend}
-                className="flex-1 flex items-end gap-1"
+                className="flex-1 flex items-center gap-1"
               >
                 <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
                 
                 {!editMessage && (
                   <>
                     <button type="button" onClick={() => { setShowEmoji(v => !v); }}
-                      className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-colors shrink-0 mb-[2px] ${showEmoji ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}>
-                      <span className="text-xl leading-none">😀</span>
+                      className={`w-10 h-10 md:w-10 md:h-10 flex items-center justify-center rounded-full transition-colors shrink-0 ${showEmoji ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}>
+                      <Smile size={20} strokeWidth={1.75} />
                     </button>
                     {isPrimePlus && (
                       <div className="relative hidden md:block">
