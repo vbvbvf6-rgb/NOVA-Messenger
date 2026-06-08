@@ -534,7 +534,9 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
 
   const handleDeleteRequest = () => {
     closeMenu();
-    setConfirmDelete(true);
+    // Delay so the touch event that closed the menu doesn't immediately
+    // trigger Radix UI's "pointer down outside" handler and close the dialog.
+    setTimeout(() => setConfirmDelete(true), 80);
   };
 
   const handleDeleteConfirm = async () => {
