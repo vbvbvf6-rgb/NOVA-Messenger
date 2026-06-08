@@ -109,21 +109,27 @@ router.get("/users/me/events", async (req, res) => {
 
   subscribeToUserEvents(uid, res);
 
-  // Mark user online
+  // Mark user online — only if they haven't manually set "away"
   try {
-    await db.update(usersTable).set({ status: "online" }).where(eq(usersTable.id, uid));
+    const cur = await db.execute(sql`SELECT status FROM users WHERE id = ${uid} LIMIT 1`);
+    if ((cur.rows[0] as any)?.status !== "away") {
+      await db.update(usersTable).set({ status: "online" }).where(eq(usersTable.id, uid));
+    }
   } catch {}
 
   req.on("close", async () => {
     clearInterval(keepAlive);
     unsubscribeFromUserEvents(uid, res);
 
-    // Only go offline if this was the last connection
+    // Only go offline if this was the last connection and status wasn't manually "away"
     if (getUserConnectionCount(uid) === 0) {
       try {
-        await db.update(usersTable)
-          .set({ status: "offline", lastSeen: new Date().toISOString() })
-          .where(eq(usersTable.id, uid));
+        const cur = await db.execute(sql`SELECT status FROM users WHERE id = ${uid} LIMIT 1`);
+        if ((cur.rows[0] as any)?.status !== "away") {
+          await db.update(usersTable)
+            .set({ status: "offline", lastSeen: new Date().toISOString() })
+            .where(eq(usersTable.id, uid));
+        }
       } catch {}
     }
   });

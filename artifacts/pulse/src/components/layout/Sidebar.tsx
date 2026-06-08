@@ -445,6 +445,13 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
             <PulseLogo size={22} />
           </div>
           <span className="font-black text-2xl tracking-tight text-foreground flex-1">Nova</span>
+          <button
+            onClick={toggleTheme}
+            title={isDark ? "Светлая тема" : "Тёмная тема"}
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary bg-secondary/50 transition-all"
+          >
+            {isDark ? <Sun size={18} strokeWidth={2.5} /> : <Moon size={18} strokeWidth={2.5} />}
+          </button>
           <button onClick={onMobileClose} className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary bg-secondary/50 transition-all">
             <X size={18} strokeWidth={2.5} />
           </button>

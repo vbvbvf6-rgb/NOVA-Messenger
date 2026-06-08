@@ -916,12 +916,10 @@ router.delete("/messages/:messageId/reactions", async (req, res) => {
   }
 });
 
-// AI Voice Transcription endpoint (Prime+ only)
+// AI Voice Transcription endpoint
 router.post("/messages/transcribe", async (req, res) => {
   try {
     const uid = req.currentUserId;
-    const { isPrimePlus } = await getUserPrimeInfo(uid);
-    if (!isPrimePlus) return res.status(403).json({ error: "AI транскрипция доступна только для Prime+" });
 
     const { messageId } = req.body;
     if (!messageId) return res.status(400).json({ error: "messageId обязателен" });

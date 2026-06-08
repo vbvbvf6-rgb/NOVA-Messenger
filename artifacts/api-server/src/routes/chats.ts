@@ -552,4 +552,50 @@ router.post("/chats/:chatId/leave", async (req, res) => {
   }
 });
 
+// Discover public groups and channels (with optional search query)
+router.get("/chats/discover", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const q = ((req.query.q as string) || "").trim();
+    const rows = await db.execute(sql`
+      SELECT
+        c.id, c.name, c.type, c.avatar_url, c.avatar_color, c.description,
+        COUNT(DISTINCT cm.user_id)::int AS member_count,
+        EXISTS(SELECT 1 FROM chat_members WHERE chat_id = c.id AND user_id = ${uid}) AS is_member
+      FROM chats c
+      LEFT JOIN chat_members cm ON cm.chat_id = c.id
+      WHERE c.type IN ('group','channel')
+        AND (${q} = '' OR c.name ILIKE ${'%' + q + '%'} OR COALESCE(c.description,'') ILIKE ${'%' + q + '%'})
+      GROUP BY c.id
+      ORDER BY member_count DESC, c.created_at DESC
+      LIMIT 40
+    `);
+    res.json(rows.rows);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Join a public group or channel
+router.post("/chats/:chatId/join", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const chatId = Number(req.params.chatId);
+    const chat = await db.query.chatsTable.findFirst({ where: eq(chatsTable.id, chatId) });
+    if (!chat || (chat.type !== "group" && chat.type !== "channel")) {
+      return res.status(404).json({ error: "Чат не найден" });
+    }
+    const existing = await db.execute(
+      sql`SELECT 1 FROM chat_members WHERE chat_id = ${chatId} AND user_id = ${uid} LIMIT 1`
+    );
+    if (existing.rows.length > 0) return res.status(409).json({ error: "Вы уже участник" });
+    await db.insert(chatMembersTable).values({ chatId, userId: uid, role: "member" } as any);
+    res.json({ success: true, chatId });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

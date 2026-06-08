@@ -1065,7 +1065,7 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
                     onClick={() => handleReact(emoji)}
                     className={cn(
                       "text-xl w-10 h-10 flex items-center justify-center rounded-xl transition-all hover:bg-card hover:scale-110 hover:shadow-sm",
-                      (groupedReactions[emoji]?.mine) && "bg-primary/20 text-white"
+                      (groupedReactions[emoji]?.mine) && "bg-primary/20 text-primary"
                     )}
                   >
                     {emoji}
