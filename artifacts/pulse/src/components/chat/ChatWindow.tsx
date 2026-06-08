@@ -961,7 +961,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               {p2p.isConnected && (
                 <div
                   title="P2P connected — messages are delivered instantly"
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-bold select-none"
+                  className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary text-[11px] font-bold select-none"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse inline-block" />
                   P2P
@@ -970,7 +970,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               <button
                 onClick={() => handleStartCall("audio")}
                 disabled={calling}
-                className="w-10 h-10 flex items-center justify-center hover:bg-secondary rounded-xl transition-all hover:text-foreground disabled:opacity-50"
+                className="hidden md:flex w-10 h-10 items-center justify-center hover:bg-secondary rounded-xl transition-all hover:text-foreground disabled:opacity-50"
                 title="Audio call"
               >
                 <Phone size={20} />
@@ -978,7 +978,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               <button
                 onClick={() => handleStartCall("video")}
                 disabled={calling}
-                className="w-10 h-10 flex items-center justify-center hover:bg-secondary rounded-xl transition-all hover:text-foreground disabled:opacity-50"
+                className="hidden md:flex w-10 h-10 items-center justify-center hover:bg-secondary rounded-xl transition-all hover:text-foreground disabled:opacity-50"
                 title="Video call"
               >
                 <Video size={22} />
@@ -1002,6 +1002,19 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60 rounded-2xl p-2 border-border shadow-2xl">
+              {chat.type === "direct" && !(chat.otherUser as any)?.isBot && (
+                <div className="md:hidden">
+                  <DropdownMenuItem onClick={() => handleStartCall("audio")} disabled={calling} className="rounded-xl cursor-pointer py-2.5">
+                    <Phone size={18} className="mr-3 text-green-500" />
+                    <span className="font-semibold">Аудиозвонок</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleStartCall("video")} disabled={calling} className="rounded-xl cursor-pointer py-2.5">
+                    <Video size={18} className="mr-3 text-blue-500" />
+                    <span className="font-semibold">Видеозвонок</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </div>
+              )}
               {chat.type === "direct" && chat.otherUser?.id && (
                 <>
                   <DropdownMenuItem onClick={openProfile} className="rounded-xl cursor-pointer py-2.5">

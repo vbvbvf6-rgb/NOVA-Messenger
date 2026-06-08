@@ -77,7 +77,7 @@ function AccountRow({
         {!isActive && (
           <button
             onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
+            className="p-1.5 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
             title="Удалить аккаунт"
           >
             <Trash2 size={14} />

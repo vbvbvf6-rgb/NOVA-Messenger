@@ -17,6 +17,15 @@ if (window.visualViewport) {
 }
 window.addEventListener("orientationchange", () => setTimeout(updateAppHeight, 300));
 
+// Lock to portrait on mobile devices
+if (screen.orientation && typeof screen.orientation.lock === "function") {
+  const tryLock = () => {
+    screen.orientation.lock("portrait").catch(() => {});
+  };
+  document.addEventListener("fullscreenchange", tryLock);
+  tryLock();
+}
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {});

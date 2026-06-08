@@ -905,7 +905,7 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
                         isMine ? "bg-black/40 text-white" : "bg-secondary/90 text-foreground"
                       )}>
                         <Eye size={11} />
-                        Удалено · Prime+
+                        Удалено
                       </span>
                     </div>
                   </div>
