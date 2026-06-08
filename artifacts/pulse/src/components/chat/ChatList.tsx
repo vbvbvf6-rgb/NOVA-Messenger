@@ -226,7 +226,6 @@ export function ChatList() {
   const { data: chats, isLoading } = useGetChats();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
   const [folder, setFolder] = useState<FolderKey>("all");
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
@@ -413,14 +412,6 @@ export function ChatList() {
   };
 
   const filtered = chats?.filter((chat: Chat) => {
-    if (search) {
-      const name =
-        chat.type === "direct"
-          ? ((chat.otherUser as any)?.displayName || chat.name || "")
-          : (chat.name || "");
-      if (!name.toLowerCase().includes(search.toLowerCase())) return false;
-    }
-
     if ((chat as any).type === "saved") return false;
     if (folder === "unread") return (chat.unreadCount ?? 0) > 0;
     if (folder === "groups") return chat.type === "group" || chat.type === "channel";
@@ -447,15 +438,15 @@ export function ChatList() {
       </AnimatePresence>
       <div className="px-4 pb-3" style={{ paddingTop: "max(16px, env(safe-area-inset-top, 16px))" }}>
         <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <Input
-              placeholder={t("chatlist.search")}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-11 pr-4 h-12 bg-secondary/50 border-transparent hover:border-border focus-visible:bg-card focus-visible:ring-1 focus-visible:ring-primary rounded-2xl transition-all text-[15px] font-medium placeholder:text-muted-foreground/70"
-            />
-          </div>
+          <button
+            onClick={() => setShowGlobalSearch(true)}
+            className="relative flex-1 flex items-center h-12 bg-secondary/50 hover:bg-secondary/80 border border-transparent hover:border-border rounded-2xl transition-all px-4 gap-3 text-left"
+          >
+            <Search className="text-muted-foreground w-5 h-5 shrink-0" />
+            <span className="text-[15px] font-medium text-muted-foreground/70 flex-1">
+              {t("chatlist.search")}
+            </span>
+          </button>
           <button
             onClick={openCreate}
             className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-all shadow-[0_4px_14px_rgba(234,88,12,0.3)] shrink-0"
@@ -533,7 +524,7 @@ export function ChatList() {
       </div>
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none mt-2 px-2 pb-24 md:pb-4">
-        {!search && folder === "all" && (
+        {folder === "all" && (
           <div className="space-y-1 mb-2">
             <SavedMessagesEntry onOpen={(id) => setSelectedChatId(id)} />
             <button
@@ -582,9 +573,7 @@ export function ChatList() {
             ))
           ) : sorted?.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground text-[15px] font-medium mt-10">
-              {search
-                ? "Чаты не найдены"
-                : folder === "unread"
+              {folder === "unread"
                 ? "Нет новых сообщений"
                 : folder === "groups"
                 ? "Нет групп и каналов"

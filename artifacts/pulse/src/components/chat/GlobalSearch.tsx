@@ -2,13 +2,13 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, X, MessageSquare, ChevronRight, Hash, Users, Radio,
-  UserPlus, Check, Loader2
+  UserPlus, Check, Loader2, User, ArrowLeft
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAppContext } from "@/contexts/AppContext";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
-import { getGetChatsQueryKey } from "@workspace/api-client-react";
+import { getGetChatsQueryKey, useGetChats, Chat } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface MessageResult {
@@ -36,8 +36,20 @@ interface PublicChat {
   is_member: boolean;
 }
 
+interface UserResult {
+  id: number;
+  username: string;
+  displayName: string;
+  display_name?: string;
+  avatarUrl?: string;
+  avatar_url?: string;
+  avatarColor?: string;
+  avatar_color?: string;
+}
+
 interface GlobalSearchProps {
   onClose: () => void;
+  initialQuery?: string;
 }
 
 function getAuthHeaders(): Record<string, string> {
@@ -52,81 +64,104 @@ function highlight(text: string, q: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="bg-primary/25 text-primary rounded px-0.5">{text.slice(idx, idx + q.length)}</mark>
+      <mark className="bg-primary/25 text-primary rounded px-0.5 not-italic">{text.slice(idx, idx + q.length)}</mark>
       {text.slice(idx + q.length)}
     </>
   );
 }
 
-function chatLabel(r: MessageResult) {
-  if (r.chat_type === "direct") return r.other_user_name || r.display_name;
-  return r.chat_name || (r.chat_type === "group" ? "Группа" : "Канал");
-}
-
 function MemberCount({ count }: { count: number }) {
-  if (count >= 1000) return <>{(count / 1000).toFixed(1)}K участников</>;
-  return <>{count} участников</>;
+  if (count >= 1_000_000) return <>{(count / 1_000_000).toFixed(1)}M подписчиков</>;
+  if (count >= 1000) return <>{(count / 1000).toFixed(1)}K подписчиков</>;
+  return <>{count} подписчиков</>;
 }
 
-export function GlobalSearch({ onClose }: GlobalSearchProps) {
-  const { t, lang } = useLanguage();
-  const { setSelectedChatId } = useAppContext();
+function Avatar({
+  name, color, url, size = 12, radius = "rounded-[16px]", icon
+}: {
+  name: string; color?: string; url?: string; size?: number; radius?: string; icon?: React.ReactNode
+}) {
+  return (
+    <div
+      className={`w-${size} h-${size} ${radius} flex items-center justify-center text-white font-bold overflow-hidden shrink-0`}
+      style={{ backgroundColor: color || "#3B82F6", width: size * 4, height: size * 4 }}
+    >
+      {url ? (
+        <img src={url} alt={name} className="w-full h-full object-cover" />
+      ) : icon ? icon : (
+        <span className="text-base font-black">{name?.[0]?.toUpperCase() || "?"}</span>
+      )}
+    </div>
+  );
+}
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div className="px-4 pt-4 pb-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+      {label}
+    </div>
+  );
+}
+
+export function GlobalSearch({ onClose, initialQuery = "" }: GlobalSearchProps) {
+  const { lang } = useLanguage();
+  const { setSelectedChatId, currentUserId } = useAppContext();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"messages" | "chats">("chats");
-  const [query, setQuery] = useState("");
+  const { data: myChats } = useGetChats();
+
+  const [query, setQuery] = useState(initialQuery);
+  const [globalChats, setGlobalChats] = useState<PublicChat[]>([]);
   const [msgResults, setMsgResults] = useState<MessageResult[]>([]);
-  const [chatResults, setChatResults] = useState<PublicChat[]>([]);
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [joiningId, setJoiningId] = useState<number | null>(null);
+  const [openingDmId, setOpeningDmId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    setTimeout(() => inputRef.current?.focus(), 80);
   }, []);
 
-  const searchMessages = useCallback(async (q: string) => {
-    if (!q || q.length < 2) { setMsgResults([]); return; }
+  const runSearch = useCallback(async (q: string) => {
     setLoading(true);
-    setError("");
     try {
-      const res = await fetch(`/api/messages/search?q=${encodeURIComponent(q)}&limit=30`, {
-        headers: getAuthHeaders(),
-      });
-      if (res.ok) setMsgResults(await res.json());
-      else setMsgResults([]);
-    } catch { setError(t("common.error")); }
-    setLoading(false);
-  }, []);
+      const trimmed = q.trim();
 
-  const discoverChats = useCallback(async (q: string) => {
-    setLoading(true);
-    setError("");
-    try {
-      const url = q.length >= 2
-        ? `/api/chats/discover?q=${encodeURIComponent(q)}`
+      const discoverUrl = trimmed.length >= 2
+        ? `/api/chats/discover?q=${encodeURIComponent(trimmed)}`
         : `/api/chats/discover`;
-      const res = await fetch(url, { headers: getAuthHeaders() });
-      if (res.ok) setChatResults(await res.json());
-      else setChatResults([]);
-    } catch { setError(t("common.error")); }
+      const discoverRes = await fetch(discoverUrl, { headers: getAuthHeaders() });
+      if (discoverRes.ok) setGlobalChats(await discoverRes.json());
+      else setGlobalChats([]);
+
+      if (trimmed.length >= 2) {
+        const [msgRes, userRes] = await Promise.all([
+          fetch(`/api/messages/search?q=${encodeURIComponent(trimmed)}&limit=20`, { headers: getAuthHeaders() }),
+          fetch(`/api/users/search?q=${encodeURIComponent(trimmed)}&limit=20`, { headers: getAuthHeaders() }),
+        ]);
+        if (msgRes.ok) setMsgResults(await msgRes.json());
+        else setMsgResults([]);
+        if (userRes.ok) {
+          const data = await userRes.json();
+          const list: UserResult[] = data.users || data || [];
+          setUserResults(list.filter(u => u.id !== currentUserId));
+        } else {
+          setUserResults([]);
+        }
+      } else {
+        setMsgResults([]);
+        setUserResults([]);
+      }
+    } catch {}
     setLoading(false);
-  }, []);
+  }, [currentUserId]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      if (tab === "messages") searchMessages(query);
-      else discoverChats(query);
-    }, 350);
+    debounceRef.current = setTimeout(() => runSearch(query), 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query, tab]);
-
-  const handleMsgClick = (r: MessageResult) => {
-    setSelectedChatId(r.chat_id);
-    onClose();
-  };
+  }, [query, runSearch]);
 
   const handleJoin = async (chat: PublicChat) => {
     if (chat.is_member) {
@@ -142,243 +177,335 @@ export function GlobalSearch({ onClose }: GlobalSearchProps) {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
       if (res.ok) {
-        setChatResults(prev => prev.map(c => c.id === chat.id ? { ...c, is_member: true, member_count: c.member_count + 1 } : c));
+        setGlobalChats(prev => prev.map(c =>
+          c.id === chat.id ? { ...c, is_member: true, member_count: c.member_count + 1 } : c
+        ));
         queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
-        setTimeout(() => {
-          setSelectedChatId(chat.id);
-          onClose();
-        }, 600);
+        setTimeout(() => { setSelectedChatId(chat.id); onClose(); }, 500);
       }
     } catch {}
     setJoiningId(null);
   };
 
-  const isEmpty = tab === "messages" ? msgResults.length === 0 : chatResults.length === 0;
+  const handleOpenDm = async (user: UserResult) => {
+    setOpeningDmId(user.id);
+    try {
+      const token = sessionStorage.getItem("pulse-token");
+      const res = await fetch("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ type: "direct", participantIds: [user.id] }),
+      });
+      if (res.ok) {
+        const chat = await res.json();
+        queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
+        setSelectedChatId(chat.id);
+        onClose();
+      }
+    } catch {}
+    setOpeningDmId(null);
+  };
+
+  const filteredMyChats = (myChats || []).filter((chat: Chat) => {
+    if (!query.trim()) return false;
+    const name = chat.type === "direct"
+      ? ((chat.otherUser as any)?.displayName || chat.name || "")
+      : (chat.name || "");
+    return name.toLowerCase().includes(query.toLowerCase());
+  }).slice(0, 5);
+
+  const globalNotInMy = globalChats.filter(gc =>
+    !(myChats || []).some((mc: Chat) => mc.id === gc.id)
+  );
+
+  const hasAnyResults =
+    filteredMyChats.length > 0 ||
+    globalChats.length > 0 ||
+    userResults.length > 0 ||
+    msgResults.length > 0;
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col"
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.15 }}
+      className="absolute inset-0 z-50 bg-background flex flex-col"
     >
-      {/* Header */}
-      <div className="p-4 border-b border-border shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-primary w-4 h-4" />
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder={tab === "chats" ? "Поиск групп и каналов..." : t("search.placeholder")}
-              className="w-full pl-9 pr-4 py-2.5 bg-secondary rounded-xl border border-border focus:border-primary focus:outline-none text-sm transition-colors"
-            />
-            {query && (
-              <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                <X size={14} />
-              </button>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
-          >
-            {lang === "ru" ? "Закрыть" : "Close"}
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mt-3">
-          {[
-            { id: "chats" as const, label: "Чаты и каналы", icon: Hash },
-            { id: "messages" as const, label: "Сообщения", icon: MessageSquare },
-          ].map(({ id, label, icon: Icon }) => (
+      {/* Search bar */}
+      <div
+        className="px-3 py-3 border-b border-border shrink-0 flex items-center gap-2"
+        style={{ paddingTop: "max(12px, env(safe-area-inset-top, 12px))" }}
+      >
+        <button
+          onClick={onClose}
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-secondary transition-colors text-muted-foreground shrink-0"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4 pointer-events-none" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Поиск"
+            className="w-full pl-9 pr-9 py-2.5 bg-secondary rounded-xl border-0 focus:outline-none focus:ring-1 focus:ring-primary text-sm transition-all"
+          />
+          {query && (
             <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                tab === id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={() => setQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground w-5 h-5 flex items-center justify-center rounded-full hover:bg-border transition-colors"
             >
-              <Icon size={12} />
-              {label}
+              <X size={13} />
             </button>
-          ))}
+          )}
         </div>
       </div>
 
-      {/* Content */}
+      {/* Results */}
       <div className="flex-1 overflow-y-auto scrollbar-none">
         {loading && (
-          <div className="flex items-center justify-center py-12 text-muted-foreground text-sm gap-2">
-            <div className="w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
-            {lang === "ru" ? "Поиск..." : "Searching..."}
+          <div className="flex items-center justify-center py-10 gap-2 text-muted-foreground text-sm">
+            <Loader2 size={16} className="animate-spin" />
+            Поиск...
           </div>
         )}
 
-        {!loading && error && (
-          <div className="px-4 py-4 text-sm text-destructive">{error}</div>
-        )}
-
-        {/* — CHATS TAB — */}
-        {!loading && tab === "chats" && (
+        {!loading && !query.trim() && (
           <>
-            {chatResults.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-                <Hash size={40} className="text-muted-foreground/20" />
-                <p className="text-sm font-medium">
-                  {query.length >= 2 ? "Ничего не найдено" : "Публичные чаты и каналы"}
-                </p>
-                <p className="text-xs text-muted-foreground/60">
-                  {query.length >= 2 ? `По запросу «${query}»` : "Введите название для поиска"}
-                </p>
-              </div>
+            {globalChats.length > 0 && (
+              <>
+                <SectionHeader label="Популярные каналы" />
+                {globalChats.slice(0, 8).map(chat => (
+                  <GlobalChatRow key={chat.id} chat={chat} query="" joiningId={joiningId} onJoin={handleJoin} />
+                ))}
+              </>
             )}
-            {chatResults.length > 0 && (
-              <div className="py-2">
-                {!query && (
-                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Популярные сообщества
-                  </div>
-                )}
-                {chatResults.map(chat => {
-                  const Icon = chat.type === "channel" ? Radio : Users;
-                  const isJoining = joiningId === chat.id;
-                  return (
-                    <div
-                      key={chat.id}
-                      className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/60 transition-colors"
-                    >
-                      {/* Avatar */}
-                      <div
-                        className="w-12 h-12 rounded-[16px] flex items-center justify-center shrink-0 overflow-hidden"
-                        style={{ backgroundColor: chat.avatar_color || "#3B82F6" }}
-                      >
-                        {chat.avatar_url ? (
-                          <img src={chat.avatar_url} alt={chat.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Icon size={22} className="text-white opacity-90" />
-                        )}
-                      </div>
-
-                      {/* Info */}
-                      <button
-                        className="flex-1 min-w-0 text-left"
-                        onClick={() => { if (chat.is_member) { setSelectedChatId(chat.id); onClose(); } }}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-foreground text-sm truncate">
-                            {highlight(chat.name, query)}
-                          </span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
-                            chat.type === "channel"
-                              ? "bg-primary/10 text-primary"
-                              : "bg-blue-500/10 text-blue-500"
-                          }`}>
-                            {chat.type === "channel" ? "Канал" : "Группа"}
-                          </span>
-                        </div>
-                        {chat.description && (
-                          <p className="text-xs text-muted-foreground truncate mt-0.5">{chat.description}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground/60 mt-0.5">
-                          <MemberCount count={chat.member_count} />
-                        </p>
-                      </button>
-
-                      {/* Join button */}
-                      <button
-                        onClick={() => handleJoin(chat)}
-                        disabled={isJoining}
-                        className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                          chat.is_member
-                            ? "bg-primary/10 text-primary hover:bg-primary/15"
-                            : "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-                        }`}
-                      >
-                        {isJoining ? (
-                          <Loader2 size={13} className="animate-spin" />
-                        ) : chat.is_member ? (
-                          <><Check size={13} /> Открыть</>
-                        ) : (
-                          <><UserPlus size={13} /> Вступить</>
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
+            {globalChats.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+                <Search size={44} className="opacity-10" />
+                <p className="text-sm font-medium">Найди людей, каналы и группы</p>
+                <p className="text-xs opacity-60">Начни вводить название или @username</p>
               </div>
             )}
           </>
         )}
 
-        {/* — MESSAGES TAB — */}
-        {!loading && tab === "messages" && (
+        {!loading && query.trim() && !hasAnyResults && (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+            <Search size={44} className="opacity-10" />
+            <p className="text-sm font-medium">Ничего не найдено</p>
+            <p className="text-xs opacity-60">По запросу «{query}»</p>
+          </div>
+        )}
+
+        {!loading && query.trim() && (
           <>
-            {!query.trim() && (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-                <MessageSquare size={40} className="text-muted-foreground/20" />
-                <p className="text-sm font-medium">{t("search.globalTitle")}</p>
-                <p className="text-xs text-muted-foreground/60">
-                  {lang === "ru" ? "Введите от 2 символов" : "Type at least 2 characters"}
-                </p>
-              </div>
+            {/* My chats section */}
+            {filteredMyChats.length > 0 && (
+              <>
+                <SectionHeader label="Ваши чаты" />
+                {filteredMyChats.map((chat: Chat) => {
+                  const name = chat.type === "direct"
+                    ? ((chat.otherUser as any)?.displayName || chat.name || "")
+                    : (chat.name || "");
+                  const color = chat.type === "direct"
+                    ? ((chat.otherUser as any)?.avatarColor || chat.avatarColor || "#555")
+                    : (chat.avatarColor || "#3B82F6");
+                  const url = chat.type === "direct"
+                    ? (chat.otherUser as any)?.avatarUrl
+                    : (chat as any).avatarUrl;
+                  return (
+                    <button
+                      key={chat.id}
+                      onClick={() => { setSelectedChatId(chat.id); onClose(); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/60 transition-colors text-left"
+                    >
+                      <Avatar
+                        name={name}
+                        color={color}
+                        url={url}
+                        size={12}
+                        radius="rounded-[16px]"
+                        icon={
+                          chat.type === "channel" ? <Radio size={20} className="text-white opacity-80" /> :
+                          chat.type === "group" ? <Users size={20} className="text-white opacity-80" /> : undefined
+                        }
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {highlight(name, query)}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {chat.type === "channel" ? "Канал" : chat.type === "group" ? "Группа" : "Личное сообщение"}
+                        </p>
+                      </div>
+                      <ChevronRight size={15} className="text-muted-foreground/40 shrink-0" />
+                    </button>
+                  );
+                })}
+              </>
             )}
-            {query.trim().length >= 2 && isEmpty && (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
-                <MessageSquare size={40} className="text-muted-foreground/30" />
-                <p className="text-sm">{t("search.noResults")}</p>
-                <p className="text-xs text-muted-foreground/60">«{query}»</p>
-              </div>
+
+            {/* People / Users */}
+            {userResults.length > 0 && (
+              <>
+                <SectionHeader label="Люди" />
+                {userResults.slice(0, 5).map(user => {
+                  const name = user.displayName || user.display_name || user.username;
+                  const color = user.avatarColor || user.avatar_color;
+                  const url = user.avatarUrl || user.avatar_url;
+                  return (
+                    <button
+                      key={user.id}
+                      onClick={() => handleOpenDm(user)}
+                      disabled={openingDmId === user.id}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-secondary/60 transition-colors text-left"
+                    >
+                      <Avatar name={name} color={color} url={url} size={12} radius="rounded-full" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {highlight(name, query)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">@{user.username}</p>
+                      </div>
+                      {openingDmId === user.id ? (
+                        <Loader2 size={15} className="animate-spin text-muted-foreground shrink-0" />
+                      ) : (
+                        <ChevronRight size={15} className="text-muted-foreground/40 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </>
             )}
+
+            {/* Global channels/groups */}
+            {globalChats.length > 0 && (
+              <>
+                <SectionHeader label="Глобальный поиск" />
+                {globalChats.map(chat => (
+                  <GlobalChatRow key={chat.id} chat={chat} query={query} joiningId={joiningId} onJoin={handleJoin} />
+                ))}
+              </>
+            )}
+
+            {/* Messages */}
             {msgResults.length > 0 && (
-              <div className="py-2">
-                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {lang === "ru" ? `Найдено: ${msgResults.length}` : `Found: ${msgResults.length}`}
-                </div>
+              <>
+                <SectionHeader label={`Сообщения · ${msgResults.length}`} />
                 {msgResults.map(r => (
                   <button
                     key={r.id}
-                    onClick={() => handleMsgClick(r)}
-                    className="w-full flex items-start gap-3 px-4 py-3 hover:bg-secondary transition-colors text-left group"
+                    onClick={() => { setSelectedChatId(r.chat_id); onClose(); }}
+                    className="w-full flex items-start gap-3 px-4 py-3 hover:bg-secondary/60 transition-colors text-left"
                   >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0 overflow-hidden mt-0.5"
-                      style={{ backgroundColor: r.avatar_color || "#3B82F6" }}
-                    >
-                      {r.avatar_url ? (
-                        <img src={r.avatar_url} alt={r.display_name} className="w-full h-full object-cover" />
-                      ) : (
-                        r.display_name?.[0]?.toUpperCase() || "?"
-                      )}
-                    </div>
+                    <Avatar
+                      name={r.display_name}
+                      color={r.avatar_color}
+                      url={r.avatar_url}
+                      size={11}
+                      radius="rounded-full"
+                    />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <span className="text-sm font-semibold truncate">{r.display_name}</span>
+                      <div className="flex items-baseline justify-between gap-2 mb-0.5">
+                        <span className="text-sm font-semibold truncate text-foreground">
+                          {r.display_name}
+                        </span>
                         <span className="text-[10px] text-muted-foreground shrink-0">
-                          {formatDistanceToNow(new Date(r.created_at), { addSuffix: true, locale: lang === "ru" ? ru : undefined })}
+                          {formatDistanceToNow(new Date(r.created_at), {
+                            addSuffix: true,
+                            locale: lang === "ru" ? ru : undefined,
+                          })}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate leading-snug">
                         {highlight(r.text || "", query)}
                       </p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground/60">
-                          {t("search.inChat")} <span className="text-primary/70">{chatLabel(r)}</span>
-                        </span>
-                      </div>
+                      {(r.chat_name || r.other_user_name) && (
+                        <p className="text-[11px] text-muted-foreground/60 mt-0.5 flex items-center gap-1">
+                          <MessageSquare size={10} />
+                          {r.chat_type === "direct" ? r.other_user_name : r.chat_name}
+                        </p>
+                      )}
                     </div>
-                    <ChevronRight size={14} className="text-muted-foreground shrink-0 mt-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
-              </div>
+              </>
             )}
           </>
         )}
       </div>
     </motion.div>
+  );
+}
+
+function GlobalChatRow({
+  chat, query, joiningId, onJoin,
+}: {
+  chat: PublicChat;
+  query: string;
+  joiningId: number | null;
+  onJoin: (chat: PublicChat) => void;
+}) {
+  const isJoining = joiningId === chat.id;
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 hover:bg-secondary/60 transition-colors">
+      <div
+        className="w-12 h-12 rounded-[16px] flex items-center justify-center shrink-0 overflow-hidden"
+        style={{ backgroundColor: chat.avatar_color || "#3B82F6" }}
+      >
+        {chat.avatar_url ? (
+          <img src={chat.avatar_url} alt={chat.name} className="w-full h-full object-cover" />
+        ) : chat.type === "channel" ? (
+          <Radio size={22} className="text-white opacity-80" />
+        ) : (
+          <Users size={22} className="text-white opacity-80" />
+        )}
+      </div>
+
+      <button
+        className="flex-1 min-w-0 text-left"
+        onClick={() => { if (chat.is_member) onJoin(chat); }}
+      >
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className="font-semibold text-sm text-foreground truncate">
+            {highlight(chat.name, query)}
+          </span>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+            chat.type === "channel"
+              ? "bg-primary/10 text-primary"
+              : "bg-blue-500/10 text-blue-400"
+          }`}>
+            {chat.type === "channel" ? "Канал" : "Группа"}
+          </span>
+        </div>
+        {chat.description && (
+          <p className="text-xs text-muted-foreground truncate">{chat.description}</p>
+        )}
+        <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+          <MemberCount count={chat.member_count} />
+        </p>
+      </button>
+
+      <button
+        onClick={() => onJoin(chat)}
+        disabled={isJoining}
+        className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+          chat.is_member
+            ? "bg-secondary text-foreground hover:bg-secondary/80"
+            : "bg-primary text-primary-foreground hover:bg-primary/90"
+        }`}
+      >
+        {isJoining ? (
+          <Loader2 size={13} className="animate-spin" />
+        ) : chat.is_member ? (
+          <><Check size={12} /> Открыть</>
+        ) : (
+          <><UserPlus size={12} /> Вступить</>
+        )}
+      </button>
+    </div>
   );
 }
