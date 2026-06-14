@@ -138,7 +138,10 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const getSocket = useCallback((): Socket => {
     if (socketRef.current?.connected) return socketRef.current;
     const token = sessionStorage.getItem("pulse-token");
-    const sock = io("/", {
+    // When VITE_API_URL is set (Vercel split-deploy) connect Socket.IO directly
+    // to the backend. Otherwise use the current origin (single-server deploy).
+    const apiBase = import.meta.env.VITE_API_URL ?? "";
+    const sock = io(apiBase || "/", {
       path: "/socket.io",
       auth: { token },
       transports: ["websocket", "polling"],
@@ -647,9 +650,10 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       if (dead) return;
       const uid = currentUserIdRef.current;
       const token = sessionStorage.getItem("pulse-token");
+      const apiBase = import.meta.env.VITE_API_URL ?? "";
       const sseUrl = token
-        ? `/api/users/me/events?_token=${encodeURIComponent(token)}`
-        : `/api/users/me/events?_uid=${uid}`;
+        ? `${apiBase}/api/users/me/events?_token=${encodeURIComponent(token)}`
+        : `${apiBase}/api/users/me/events?_uid=${uid}`;
       es = new EventSource(sseUrl);
 
       es.addEventListener("incoming-call", (e: MessageEvent) => {

@@ -374,9 +374,10 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
       if (dead) return;
       const uid = sessionStorage.getItem("pulse-user-id") || "1";
       const token = sessionStorage.getItem("pulse-token");
+      const apiBase = import.meta.env.VITE_API_URL ?? "";
       const sseUrl = token
-        ? `/api/chats/${chatId}/events?_token=${encodeURIComponent(token)}`
-        : `/api/chats/${chatId}/events?_uid=${uid}`;
+        ? `${apiBase}/api/chats/${chatId}/events?_token=${encodeURIComponent(token)}`
+        : `${apiBase}/api/chats/${chatId}/events?_uid=${uid}`;
       es = new EventSource(sseUrl);
       sseRef.current = es;
 

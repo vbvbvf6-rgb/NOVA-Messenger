@@ -1,110 +1,127 @@
-# Деплой Nova на Render + Supabase (бесплатно, без карты)
+# Деплой Nova: Vercel (фронтенд) + Render (бэкенд)
 
-## Итог: что нужно
+## Архитектура
 
-| Сервис | Роль | Карта? |
-|--------|------|--------|
-| **Supabase** | PostgreSQL база данных | ❌ Нет |
-| **Render** | Хостинг Node.js сервера | ❌ Нет |
-| **cron-job.org** | Пинг чтобы Render не засыпал | ❌ Нет |
+```
+Пользователь
+    │
+    ├─► Vercel ──── React/Vite фронтенд (CDN, быстро)
+    │
+    └─► Render ──── Express API + Socket.IO + PostgreSQL
+```
 
-> TURN-сервер для звонков встроен (openrelay) и работает **без регистрации**.
-> Для более надёжной связи можно позже добавить TURN_URL/TURN_USER/TURN_CRED.
-
----
-
-## Шаг 1. База данных — Supabase
-
-1. Зайди на [supabase.com](https://supabase.com) → **Start your project** (GitHub / email, без карты)
-2. **New project** → задай имя, придумай пароль, выбери регион **Frankfurt**
-3. Подожди ~2 минуты пока проект запустится
-4. Слева → **Settings → Database → Connection string**
-5. Переключись на вкладку **Transaction** (важно!) → скопируй строку вида:
-   ```
-   postgresql://postgres.xxxx:ВАШ_ПАРОЛЬ@aws-0-eu-central-1.pooler.supabase.com:6543/postgres
-   ```
-   Это и есть `DATABASE_URL`.
+Фронтенд знает адрес бэкенда через переменную `VITE_API_URL`.
 
 ---
 
-## Шаг 2. Деплой на Render
+## Шаг 1. Бэкенд — Render (без карты)
 
-1. Загрузи проект на GitHub (если ещё нет)
-2. Зайди на [render.com](https://render.com) → **Sign Up** (GitHub, без карты)
+### 1.1 База данных — Supabase
 
-### Создать сервис
+1. [supabase.com](https://supabase.com) → **Start your project** (GitHub, без карты)
+2. **New project** → имя, пароль, регион **Frankfurt**
+3. Подожди ~2 минуты
+4. **Settings → Database → Connection string → Transaction** (вкладка) → скопируй:
+   ```
+   postgresql://postgres.xxxx:ПАРОЛЬ@aws-0-eu-central-1.pooler.supabase.com:6543/postgres
+   ```
 
-**New → Blueprint** (Render автоматически найдёт `render.yaml` в репозитории):
-- Подключи GitHub репозиторий
-- Render создаст сервис `nova-messenger` сам
+### 1.2 Деплой API-сервера — Render
 
-**Или вручную — New → Web Service:**
+1. [render.com](https://render.com) → Sign Up (GitHub, без карты)
+2. **New → Web Service**
+3. Подключи GitHub репозиторий
 
 | Поле | Значение |
 |------|----------|
-| Repository | Твой GitHub репо |
-| Runtime | **Node** |
-| Build Command | `npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/pulse run build` |
-| Start Command | `node --enable-source-maps ./artifacts/api-server/dist/index.mjs` |
-| Instance Type | **Free** |
+| **Runtime** | Node |
+| **Build Command** | `npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build` |
+| **Start Command** | `node --enable-source-maps ./artifacts/api-server/dist/index.mjs` |
+| **Instance Type** | Free |
 
----
-
-## Шаг 3. Переменные окружения
-
-В Render → твой сервис → **Environment** → добавь:
+4. **Environment** → добавь:
 
 | Ключ | Значение |
 |------|----------|
-| `DATABASE_URL` | Строка из Supabase (шаг 1) |
+| `DATABASE_URL` | Строка из Supabase |
 | `NODE_ENV` | `production` |
-| `JWT_SECRET` | Нажми «Generate» или вставь случайную строку (если Render не сгенерировал сам) |
+| `JWT_SECRET` | Нажми «Generate» или вставь 64 случайных символа |
 
-Остальные переменные (`VAPID_*`, `TURN_*`) — опциональны, добавляй позже.
-
-После сохранения нажми **Manual Deploy → Deploy latest commit**.
-
----
-
-## Шаг 4. Не давать Render засыпать — cron-job.org
-
-Бесплатный Render засыпает через 15 минут без запросов.
-
-1. [cron-job.org](https://cron-job.org) → **Sign Up** → **Create cronjob**
-2. URL: `https://nova-messenger.onrender.com/api/healthz`  
-   *(замени `nova-messenger` на имя своего сервиса)*
-3. Schedule: **Every 14 minutes** → Сохранить
+5. **Create Web Service** → дождись деплоя (~5 мин)
+6. Запомни URL сервиса: `https://nova-api.onrender.com` ← это `VITE_API_URL`
 
 ---
 
-## Частые ошибки
+## Шаг 2. Фронтенд — Vercel (без карты)
 
-### `DATABASE_URL must be set`
-Не добавлена переменная в Render → **Environment**.
-Добавь `DATABASE_URL` со строкой из Supabase → Save Changes → Manual Deploy.
+1. [vercel.com](https://vercel.com) → Sign Up (GitHub, без карты)
+2. **Add New → Project** → импортируй тот же GitHub репозиторий
+3. Vercel сам найдёт `vercel.json` в корне репозитория
 
-### `SSL connection required`
-Supabase требует SSL. Это уже настроено в коде для production.
-Если всё равно ошибка — добавь `?sslmode=require` в конец DATABASE_URL.
+### Настройки проекта (если Vercel спросит)
 
-### `Cannot find module` или ошибки сборки
-Сборка большого монорепо занимает 5–8 минут. Render Free может прервать по таймауту.
-Решение: подожди, нажми **Retry** или используй вместо этого Docker (Blueprint).
+| Поле | Значение |
+|------|----------|
+| **Framework Preset** | Other |
+| **Root Directory** | `.` (корень) |
+| **Build Command** | *(берётся из vercel.json автоматически)* |
+| **Output Directory** | *(берётся из vercel.json автоматически)* |
 
-### Звонки не работают
-TURN-сервер встроен (openrelay, без регистрации). Если звук есть но плохое качество:
-- Зарегистрируйся на [expressturn.com](https://expressturn.com) (бесплатно, только email) и добавь:
-  - `TURN_URL` = `turn:relay.expressturn.com:3480`
-  - `TURN_USER` = *(из дашборда)*
-  - `TURN_CRED` = *(из дашборда)*
+### Переменные окружения
+
+В Vercel → **Settings → Environment Variables** добавь:
+
+| Ключ | Значение |
+|------|----------|
+| `VITE_API_URL` | URL твоего Render сервиса, например `https://nova-api.onrender.com` |
+
+> ⚠️ Без `VITE_API_URL` фронтенд не будет знать где бэкенд и ничего не заработает.
+
+4. **Deploy** → Vercel соберёт и задеплоит (~3–5 мин)
+
+---
+
+## Шаг 3. Не давать Render засыпать — cron-job.org
+
+Render Free засыпает через 15 минут без запросов.
+
+1. [cron-job.org](https://cron-job.org) → Sign Up → **Create cronjob**
+2. URL: `https://nova-api.onrender.com/api/healthz`
+3. Schedule: **Every 14 minutes** → Save
 
 ---
 
 ## Итог
 
-После деплоя Nova будет доступна по адресу:
-```
-https://nova-messenger.onrender.com
-```
+| URL | Что |
+|-----|-----|
+| `https://nova-messenger.vercel.app` | Твой мессенджер (фронтенд) |
+| `https://nova-api.onrender.com` | API-сервер (бэкенд) |
 
-Первый запуск после сна занимает ~20–30 секунд (cron-job.org предотвращает это).
+---
+
+## Частые ошибки
+
+### Белый экран / "Failed to fetch"
+`VITE_API_URL` не задан в Vercel или задан неправильно.
+- Проверь: Vercel → Settings → Environment Variables
+- URL должен быть **без слеша в конце**: `https://nova-api.onrender.com` ✅ `https://nova-api.onrender.com/` ❌
+- После изменения переменной → **Redeploy**
+
+### `DATABASE_URL must be set` на Render
+Переменная не добавлена в Render → Environment.
+Добавь `DATABASE_URL` → **Save Changes** → **Manual Deploy**
+
+### Звонки не работают (нет звука)
+Встроенный TURN-сервер (openrelay) работает без регистрации.
+Если всё равно не слышат друг друга — это проблема с сетью/NAT.
+Можно улучшить добавив бесплатный TURN от [expressturn.com](https://expressturn.com) (только email, без карты):
+- Render Environment: `TURN_URL`, `TURN_USER`, `TURN_CRED`
+
+### Build failed на Vercel: "pnpm not found"
+Vercel должен установить pnpm через build command.
+Убедись что build command в `vercel.json` начинается с `npm install -g pnpm@10 &&`
+
+### CORS ошибки в консоли браузера
+Бэкенд уже настроен принимать запросы с любого домена (`cors: origin: true`).
+Если видишь CORS — проверь что `VITE_API_URL` указывает на правильный Render URL.
