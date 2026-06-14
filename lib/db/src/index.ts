@@ -10,11 +10,18 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+// In production (Render, Supabase, etc.) Postgres requires SSL.
+// We accept self-signed certs from managed cloud providers.
+const sslConfig = process.env.NODE_ENV === "production"
+  ? { ssl: { rejectUnauthorized: false } }
+  : {};
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,
+  ...sslConfig,
 });
 
 pool.on("error", (err) => {

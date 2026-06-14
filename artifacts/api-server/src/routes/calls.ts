@@ -6,6 +6,42 @@ import { broadcastToUser } from "../lib/sse";
 
 const router = Router();
 
+// ── ICE server config (served from backend so TURN creds stay server-side) ──
+router.get("/calls/ice-servers", (_req, res) => {
+  const servers: RTCIceServer[] = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
+    { urls: "stun:global.stun.twilio.com:3478" },
+    { urls: "stun:openrelay.metered.ca:80" },
+  ];
+
+  // Custom TURN from env (set in Render dashboard, never baked into frontend bundle)
+  const turnUrl  = process.env.TURN_URL;
+  const turnUser = process.env.TURN_USER;
+  const turnCred = process.env.TURN_CRED;
+  if (turnUrl && turnUser && turnCred) {
+    servers.push({ urls: turnUrl, username: turnUser, credential: turnCred });
+    const tlsUrl = turnUrl.replace(/^turn:/, "turns:") + (turnUrl.includes("?") ? "" : "?transport=tcp");
+    servers.push({ urls: tlsUrl, username: turnUser, credential: turnCred });
+  }
+
+  // OpenRelay public TURN as fallback
+  const openRelayUser = "openrelayproject";
+  const openRelayCred = "openrelayproject";
+  servers.push(
+    { urls: "turn:openrelay.metered.ca:80",                    username: openRelayUser, credential: openRelayCred },
+    { urls: "turn:openrelay.metered.ca:443",                   username: openRelayUser, credential: openRelayCred },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp",     username: openRelayUser, credential: openRelayCred },
+    { urls: "turns:openrelay.metered.ca:443?transport=tcp",    username: openRelayUser, credential: openRelayCred },
+  );
+
+  res.json({ iceServers: servers });
+});
+
 async function buildCall(call: typeof callsTable.$inferSelect) {
   const caller = call.callerId ? await db.query.usersTable.findFirst({ where: eq(usersTable.id, call.callerId) }) : null;
   const callee = call.calleeId ? await db.query.usersTable.findFirst({ where: eq(usersTable.id, call.calleeId) }) : null;

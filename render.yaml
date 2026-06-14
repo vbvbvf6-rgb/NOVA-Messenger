@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: nova-messenger
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # Render's free tier — sleeps after 15 min of inactivity.
+    # Use cron-job.org to ping /api/healthz every 14 min to keep it alive.
+    plan: free
+    healthCheckPath: /api/healthz
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # ── Required ─────────────────────────────────────────────────────────
+      - key: DATABASE_URL
+        sync: false   # Enter manually in Render dashboard (from Supabase)
+
+      - key: JWT_SECRET
+        generateValue: true   # Render auto-generates a secure random value
+
+      # ── Push notifications (optional) ────────────────────────────────────
+      - key: VAPID_PUBLIC_KEY
+        value: BMYTPQMepM0IUhvdnCp9EEZCX787iklvM032FY1m7vq6PheB6OUr-ZxocSlQE2tdmUBNULyvc_vfA5kyu9vVf7I
+
+      - key: VAPID_EMAIL
+        value: mailto:admin@nova.app
+
+      # ── TURN server for WebRTC calls (optional but recommended) ───────────
+      # Register free at metered.ca → Dashboard → TURN credentials
+      - key: TURN_URL
+        sync: false   # e.g. turn:relay.metered.ca:80
+
+      - key: TURN_USER
+        sync: false   # from metered.ca dashboard
+
+      - key: TURN_CRED
+        sync: false   # from metered.ca dashboard

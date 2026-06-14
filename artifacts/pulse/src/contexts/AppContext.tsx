@@ -3,44 +3,26 @@ import { io, Socket } from "socket.io-client";
 import { Call } from "@workspace/api-client-react";
 import { getSavedAccounts, SavedAccount, MAX_ACCOUNTS } from "@/lib/accounts";
 
-// ---------------------------------------------------------------------------
-// ICE server configuration
-// Priority: env-var custom TURN > OpenRelay public TURN > STUN-only fallback
-//
-// For reliable calls behind symmetric NAT set these env vars (free tier):
-//   VITE_TURN_URL     e.g. turn:relay.metered.ca:80
-//   VITE_TURN_USER    (username from metered.ca dashboard)
-//   VITE_TURN_CRED    (credential from metered.ca dashboard)
-// ---------------------------------------------------------------------------
-const CUSTOM_TURN = import.meta.env.VITE_TURN_URL;
-const CUSTOM_TURN_USER = import.meta.env.VITE_TURN_USER;
-const CUSTOM_TURN_CRED = import.meta.env.VITE_TURN_CRED;
-
-const ICE_SERVERS: RTCIceServer[] = [
-  // ── STUN (NAT discovery) ─────────────────────────────────────────────────
+// ICE servers are fetched from the API at call-start time so that TURN
+// credentials live only on the server and are never baked into the JS bundle.
+// Falls back to Google STUN if the fetch fails.
+const FALLBACK_ICE: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:19302" },
-  { urls: "stun:stun.cloudflare.com:3478" },
-  { urls: "stun:global.stun.twilio.com:3478" },
-  { urls: "stun:openrelay.metered.ca:80" },
-
-  // ── Custom TURN (highest priority when configured) ───────────────────────
-  ...(CUSTOM_TURN && CUSTOM_TURN_USER && CUSTOM_TURN_CRED
-    ? [
-        { urls: CUSTOM_TURN, username: CUSTOM_TURN_USER, credential: CUSTOM_TURN_CRED },
-        { urls: CUSTOM_TURN.replace(/^turn:/, "turns:") + "?transport=tcp", username: CUSTOM_TURN_USER, credential: CUSTOM_TURN_CRED },
-      ]
-    : []),
-
-  // ── OpenRelay public TURN (shared, may be throttled) ────────────────────
-  { urls: "turn:openrelay.metered.ca:80",      username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:openrelay.metered.ca:443",     username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-  { urls: "turns:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
 ];
+
+async function fetchIceServers(headers: Record<string, string>): Promise<RTCIceServer[]> {
+  try {
+    const res = await fetch("/api/calls/ice-servers", { headers });
+    if (!res.ok) return FALLBACK_ICE;
+    const data = await res.json();
+    return Array.isArray(data.iceServers) && data.iceServers.length > 0
+      ? data.iceServers
+      : FALLBACK_ICE;
+  } catch {
+    return FALLBACK_ICE;
+  }
+}
 
 function createSilentStream(): MediaStream {
   try {
@@ -125,6 +107,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const screenStreamRef = useRef<MediaStream | null>(null);
   const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iceServersRef = useRef<RTCIceServer[]>(FALLBACK_ICE);
 
   // Signals that arrived before the peer was created — keyed by fromUserId
   const pendingSignalsRef = useRef<Map<number, { type: string; sdp?: string; candidate?: RTCIceCandidateInit }[]>>(new Map());
@@ -202,7 +185,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   // ── peer factory ──────────────────────────────────────────────────────────
   const createPeer = useCallback((targetUserId: number, roomId: number): RTCPeerConnection => {
     const pc = new RTCPeerConnection({
-      iceServers: ICE_SERVERS,
+      iceServers: iceServersRef.current,
       // bundle all media into one transport — reduces ICE candidates & ports needed
       bundlePolicy: "max-bundle",
       // use a single RTCP mux — simpler traversal through firewalls
@@ -462,6 +445,9 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
 
     // 5. Socket.IO + WebRTC — non-fatal; call UI stays even if this fails
     try {
+      // Fetch ICE servers (TURN credentials) from backend — happens once per call
+      iceServersRef.current = await fetchIceServers(getUserHeaders());
+
       const sock = getSocket();
       setupCallSocket(sock, call.id);
       sock.emit("join-call", { callId: call.id });
@@ -520,6 +506,9 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     const roomId = groupRoomIdRef.current ?? call.id;
     groupRoomIdRef.current = roomId;
     try {
+      // Fetch ICE servers (TURN credentials) from backend — happens once per call
+      iceServersRef.current = await fetchIceServers(getUserHeaders());
+
       const sock = getSocket();
       setupCallSocket(sock, roomId);
       sock.emit("join-call", { callId: roomId });
