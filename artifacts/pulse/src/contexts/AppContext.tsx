@@ -38,12 +38,6 @@ const ICE_SERVERS: RTCIceServer[] = [
     username: "openrelayproject",
     credential: "openrelayproject",
   },
-  // Numb TURN — additional free relay for fallback
-  {
-    urls: "turn:numb.viagenie.ca",
-    username: "webrtc@live.com",
-    credential: "muazkh",
-  },
 ];
 
 function createSilentStream(): MediaStream {
@@ -127,6 +121,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
 
   const localStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
+  const cameraVideoTrackRef = useRef<MediaStreamTrack | null>(null);
   const ringTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Signals that arrived before the peer was created — keyed by fromUserId
@@ -563,6 +558,12 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       const screenTrack = screenStream.getVideoTracks()[0];
       if (!screenTrack) return;
 
+      // Save the original camera track before replacing it so we can restore it later
+      if (localStreamRef.current) {
+        const existingCamera = localStreamRef.current.getVideoTracks()[0];
+        if (existingCamera) cameraVideoTrackRef.current = existingCamera;
+      }
+
       // Replace video track in every peer connection
       peersRef.current.forEach((pc) => {
         const sender = pc.getSenders().find((s) => s.track?.kind === "video");
@@ -594,15 +595,26 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     screenStream.getTracks().forEach((t) => t.stop());
     screenStreamRef.current = null;
 
-    // Switch back to camera track
+    // Restore the saved camera track (cameraVideoTrackRef holds it reliably)
+    const cameraVideoTrack = cameraVideoTrackRef.current;
+    cameraVideoTrackRef.current = null;
+
     const cameraStream = localStreamRef.current;
     if (cameraStream) {
-      const cameraVideoTrack = cameraStream.getVideoTracks().find((t) => t.label !== "Screen");
+      // Remove the screen track from the stream
+      cameraStream.getVideoTracks().forEach((t) => cameraStream.removeTrack(t));
+
+      // Re-add camera track if we have one
+      if (cameraVideoTrack) cameraStream.addTrack(cameraVideoTrack);
+
+      // Replace track in all peer connections
       peersRef.current.forEach((pc) => {
         const sender = pc.getSenders().find((s) => s.track?.kind === "video");
-        if (sender && cameraVideoTrack) sender.replaceTrack(cameraVideoTrack).catch(() => {});
+        if (sender) {
+          sender.replaceTrack(cameraVideoTrack ?? null).catch(() => {});
+        }
       });
-      // Rebuild localStream with camera tracks
+
       const audioTracks = cameraStream.getAudioTracks();
       const newStream = new MediaStream([...(cameraVideoTrack ? [cameraVideoTrack] : []), ...audioTracks]);
       localStreamRef.current = newStream;
