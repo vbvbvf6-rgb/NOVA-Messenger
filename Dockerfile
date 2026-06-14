@@ -1,5 +1,6 @@
 # ─── Stage 1: Builder ──────────────────────────────────────────────────────────
-# Installs all workspace dependencies and compiles the API server bundle.
+# Installs all workspace dependencies, compiles the API server bundle,
+# and builds the React frontend.
 FROM node:24-slim AS builder
 
 WORKDIR /workspace
@@ -16,6 +17,7 @@ COPY lib/api-spec/package.json          ./lib/api-spec/
 COPY lib/api-zod/package.json           ./lib/api-zod/
 COPY lib/api-client-react/package.json  ./lib/api-client-react/
 COPY artifacts/api-server/package.json  ./artifacts/api-server/
+COPY artifacts/pulse/package.json       ./artifacts/pulse/
 
 # Install all dependencies (frozen — uses exact lockfile versions)
 RUN pnpm install --frozen-lockfile
@@ -24,13 +26,17 @@ RUN pnpm install --frozen-lockfile
 COPY tsconfig.json tsconfig.base.json* ./
 COPY lib/ ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
+COPY artifacts/pulse/ ./artifacts/pulse/
 
 # Build the API server (esbuild bundles everything into dist/)
 RUN pnpm --filter @workspace/api-server run build
 
+# Build the React frontend (outputs to artifacts/pulse/dist/public)
+RUN PORT=8080 BASE_PATH=/ pnpm --filter @workspace/pulse run build
+
 
 # ─── Stage 2: Runner ───────────────────────────────────────────────────────────
-# Lean production image — only the compiled bundle + externalized runtime deps.
+# Lean production image — compiled API bundle + frontend static files.
 FROM node:24-slim AS runner
 
 WORKDIR /app
@@ -39,8 +45,11 @@ WORKDIR /app
 # so it must be present in node_modules at runtime.
 RUN npm install --omit=dev nodemailer@^8
 
-# Copy the compiled bundle and its pino worker side-files
-COPY --from=builder /workspace/artifacts/api-server/dist ./dist
+# Copy the compiled API bundle and pino worker side-files
+COPY --from=builder /workspace/artifacts/api-server/dist ./artifacts/api-server/dist
+
+# Copy the built frontend static files (served by the API server)
+COPY --from=builder /workspace/artifacts/pulse/dist/public ./artifacts/pulse/dist/public
 
 # Runtime environment
 ENV NODE_ENV=production
@@ -52,4 +61,4 @@ EXPOSE 8080
 # Optional:            VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL (web push)
 #                      JWT_SECRET (defaults to a built-in value if not set)
 
-CMD ["node", "--enable-source-maps", "./dist/index.mjs"]
+CMD ["node", "--enable-source-maps", "./artifacts/api-server/dist/index.mjs"]
