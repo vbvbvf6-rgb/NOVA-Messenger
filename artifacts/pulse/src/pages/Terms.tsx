@@ -1,9 +1,196 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Globe } from "lucide-react";
 
 export default function Terms() {
   const [, navigate] = useLocation();
-  const today = "20 июня 2026 г.";
+  const [lang, setLang] = useState<"en" | "ru">(() =>
+    navigator.language.startsWith("ru") ? "ru" : "en"
+  );
+
+  const updated = "June 20, 2026 / 20 июня 2026";
+
+  const t = {
+    title: { en: "Terms of Service", ru: "Пользовательское соглашение" },
+    updated: { en: "Last updated", ru: "Последнее обновление" },
+    intro: {
+      en: 'These Terms of Service govern your use of Nova Messenger ("Nova", "Service"). By registering or using Nova, you agree to these Terms. Nova is a global service available worldwide.',
+      ru: "Настоящее Пользовательское соглашение регулирует использование мессенджера Nova. Регистрируясь или используя Nova, вы принимаете условия настоящего Соглашения. Nova — глобальный сервис, доступный по всему миру.",
+    },
+  };
+
+  const sections = [
+    {
+      id: "1",
+      en: {
+        title: "Acceptance of Terms",
+        body: 'By creating an account, you confirm you are at least 16 years old (or have parental consent if under 18 in your jurisdiction) and that you have read and agree to these Terms and our Privacy Policy. If you disagree, do not use the Service.',
+      },
+      ru: {
+        title: "Принятие условий",
+        body: "Создавая аккаунт, вы подтверждаете, что вам не менее 16 лет (или имеется согласие родителей в случаях, предусмотренных законодательством вашей страны), и что вы прочитали и принимаете настоящее Соглашение и Политику конфиденциальности. Если вы не согласны — не используйте Сервис.",
+      },
+    },
+    {
+      id: "2",
+      en: {
+        title: "Description of Service",
+        body: "Nova is a global instant messenger offering text and media messaging, voice and video calls, group chats, channels, stories, and related features. The Service is provided \"as is\" without warranties of uninterrupted availability.",
+      },
+      ru: {
+        title: "Описание Сервиса",
+        body: "Nova — глобальный мессенджер для обмена текстовыми и медиасообщениями, голосовых и видеозвонков, групп, каналов, историй и сопутствующих функций. Сервис предоставляется «как есть» без гарантий бесперебойной доступности.",
+      },
+    },
+    {
+      id: "3",
+      en: {
+        title: "Prohibited Conduct",
+        intro: "You may not use Nova to:",
+        list: [
+          "Distribute content that is illegal under applicable law in your jurisdiction or ours.",
+          "Promote, glorify, or incite violence, terrorism, or extremism.",
+          "Distribute child sexual abuse material (CSAM) or content that sexually exploits minors.",
+          "Harass, stalk, threaten, or intimidate other users.",
+          "Distribute malware, spyware, or engage in phishing or fraud.",
+          "Send unsolicited bulk messages (spam).",
+          "Infringe on intellectual property rights of third parties.",
+          "Attempt unauthorized access to other users' accounts or Nova's infrastructure.",
+          "Engage in automated or bot activity without explicit permission.",
+          "Violate any applicable local, national, or international law.",
+        ],
+      },
+      ru: {
+        title: "Запрещённые действия",
+        intro: "Вам запрещено использовать Nova для:",
+        list: [
+          "Распространения контента, незаконного по применимым законам вашей юрисдикции или нашей.",
+          "Пропаганды, прославления или подстрекательства к насилию, терроризму, экстремизму.",
+          "Распространения материалов сексуального насилия над детьми (CSAM).",
+          "Домогательств, преследования, угроз или запугивания других пользователей.",
+          "Распространения вредоносного ПО, шпионских программ или фишинга.",
+          "Массовой рассылки нежелательных сообщений (спам).",
+          "Нарушения интеллектуальных прав третьих лиц.",
+          "Попыток несанкционированного доступа к аккаунтам или инфраструктуре Nova.",
+          "Автоматизированной активности или ботов без явного разрешения.",
+          "Нарушения любых применимых местных, национальных или международных законов.",
+        ],
+      },
+    },
+    {
+      id: "4",
+      en: {
+        title: "User Content",
+        body: "You are solely responsible for all content you post or transmit through Nova. By submitting content, you warrant that you own or have the right to share it, and that it does not violate these Terms or any applicable law. Nova does not endorse user-generated content.",
+      },
+      ru: {
+        title: "Контент пользователей",
+        body: "Вы несёте полную ответственность за весь контент, публикуемый или передаваемый через Nova. Размещая контент, вы гарантируете, что владеете им или имеете право им делиться, и что он не нарушает настоящее Соглашение или применимые законы. Nova не несёт ответственности за пользовательский контент.",
+      },
+    },
+    {
+      id: "5",
+      en: {
+        title: "Account Security",
+        list: [
+          "You are responsible for maintaining the confidentiality of your credentials.",
+          "Do not share your password or access tokens with anyone.",
+          "Notify us immediately through Support if you detect unauthorized access.",
+          "One natural person per account; mass account creation is prohibited.",
+          "We recommend enabling two-factor authentication (2FA) for additional security.",
+        ],
+      },
+      ru: {
+        title: "Безопасность аккаунта",
+        list: [
+          "Вы несёте ответственность за конфиденциальность учётных данных.",
+          "Не передавайте пароль или токены третьим лицам.",
+          "Немедленно уведомляйте нас через Поддержку при обнаружении несанкционированного доступа.",
+          "Один аккаунт — один реальный человек; массовое создание аккаунтов запрещено.",
+          "Рекомендуем включить двухфакторную аутентификацию (2FA).",
+        ],
+      },
+    },
+    {
+      id: "6",
+      en: {
+        title: "Content Moderation & Enforcement",
+        body: "Nova reserves the right to remove content that violates these Terms and to suspend or terminate accounts of users who repeatedly violate our policies. In serious cases (e.g., CSAM, terrorism), we will report to appropriate law enforcement authorities.",
+      },
+      ru: {
+        title: "Модерация и правоприменение",
+        body: "Nova оставляет за собой право удалять контент, нарушающий настоящее Соглашение, а также приостанавливать или удалять аккаунты нарушителей. В серьёзных случаях (например, CSAM, терроризм) Nova передаёт информацию в компетентные правоохранительные органы.",
+      },
+    },
+    {
+      id: "7",
+      en: {
+        title: "Account Deletion",
+        body: "You may delete your account at any time from Settings → Privacy → Delete Account. Upon deletion, all your personal data (messages, call history, gifts, contacts) will be permanently erased from our systems.",
+      },
+      ru: {
+        title: "Удаление аккаунта",
+        body: "Вы можете удалить аккаунт в любое время через Настройки → Конфиденциальность → Удалить аккаунт. После удаления все ваши персональные данные (сообщения, история звонков, подарки, контакты) будут навсегда уничтожены в наших системах.",
+      },
+    },
+    {
+      id: "8",
+      en: {
+        title: "Intellectual Property",
+        body: "Nova and its design, code, and branding are owned by the Service operator. You receive a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes. You retain ownership of content you create.",
+      },
+      ru: {
+        title: "Интеллектуальная собственность",
+        body: "Nova, её дизайн, код и бренд принадлежат оператору Сервиса. Вам предоставляется ограниченная, неисключительная, непередаваемая лицензия на использование Сервиса в личных некоммерческих целях. Права на созданный вами контент остаются за вами.",
+      },
+    },
+    {
+      id: "9",
+      en: {
+        title: "Disclaimer & Limitation of Liability",
+        body: "The Service is provided \"as is\". To the maximum extent permitted by law, Nova disclaims all warranties and shall not be liable for indirect, incidental, or consequential damages. Nova's liability shall not exceed the amount you paid for the Service (if any) in the 12 months prior to the claim.",
+      },
+      ru: {
+        title: "Отказ от гарантий и ограничение ответственности",
+        body: "Сервис предоставляется «как есть». В максимальной степени, допустимой применимым правом, Nova отказывается от любых гарантий и не несёт ответственности за косвенные, случайные или последующие убытки. Ответственность Nova ограничена суммой, уплаченной вами за Сервис (если таковая имеется) за 12 месяцев до предъявления требования.",
+      },
+    },
+    {
+      id: "10",
+      en: {
+        title: "Governing Law & Disputes",
+        body: "These Terms are governed by applicable international law and the laws of the jurisdiction where the Service operator is established. For users in the EU/EEA, mandatory consumer protection laws of your country of residence apply. Disputes should first be addressed through our Support channel.",
+      },
+      ru: {
+        title: "Применимое право и споры",
+        body: "Настоящее Соглашение регулируется международным правом и законодательством юрисдикции, в которой зарегистрирован оператор Сервиса. Для пользователей из ЕС/ЕЭЗ применяются обязательные нормы потребительской защиты страны их проживания. Споры следует сначала урегулировать через нашу Поддержку.",
+      },
+    },
+    {
+      id: "11",
+      en: {
+        title: "Changes to Terms",
+        body: "We may modify these Terms. For material changes, we will notify you in-app at least 7 days before the new Terms take effect (except for changes required immediately for security or legal reasons). Continued use after that date means you accept the revised Terms.",
+      },
+      ru: {
+        title: "Изменения Соглашения",
+        body: "Мы вправе изменять настоящее Соглашение. О существенных изменениях мы уведомим в приложении не менее чем за 7 дней до вступления их в силу (кроме случаев, требующих немедленных изменений из соображений безопасности или права). Продолжение использования Сервиса означает согласие с обновлённым Соглашением.",
+      },
+    },
+    {
+      id: "12",
+      en: {
+        title: "Contact",
+        body: "For any questions about these Terms, please use the in-app Support section. We aim to respond within 30 days.",
+      },
+      ru: {
+        title: "Контакты",
+        body: "По любым вопросам, связанным с настоящим Соглашением, обращайтесь через раздел «Поддержка» в приложении. Мы стремимся отвечать в течение 30 дней.",
+      },
+    },
+  ];
+
+  const l = lang;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -12,97 +199,46 @@ export default function Terms() {
           <ArrowLeft size={20} />
         </button>
         <FileText size={18} className="text-primary" />
-        <h1 className="text-base font-semibold">Пользовательское соглашение</h1>
+        <h1 className="text-base font-semibold flex-1">{t.title[l]}</h1>
+        <button
+          onClick={() => setLang(l === "en" ? "ru" : "en")}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-xs font-semibold transition-colors"
+        >
+          <Globe size={13} />
+          {l === "en" ? "RU" : "EN"}
+        </button>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6 text-sm leading-relaxed">
         <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl">
-          <p className="text-xs text-muted-foreground">Последнее обновление: {today}</p>
-          <p className="mt-1 font-medium">Настоящее Пользовательское соглашение (далее — «Соглашение») регулирует использование мессенджера Nova.</p>
+          <p className="text-xs text-muted-foreground">{t.updated[l]}: {updated}</p>
+          <p className="mt-1 font-medium">{t.intro[l]}</p>
         </div>
 
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">1. Принятие условий</h2>
-          <p>Регистрируясь в Сервисе, вы подтверждаете, что прочитали, поняли и согласны с настоящим Соглашением и Политикой конфиденциальности. Если вы не согласны с условиями, не используйте Сервис.</p>
-          <p className="text-muted-foreground">Минимальный возраст для использования: <strong className="text-foreground">16 лет</strong>. Использование Сервисом лицами младше 16 лет допускается только с согласия законных представителей.</p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">2. Описание Сервиса</h2>
-          <p>Nova — мессенджер для обмена текстовыми и медиасообщениями, проведения звонков, создания групп и каналов. Сервис предоставляется «как есть» без гарантий бесперебойной работы.</p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">3. Правила использования</h2>
-          <p className="font-medium text-destructive">Запрещено использовать Сервис для:</p>
-          <ul className="space-y-1 list-disc list-inside text-muted-foreground">
-            <li>Распространения материалов, запрещённых законодательством РФ.</li>
-            <li>Пропаганды экстремизма, терроризма, нацизма.</li>
-            <li>Распространения детской порнографии или сексуальной эксплуатации несовершеннолетних.</li>
-            <li>Распространения наркотиков, оружия и иных запрещённых товаров.</li>
-            <li>Мошенничества, фишинга и иных форм обмана пользователей.</li>
-            <li>Спама, массовой рассылки без согласия получателей.</li>
-            <li>Нарушения авторских прав и смежных прав.</li>
-            <li>Преследования, запугивания или домогательства других пользователей.</li>
-            <li>Несанкционированного доступа к данным других пользователей.</li>
-            <li>Автоматизированного использования Сервиса без разрешения (боты, парсеры).</li>
-          </ul>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">4. Контент пользователей</h2>
-          <p>Вы несёте ответственность за весь контент, который публикуете в Сервисе. Размещая контент, вы гарантируете, что имеете право его публиковать и он не нарушает права третьих лиц.</p>
-          <p className="text-muted-foreground">Сервис оставляет за собой право удалить контент, нарушающий настоящее Соглашение, без предварительного уведомления.</p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">5. Аккаунт и безопасность</h2>
-          <ul className="space-y-1 list-disc list-inside text-muted-foreground">
-            <li>Вы несёте ответственность за сохранность пароля и данных входа.</li>
-            <li>Не передавайте данные аккаунта третьим лицам.</li>
-            <li>Незамедлительно сообщайте о несанкционированном доступе к вашему аккаунту.</li>
-            <li>Один человек — один аккаунт (создание массовых аккаунтов запрещено).</li>
-          </ul>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">6. Блокировка и удаление аккаунта</h2>
-          <p>Сервис вправе заблокировать или удалить аккаунт при нарушении настоящего Соглашения. Вы можете самостоятельно удалить аккаунт в любой момент через раздел настроек.</p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">7. Интеллектуальная собственность</h2>
-          <p>Все права на Сервис, его дизайн и программный код принадлежат разработчику. Вы получаете ограниченную, непередаваемую лицензию на использование Сервиса в личных целях.</p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">8. Ограничение ответственности</h2>
-          <p>Сервис не несёт ответственности за:</p>
-          <ul className="space-y-1 list-disc list-inside text-muted-foreground">
-            <li>Контент, публикуемый пользователями.</li>
-            <li>Перебои в работе, вызванные техническими причинами.</li>
-            <li>Действия третьих лиц.</li>
-            <li>Убытки, возникшие вследствие нарушения вами настоящего Соглашения.</li>
-          </ul>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">9. Применимое право</h2>
-          <p>Настоящее Соглашение регулируется законодательством Российской Федерации. Все споры подлежат рассмотрению в судах по месту нахождения разработчика.</p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">10. Изменения Соглашения</h2>
-          <p>Мы вправе изменять настоящее Соглашение. Уведомление об изменениях публикуется в приложении за 7 дней до вступления в силу (кроме случаев, требующих немедленных изменений в целях безопасности).</p>
-        </section>
-
-        <section className="space-y-2">
-          <h2 className="font-semibold text-base">11. Контакты</h2>
-          <p className="text-muted-foreground">По вопросам соблюдения настоящего Соглашения обращайтесь через раздел «Поддержка» в приложении.</p>
-        </section>
+        {sections.map(s => {
+          const sec = s[l];
+          return (
+            <section key={s.id} className="space-y-2">
+              <h2 className="font-semibold text-base">{s.id}. {sec.title}</h2>
+              {"intro" in sec && (sec as any).intro && (
+                <p className="font-medium text-destructive">{(sec as any).intro}</p>
+              )}
+              {"body" in sec && <p className="text-muted-foreground">{(sec as any).body}</p>}
+              {"list" in sec && (
+                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
+                  {(sec as any).list.map((item: string, i: number) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          );
+        })}
 
         <div className="p-4 bg-muted/40 rounded-2xl text-xs text-muted-foreground">
-          Настоящее Соглашение является офертой. Регистрация в Сервисе означает безоговорочное акцептирование всех его условий (ст. 428 ГК РФ).
+          {l === "en"
+            ? "These Terms of Service constitute a binding agreement between you and Nova Messenger. By using Nova, you acknowledge that you have read, understood, and agree to be bound by these Terms."
+            : "Настоящее Соглашение является обязательным договором между вами и Nova Messenger. Используя Nova, вы подтверждаете, что прочитали, поняли и согласны соблюдать его условия."}
         </div>
       </div>
     </div>
