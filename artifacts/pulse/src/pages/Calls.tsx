@@ -81,7 +81,7 @@ export default function Calls() {
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto scrollbar-none pb-[calc(6rem+env(safe-area-inset-bottom,0px))] md:pb-0">
+      <div className="flex-1 overflow-y-auto scrollbar-none pb-[calc(6rem+env(safe-area-inset-bottom,0px))] landscape:pb-4 md:pb-0">
         {isLoading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3, 4].map((i) => (

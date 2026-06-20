@@ -430,7 +430,7 @@ export function ChatList() {
     });
 
   return (
-    <div className="relative overflow-hidden w-full md:w-[380px] lg:w-[420px] flex flex-col h-[100dvh] bg-background border-r border-border shrink-0 z-20">
+    <div className="relative overflow-hidden w-full md:w-[380px] lg:w-[420px] flex flex-col bg-background border-r border-border shrink-0 z-20" style={{ height: "var(--app-h, 100dvh)" }}>
       <AnimatePresence>
         {showGlobalSearch && (
           <GlobalSearch onClose={() => setShowGlobalSearch(false)} />
@@ -523,7 +523,7 @@ export function ChatList() {
         <StoriesBar />
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-none mt-2 px-2 pb-24 md:pb-4">
+      <div className="chat-list-scroll flex-1 overflow-y-auto overflow-x-hidden scrollbar-none mt-2 px-2 pb-28 landscape:pb-4 md:pb-4">
         {folder === "all" && (
           <div className="space-y-1 mb-2">
             <SavedMessagesEntry onOpen={(id) => setSelectedChatId(id)} />

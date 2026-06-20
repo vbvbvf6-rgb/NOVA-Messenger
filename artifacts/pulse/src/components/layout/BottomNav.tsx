@@ -29,7 +29,7 @@ export function BottomNav({ onOpenPalette, onOpenSidebar }: BottomNavProps) {
 
   return (
     <nav
-      className="flex md:hidden fixed bottom-0 inset-x-0 z-50 pointer-events-none"
+      className="flex md:hidden landscape:hidden fixed bottom-0 inset-x-0 z-50 pointer-events-none"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div

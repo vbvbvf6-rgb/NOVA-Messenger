@@ -22,14 +22,7 @@ if (window.visualViewport) {
 }
 window.addEventListener("orientationchange", () => setTimeout(updateAppHeight, 300));
 
-// Lock to portrait on mobile devices
-if (screen.orientation && typeof (screen.orientation as any).lock === "function") {
-  const tryLock = () => {
-    (screen.orientation as any).lock("portrait").catch(() => {});
-  };
-  document.addEventListener("fullscreenchange", tryLock);
-  tryLock();
-}
+// Allow all orientations — landscape is fully supported
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

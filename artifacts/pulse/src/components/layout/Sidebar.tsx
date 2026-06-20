@@ -486,8 +486,8 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
         onClick={onMobileClose}
       />
       <div
-        className={`fixed left-0 top-0 bottom-0 z-[91] md:hidden w-[280px] bg-card border-r border-border/50 flex flex-col pt-6 shadow-2xl transition-transform duration-300 overflow-y-auto`}
-        style={{ transform: mobileSidebarOpen ? "translateX(0)" : "translateX(-100%)" }}
+        className={`mobile-sidebar-drawer fixed left-0 top-0 bottom-0 z-[91] md:hidden w-[280px] bg-card border-r border-border/50 flex flex-col pt-6 shadow-2xl transition-transform duration-300 overflow-y-auto overscroll-contain`}
+        style={{ transform: mobileSidebarOpen ? "translateX(0)" : "translateX(-100%)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center gap-3 px-5 mb-6">
           <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10 border border-primary/20 text-primary relative overflow-hidden">

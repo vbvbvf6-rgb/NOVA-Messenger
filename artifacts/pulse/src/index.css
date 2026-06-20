@@ -263,15 +263,35 @@
 
 /* ── Landscape phone layout ─────────────────────────────────────────────── */
 @media (max-width: 767px) and (orientation: landscape) {
-  main .flex-1.overflow-y-auto {
-    padding-bottom: max(3.5rem, env(safe-area-inset-bottom, 3.5rem));
+  /* No BottomNav in landscape — minimal bottom padding everywhere */
+  .chat-list-scroll {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem)) !important;
   }
-  main .flex-1.overflow-y-auto.overflow-x-hidden {
-    padding-bottom: max(3.5rem, env(safe-area-inset-bottom, 3.5rem));
+  /* All scrollable page containers: remove the large mobile bottom nav padding */
+  .flex-1.overflow-y-auto[class*="pb-24"],
+  .flex-1.overflow-y-auto[class*="pb-28"] {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem)) !important;
+  }
+  /* Also fix non-flex-1 containers */
+  div[class*="pb-24"]:not(.chat-list-scroll) {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem)) !important;
   }
   .login-landscape {
     align-items: flex-start !important;
     padding-top: max(1.5rem, env(safe-area-inset-top, 1.5rem));
+  }
+  /* Compact chat input in landscape */
+  textarea[data-chat-input] {
+    max-height: 60px !important;
+  }
+  /* Sidebar proper safe area in landscape */
+  .mobile-sidebar-drawer {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Compact page headers in landscape — save vertical space */
+  header[style*="safe-area-inset-top"] {
+    min-height: calc(2.75rem + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 6px !important;
   }
 }
 
@@ -349,34 +369,9 @@
   background: linear-gradient(135deg, hsl(226 30% 9%) 0%, hsl(225 28% 12%) 50%, hsl(226 30% 9%) 100%);
 }
 
-/* ── Landscape orientation overlay (mobile only) ────────────────────────── */
+/* ── Landscape orientation — allow usage, compact layout ───────────────── */
 @media screen and (orientation: landscape) and (max-height: 500px) {
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 99999;
-    background: hsl(226 30% 9%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  body::before {
-    content: "↩ Пожалуйста, переверните устройство";
-    position: fixed;
-    inset: 0;
-    z-index: 100000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 16px;
-    font-family: inherit;
-    font-weight: 700;
-    text-align: center;
-    padding: 24px;
-    pointer-events: none;
-  }
+  /* Allow the app to work in landscape — no blocking overlay */
 }
 
 /* ── Typing indicator dots ───────────────────────────────────────────────── */

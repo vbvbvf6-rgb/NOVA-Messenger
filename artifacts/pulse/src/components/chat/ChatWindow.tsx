@@ -310,6 +310,7 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   );
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [searchMatchIndex, setSearchMatchIndex] = useState(0);
@@ -348,10 +349,24 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
   const prevBotTypingRef = useRef(false);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (!el) return;
+    const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distFromBottom < 200) {
+      el.scrollTop = el.scrollHeight;
     }
   }, [messages, botTyping, typingUsers.length]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShowScrollDown(distFromBottom > 200);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   const isBot = chat && chat.type === "direct" && (chat.otherUser as any)?.isBot;
   const autoDeleteTimer = (chat as any)?.autoDeleteTimer as number | null | undefined;
@@ -1334,6 +1349,17 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Scroll-to-bottom button */}
+      {showScrollDown && (
+        <button
+          onClick={() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }}
+          className="absolute bottom-24 right-4 z-30 w-10 h-10 rounded-full bg-card border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all active:scale-90"
+          aria-label="Прокрутить вниз"
+        >
+          <ChevronDown size={20} />
+        </button>
+      )}
 
       {/* Messages */}
       <div

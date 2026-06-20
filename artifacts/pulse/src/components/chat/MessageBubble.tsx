@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Message, useGetMe } from "@workspace/api-client-react";
+import { Message, useGetMe, useGetChats } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { useAppContext } from "@/contexts/AppContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetMessagesQueryKey, getGetChatsQueryKey } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
-import { Check, CheckCheck, Clock, X, Info, Play, Pause, Mic, Reply, Pencil, Trash2, Copy, SmilePlus, Languages, Pin, PinOff, BarChart2, Eye, Crown, Wand2, MessageSquare, Shield, Sparkles } from "lucide-react";
+import { Check, CheckCheck, Clock, X, Info, Play, Pause, Mic, Reply, Pencil, Trash2, Copy, SmilePlus, Languages, Pin, PinOff, BarChart2, Eye, Crown, Wand2, MessageSquare, Shield, Sparkles, Forward, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertDialog,
@@ -436,6 +436,12 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
   const swipeStartY = useRef(0);
   const swipeAxis = useRef<"h" | "v" | null>(null);
   const [swipeDx, setSwipeDx] = useState(0);
+  const lastTapRef = useRef<number>(0);
+  const [heartFlash, setHeartFlash] = useState(false);
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardSearch, setForwardSearch] = useState("");
+  const [forwarding, setForwarding] = useState(false);
+  const { data: allChats } = useGetChats();
 
   // Pending state — show clock for ~1.5s after a new outgoing message appears
   const [isPending, setIsPending] = useState<boolean>(() => {
@@ -519,16 +525,29 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
     if (isDeleted) return;
     const touch = e.touches[0];
     longPressRef.current = setTimeout(() => {
+      navigator.vibrate?.(12);
       openMenu(touch.clientX, touch.clientY);
     }, 500);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
     if (longPressRef.current) clearTimeout(longPressRef.current);
+    if (isDeleted) return;
+    const now = Date.now();
+    if (now - lastTapRef.current < 320) {
+      lastTapRef.current = 0;
+      navigator.vibrate?.(8);
+      setHeartFlash(true);
+      setTimeout(() => setHeartFlash(false), 600);
+      handleReact("❤️");
+    } else {
+      lastTapRef.current = now;
+    }
   };
 
   const handleTouchMove = () => {
     if (longPressRef.current) clearTimeout(longPressRef.current);
+    lastTapRef.current = 0;
   };
 
   useEffect(() => {
@@ -629,6 +648,27 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
   const handlePin = () => {
     closeMenu();
     onPin?.(message);
+  };
+
+  const handleForwardTo = async (targetChatId: number) => {
+    setForwarding(true);
+    try {
+      const token = sessionStorage.getItem("pulse-token");
+      const authHeaders = { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) };
+      const forwardText = message.type === "text"
+        ? message.text || ""
+        : message.type === "image" ? "📷 Фото" : message.type === "audio" ? "🎤 Голосовое" : "Сообщение";
+      await fetch(`/api/messages`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ chatId: targetChatId, text: `⤵️ ${forwardText}` }),
+      });
+      queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
+    } catch {} finally {
+      setForwarding(false);
+      setShowForwardModal(false);
+      setForwardSearch("");
+    }
   };
 
   const formatTime = (dateStr: string) => format(new Date(dateStr), "HH:mm");
@@ -918,6 +958,18 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
               )}
               style={isMine && ownBubbleStyle && message.type !== "sticker" ? ownBubbleStyle : undefined}
             >
+              {/* Double-tap ❤️ flash */}
+              {heartFlash && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.3 }}
+                  animate={{ opacity: 1, scale: 1.4 }}
+                  exit={{ opacity: 0, scale: 1.8 }}
+                  transition={{ duration: 0.28, ease: "backOut" }}
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 text-3xl select-none"
+                >
+                  ❤️
+                </motion.span>
+              )}
               {!isMine && message.sender && (
                 <div className="flex items-center gap-1 mb-1.5 flex-wrap">
                   {/* Sender name: gradient for Prime+ */}
@@ -1212,6 +1264,13 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
                     Копировать
                   </button>
                 )}
+                <button
+                  onClick={() => { closeMenu(); setShowForwardModal(true); }}
+                  className="w-full flex items-center gap-3 px-3 py-3 text-[15px] font-bold text-foreground hover:bg-secondary rounded-xl transition-colors text-left"
+                >
+                  <Forward size={18} className="text-green-500" />
+                  Переслать
+                </button>
                 {isMine && onEdit && message.type === "text" && (
                   <button
                     onClick={() => { closeMenu(); onEdit(message); }}
@@ -1263,6 +1322,78 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Forward Modal */}
+      <AnimatePresence>
+        {showForwardModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) { setShowForwardModal(false); setForwardSearch(""); } }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              transition={{ type: "spring", damping: 26, stiffness: 360 }}
+              className="bg-card border border-border rounded-[24px] w-full max-w-sm shadow-2xl overflow-hidden max-h-[70dvh] flex flex-col"
+            >
+              <div className="px-5 pt-5 pb-3 flex items-center justify-between shrink-0">
+                <h3 className="font-black text-lg">Переслать</h3>
+                <button onClick={() => { setShowForwardModal(false); setForwardSearch(""); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-secondary text-muted-foreground">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="px-4 pb-3 shrink-0">
+                <div className="flex items-center gap-2 bg-secondary rounded-xl px-3 py-2.5">
+                  <Search size={15} className="text-muted-foreground shrink-0" />
+                  <input
+                    value={forwardSearch}
+                    onChange={e => setForwardSearch(e.target.value)}
+                    placeholder="Поиск чатов..."
+                    className="flex-1 bg-transparent border-none outline-none text-[14px] font-medium placeholder:text-muted-foreground"
+                    autoFocus={typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches}
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-0.5">
+                {(allChats || [])
+                  .filter((c: any) => {
+                    const name = c.type === "direct" ? (c.otherUser?.displayName || "") : (c.name || "");
+                    return name.toLowerCase().includes(forwardSearch.toLowerCase());
+                  })
+                  .slice(0, 30)
+                  .map((c: any) => {
+                    const name = c.type === "direct" ? (c.otherUser?.displayName || "Чат") : (c.name || "Чат");
+                    const initials = name[0]?.toUpperCase() || "?";
+                    const color = c.type === "direct" ? (c.otherUser?.avatarColor || "#666") : (c.avatarColor || "#666");
+                    return (
+                      <button
+                        key={c.id}
+                        disabled={forwarding}
+                        onClick={() => handleForwardTo(c.id)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary transition-colors text-left disabled:opacity-60"
+                      >
+                        <div className="w-10 h-10 rounded-[12px] flex items-center justify-center text-white font-black text-base shrink-0 overflow-hidden" style={{ backgroundColor: color }}>
+                          {(c.type === "direct" ? c.otherUser?.avatarUrl : c.avatarUrl) ? (
+                            <img src={c.type === "direct" ? c.otherUser?.avatarUrl : c.avatarUrl} alt={name} className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                          ) : initials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-[14px] truncate">{name}</p>
+                          <p className="text-[12px] text-muted-foreground">{c.type === "direct" ? "Личные сообщения" : c.type === "group" ? "Группа" : "Канал"}</p>
+                        </div>
+                        {forwarding && <div className="ml-auto shrink-0 w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
+                      </button>
+                    );
+                  })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {lightbox && (
