@@ -314,6 +314,8 @@ function AuthPages({ onLogin }: { onLogin: (userId: number) => void }) {
       <Route path="/register" component={() => <Register onLogin={handleLogin} />} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/qr/:tokenId" component={QrLoginGate} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/terms" component={Terms} />
       <Route component={() => <Login onLogin={handleLogin} />} />
     </Switch>
   );

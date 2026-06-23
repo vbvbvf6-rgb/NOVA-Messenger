@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CalendarDays, MapPin, Users, Clock, Star, Flame, Zap,
@@ -107,6 +108,7 @@ function formatEventDate(dateStr?: string): string {
 
 /* ─── Component ─────────────────────────────────────────────────────── */
 export default function Events() {
+  const [, navigate] = useLocation();
   const [tab, setTab] = useState<Tab>("quests");
   const [completed, setCompleted] = useState<Set<string>>(loadCompleted);
   const [progress, setProgress] = useState<Record<string, number>>(loadProgress);
@@ -703,7 +705,7 @@ export default function Events() {
                       <span className="text-xs font-bold">Панель администратора</span>
                     </div>
                     <button
-                      onClick={() => window.location.href = "/admin"}
+                      onClick={() => navigate("/admin")}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500 text-white rounded-xl text-xs font-bold hover:bg-violet-600 transition-colors"
                     >
                       <Plus size={12} /> Создать событие
@@ -737,7 +739,7 @@ export default function Events() {
                     </p>
                     {(me as any)?.isAdmin && (
                       <button
-                        onClick={() => window.location.href = "/admin"}
+                        onClick={() => navigate("/admin")}
                         className="mt-5 flex items-center gap-2 px-5 py-2.5 bg-violet-500 text-white rounded-2xl text-sm font-bold hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/30"
                       >
                         <Plus size={15} /> Создать первое событие

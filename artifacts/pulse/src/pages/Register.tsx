@@ -188,6 +188,7 @@ export default function Register({ onLogin }: RegisterProps) {
       if (data.token) sessionStorage.setItem("pulse-token", data.token);
       sessionStorage.setItem("pulse-user-id", String(data.userId));
       sessionStorage.setItem("pulse-user", JSON.stringify(data.user));
+      sessionStorage.setItem("pulse-tab-owned", "1");
       onLogin(data.userId);
     } catch {
       setError("Ошибка подключения к серверу");
@@ -240,10 +241,26 @@ export default function Register({ onLogin }: RegisterProps) {
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-y-auto">
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-15%] left-[-5%] w-[55%] h-[55%] bg-primary/15 rounded-full blur-[140px] opacity-70 animate-[pulseGlow_7s_ease-in-out_infinite_alternate]" />
-        <div className="absolute bottom-[-15%] right-[-10%] w-[65%] h-[65%] bg-violet-500/8 rounded-full blur-[120px] opacity-60 animate-[pulseGlow_9s_ease-in-out_infinite_alternate-reverse]" />
-        <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-amber-500/6 rounded-full blur-[80px] opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/30" />
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[120px] opacity-80 animate-[pulseGlow_6s_ease-in-out_infinite_alternate]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[65%] h-[65%] bg-violet-500/15 rounded-full blur-[100px] opacity-70 animate-[pulseGlow_8s_ease-in-out_infinite_alternate-reverse]" />
+        <div className="absolute top-[35%] left-[55%] w-[35%] h-[35%] bg-amber-500/12 rounded-full blur-[80px] opacity-60 animate-[pulseGlow_10s_ease-in-out_infinite_alternate]" />
+        <div className="absolute top-[65%] left-[5%] w-[25%] h-[25%] bg-blue-500/10 rounded-full blur-[60px] opacity-50 animate-[pulseGlow_12s_ease-in-out_infinite_alternate-reverse]" />
+        {[...Array(10)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-primary/25"
+            style={{
+              width: `${2 + (i % 3)}px`,
+              height: `${2 + (i % 3)}px`,
+              left: `${8 + (i * 8.5) % 84}%`,
+              top: `${5 + (i * 9.7) % 88}%`,
+              animation: `pulseGlow ${4 + (i % 5)}s ease-in-out infinite alternate`,
+              animationDelay: `${i * 0.45}s`,
+              opacity: 0.35 + (i % 4) * 0.15,
+            }}
+          />
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/20" />
       </div>
 
       <motion.div
@@ -416,12 +433,9 @@ export default function Register({ onLogin }: RegisterProps) {
                 <label className="flex items-start gap-4 cursor-pointer group">
                   <input
                     type="checkbox"
-                    id="parental-consent"
+                    checked={ageConfirmChecked}
+                    onChange={(e) => setAgeConfirmChecked(e.target.checked)}
                     className="mt-1 w-5 h-5 rounded accent-primary cursor-pointer shrink-0"
-                    onChange={(e) => {
-                      const btn = document.getElementById("confirm-age-btn") as HTMLButtonElement;
-                      if (btn) btn.disabled = !e.target.checked;
-                    }}
                   />
                   <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors leading-relaxed">
                     Мой родитель или опекун знает о регистрации и дал своё согласие.
@@ -431,14 +445,13 @@ export default function Register({ onLogin }: RegisterProps) {
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => { setDobDay(""); setDobMonth(""); setDobYear(""); setStep("age-gate"); }}
+                  onClick={() => { setDobDay(""); setDobMonth(""); setDobYear(""); setAgeConfirmChecked(false); setStep("age-gate"); }}
                   className="flex-1 py-4 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
                 >
                   Назад
                 </button>
                 <button
-                  id="confirm-age-btn"
-                  disabled
+                  disabled={!ageConfirmChecked}
                   onClick={() => setStep("register")}
                   className="flex-[2] py-4 rounded-2xl bg-yellow-500 text-yellow-950 font-black text-sm hover:bg-yellow-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(234,179,8,0.2)]"
                 >
@@ -687,6 +700,18 @@ export default function Register({ onLogin }: RegisterProps) {
                   </Link>
                 </p>
               </div>
+
+              <p className="mt-4 text-center text-[11px] text-muted-foreground/60 leading-relaxed">
+                Регистрируясь, вы принимаете{" "}
+                <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors underline underline-offset-2">
+                  Условия использования
+                </Link>{" "}
+                и{" "}
+                <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors underline underline-offset-2">
+                  Политику конфиденциальности
+                </Link>{" "}
+                Nova. Ваши данные защищены в соответствии с GDPR и ФЗ-152.
+              </p>
             </motion.div>
           )}
 

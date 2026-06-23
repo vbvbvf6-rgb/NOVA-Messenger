@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useGetContacts, useSearchUsers, useAddContact, useRemoveContact, getGetContactsQueryKey, getGetChatsQueryKey } from "@workspace/api-client-react";
 import type { User } from "@workspace/api-client-react";
-import { Search, UserPlus, UserMinus, MessageSquare } from "lucide-react";
+import { Search, UserPlus, UserMinus, MessageSquare, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAppContext } from "@/contexts/AppContext";

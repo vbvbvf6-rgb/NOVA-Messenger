@@ -189,10 +189,27 @@ export default function Login({ onLogin }: LoginProps) {
     <div className="min-h-[100dvh] w-full flex items-center justify-center bg-background relative overflow-hidden p-4 sm:p-8 login-landscape">
       {/* Dynamic Background */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-15%] left-[-5%] w-[55%] h-[55%] bg-primary/15 rounded-full blur-[140px] opacity-70 animate-[pulseGlow_7s_ease-in-out_infinite_alternate]" />
-        <div className="absolute bottom-[-15%] right-[-10%] w-[65%] h-[65%] bg-violet-500/8 rounded-full blur-[120px] opacity-60 animate-[pulseGlow_9s_ease-in-out_infinite_alternate-reverse]" />
-        <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-amber-500/6 rounded-full blur-[80px] opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/30" />
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[120px] opacity-80 animate-[pulseGlow_6s_ease-in-out_infinite_alternate]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[65%] h-[65%] bg-violet-500/15 rounded-full blur-[100px] opacity-70 animate-[pulseGlow_8s_ease-in-out_infinite_alternate-reverse]" />
+        <div className="absolute top-[35%] left-[55%] w-[35%] h-[35%] bg-amber-500/12 rounded-full blur-[80px] opacity-60 animate-[pulseGlow_10s_ease-in-out_infinite_alternate]" />
+        <div className="absolute top-[60%] left-[10%] w-[25%] h-[25%] bg-blue-500/10 rounded-full blur-[60px] opacity-50 animate-[pulseGlow_12s_ease-in-out_infinite_alternate-reverse]" />
+        {/* Floating particles */}
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-primary/30"
+            style={{
+              width: `${2 + (i % 3)}px`,
+              height: `${2 + (i % 3)}px`,
+              left: `${8 + (i * 7.8) % 84}%`,
+              top: `${5 + (i * 11.3) % 88}%`,
+              animation: `pulseGlow ${4 + (i % 5)}s ease-in-out infinite alternate`,
+              animationDelay: `${i * 0.4}s`,
+              opacity: 0.4 + (i % 4) * 0.15,
+            }}
+          />
+        ))}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/20" />
       </div>
 
       <motion.div
@@ -346,6 +363,17 @@ export default function Login({ onLogin }: LoginProps) {
                     Зарегистрироваться
                   </Link>
                 </div>
+
+                <p className="mt-5 text-center text-[11px] text-muted-foreground/60 leading-relaxed">
+                  Продолжая, вы принимаете{" "}
+                  <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors underline underline-offset-2">
+                    Условия использования
+                  </Link>{" "}
+                  и{" "}
+                  <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors underline underline-offset-2">
+                    Политику конфиденциальности
+                  </Link>
+                </p>
               </motion.div>
             )}
 

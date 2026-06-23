@@ -249,12 +249,21 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
 
   const DesktopSidebar = (
     <div className="hidden md:flex flex-col w-[260px] bg-card border-r border-border/50 shrink-0 relative z-20" style={{ height: "var(--app-h, 100dvh)" }}>
-      <div className="flex items-center gap-3 px-5 pt-6 pb-4">
-        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-gradient-to-br from-primary via-orange-500 to-amber-400 shadow-lg shadow-primary/30 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/15 to-white/10 pointer-events-none" />
-          <PulseLogo size={22} />
+      <div className="flex items-center gap-3 px-5 pt-5 pb-4">
+        <div className="relative shrink-0 drop-shadow-[0_4px_12px_rgba(255,100,20,0.45)]">
+          <PulseLogo size={38} />
         </div>
-        <span className="font-black text-2xl tracking-tight text-foreground flex-1">Nova</span>
+        <span
+          className="font-black text-[22px] tracking-tight flex-1"
+          style={{
+            background: "linear-gradient(135deg, #ff9a3c 0%, #ff5c1a 50%, #e63200 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+          }}
+        >
+          Nova
+        </span>
         <div className="flex gap-1">
           <button
             onClick={onOpenPalette}
@@ -490,11 +499,18 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
         style={{ transform: mobileSidebarOpen ? "translateX(0)" : "translateX(-100%)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <div className="flex items-center gap-3 px-5 mb-6">
-          <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10 border border-primary/20 text-primary relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-transparent" />
-            <PulseLogo size={22} />
+          <div className="relative shrink-0 drop-shadow-[0_3px_10px_rgba(255,100,20,0.4)]">
+            <PulseLogo size={36} />
           </div>
-          <span className="font-black text-2xl tracking-tight text-foreground flex-1">Nova</span>
+          <span
+            className="font-black text-[22px] tracking-tight flex-1"
+            style={{
+              background: "linear-gradient(135deg, #ff9a3c 0%, #ff5c1a 50%, #e63200 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >Nova</span>
           <button
             onClick={toggleTheme}
             title={isDark ? "Светлая тема" : "Тёмная тема"}

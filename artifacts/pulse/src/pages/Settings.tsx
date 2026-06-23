@@ -15,6 +15,7 @@ import {
   Battery, FolderOpen, ArrowLeft, Mic, Headphones, Bot,
   SlidersHorizontal, Layers, Calendar, Wand2, Play, FileText, MapPin
 } from "lucide-react";
+import { useLocation } from "wouter";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
 import { useAppContext } from "@/contexts/AppContext";
 import { RINGTONES, previewRingtone, storeCustomRingtone } from "@/lib/ringtones";
@@ -797,10 +798,11 @@ function NavItem({ id, icon, color, label, badge, badgeAmber, active, onClick, h
   badge?: string; badgeAmber?: boolean; active: string;
   onClick: (id: string | null) => void; href?: string;
 }) {
+  const [, setLoc] = useLocation();
   const isActive = active === id;
   return (
     <button
-      onClick={() => href ? (window.location.href = href) : onClick(id)}
+      onClick={() => href ? setLoc(href) : onClick(id)}
       className={cn(
         "flex items-center gap-3 px-4 py-3 w-full text-left transition-colors",
         isActive ? "bg-primary/8" : "hover:bg-secondary/60"
@@ -1097,6 +1099,7 @@ function SupportSection({ lang, user, t, currentStatusOpt, onNavigate }: { lang:
 }
 
 export default function Settings() {
+  const [, setLocation] = useLocation();
   const { isDark, toggleTheme, logout } = useAppContext();
   const { t, lang, setLang } = useLanguage();
   const { data: user } = useGetMe();
@@ -2616,7 +2619,7 @@ export default function Settings() {
           {displaySection === "faq" && <FaqSection lang={lang} />}
 
           {/* ─── PULSE FEATURES ────────────────────────────── */}
-          {displaySection === "features" && <FeaturesSection lang={lang} navigate={(path: string) => { window.location.href = path; }} />}
+          {displaySection === "features" && <FeaturesSection lang={lang} navigate={(path: string) => { setLocation(path); }} />}
 
           {/* ─── SUPPORT ───────────────────────────────────── */}
           {displaySection === "support" && <SupportSection lang={lang} user={user} t={t} currentStatusOpt={currentStatusOpt} onNavigate={setActiveSection} />}

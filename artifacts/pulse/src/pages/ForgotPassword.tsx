@@ -86,14 +86,32 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-y-auto">
-      <div
-        className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] rounded-full blur-[120px] opacity-40 pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(16 100% 50% / 0.18), transparent 70%)" }}
-      />
-      <div
-        className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[55%] rounded-full blur-[120px] opacity-30 pointer-events-none"
-        style={{ background: "radial-gradient(circle, hsl(30 100% 45% / 0.15), transparent 70%)" }}
-      />
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[120px] opacity-75 animate-[pulseGlow_7s_ease-in-out_infinite_alternate]"
+          style={{ background: "radial-gradient(circle, hsl(16 100% 50% / 0.22), transparent 70%)" }}
+        />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[100px] opacity-65 animate-[pulseGlow_9s_ease-in-out_infinite_alternate-reverse]"
+          style={{ background: "radial-gradient(circle, hsl(280 80% 60% / 0.16), transparent 70%)" }}
+        />
+        <div className="absolute top-[40%] left-[60%] w-[35%] h-[35%] rounded-full blur-[80px] opacity-50 animate-[pulseGlow_11s_ease-in-out_infinite_alternate]"
+          style={{ background: "radial-gradient(circle, hsl(45 100% 55% / 0.12), transparent 70%)" }}
+        />
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-primary/30"
+            style={{
+              width: `${2 + (i % 3)}px`,
+              height: `${2 + (i % 3)}px`,
+              left: `${10 + (i * 10.5) % 80}%`,
+              top: `${8 + (i * 11.3) % 82}%`,
+              animation: `pulseGlow ${4 + (i % 4)}s ease-in-out infinite alternate`,
+              animationDelay: `${i * 0.55}s`,
+              opacity: 0.3 + (i % 3) * 0.15,
+            }}
+          />
+        ))}
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
