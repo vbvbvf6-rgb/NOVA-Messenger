@@ -513,6 +513,7 @@ function App() {
                 <ErrorBoundary>
                   <>
                     <MainApp
+                      key={userId}
                       onLogout={handleLogout}
                       onSwitchAccount={handleSwitchAccount}
                       onRemoveAccount={handleRemoveAccount}

@@ -77,6 +77,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
 
   const [text, setText] = useState("");
   const FLAGS_CATEGORY = 7;
+  const STICKERS_TAB = EMOJI_CATEGORIES.length;
   const [showEmoji, setShowEmoji] = useState(false);
   const [emojiCategory, setEmojiCategory] = useState(0);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
