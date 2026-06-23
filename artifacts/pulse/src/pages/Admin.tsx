@@ -103,7 +103,6 @@ interface LeaderEntry {
 interface Leaderboard {
   byBalance: LeaderEntry[];
   byMessages: LeaderEntry[];
-  byGifts: LeaderEntry[];
 }
 
 function getHeader(): Record<string, string> {
@@ -179,7 +178,7 @@ export default function Admin() {
   const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [leaderTab, setLeaderTab] = useState<"byBalance" | "byMessages" | "byGifts">("byBalance");
+  const [leaderTab, setLeaderTab] = useState<"byBalance" | "byMessages">("byBalance");
 
   // Gifts
   const [giftItems, setGiftItems] = useState<GiftItem[]>([]);
@@ -2358,10 +2357,10 @@ export default function Admin() {
           )}
         </div>
 
-        {/* Gift Catalog Editor */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        {/* [Gift Catalog removed] */}
+        <div className="hidden">
           <button
-            onClick={() => { setShowGiftCatalog(v => !v); if (!showGiftCatalog && giftCatalog.length === 0) fetchGiftCatalog(); }}
+            onClick={() => {}}
             className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
           >
             <div className="flex items-center gap-3">
@@ -2582,7 +2581,7 @@ export default function Admin() {
             {showLeaderboard && (
               <div className="border-t border-border p-4">
                 <div className="flex gap-1 mb-3 bg-secondary/50 rounded-xl p-1">
-                  {([["byBalance", "⚡ МОНЕТА"], ["byMessages", "💬 Сообщ."], ["byGifts", "🎁 Подарки"]] as const).map(([key, label]) => (
+                  {([["byBalance", "⚡ МОНЕТА"], ["byMessages", "💬 Сообщ."]] as const).map(([key, label]) => (
                     <button
                       key={key}
                       onClick={() => setLeaderTab(key)}
@@ -2722,10 +2721,10 @@ export default function Admin() {
           )}
         </AnimatePresence>
 
-        {/* Banwords */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        {/* [Banwords removed] */}
+        <div className="hidden">
           <button
-            onClick={() => { setShowBanwords(v => !v); if (!showBanwords && banwords.length === 0) fetchBanwords(); }}
+            onClick={() => {}}
             className="w-full p-4 flex items-center justify-between hover:bg-secondary/50 transition-colors"
           >
             <div className="flex items-center gap-3">

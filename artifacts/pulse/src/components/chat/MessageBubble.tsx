@@ -354,26 +354,7 @@ function PollDisplay({ pollData, messageId, chatId, currentUserId, isMine }: {
   );
 }
 
-const GIFT_ORB_STYLES: Record<string, { sphere: string; glow: string; cardBg: string }> = {
-  common:    { sphere: "radial-gradient(circle at 35% 28%, #a78bfa, #6d28d9 55%, #2e1065)", glow: "rgba(139,92,246,0.55)", cardBg: "linear-gradient(145deg, #3b1d8a 0%, #4c1d95 40%, #1e1b4b 100%)" },
-  rare:      { sphere: "radial-gradient(circle at 35% 28%, #67e8f9, #0284c7 55%, #0c4a6e)", glow: "rgba(56,189,248,0.55)", cardBg: "linear-gradient(145deg, #164e63 0%, #0e7490 40%, #0c4a6e 100%)" },
-  epic:      { sphere: "radial-gradient(circle at 35% 28%, #f0abfc, #9333ea 55%, #3b0764)", glow: "rgba(217,70,239,0.6)",  cardBg: "linear-gradient(145deg, #581c87 0%, #7e22ce 40%, #3b0764 100%)" },
-  legendary: { sphere: "radial-gradient(circle at 35% 28%, #fde68a, #f59e0b 55%, #78350f)", glow: "rgba(251,191,36,0.65)", cardBg: "linear-gradient(145deg, #78350f 0%, #b45309 40%, #92400e 100%)" },
-  cosmic:    { sphere: "radial-gradient(circle at 35% 28%, #fda4af, #9333ea 55%, #1e1b4b)", glow: "rgba(244,63,94,0.55)",  cardBg: "linear-gradient(145deg, #4c0519 0%, #7e22ce 50%, #1e1b4b 100%)" },
-};
 
-function GiftOrbMini({ emoji, rarity = "common", size = 90 }: { emoji: string; rarity?: string; size?: number }) {
-  const s = GIFT_ORB_STYLES[rarity] || GIFT_ORB_STYLES.common;
-  return (
-    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <div style={{ position: "absolute", inset: -size * 0.12, borderRadius: "50%", background: s.glow, filter: `blur(${size * 0.18}px)`, opacity: 0.8 }} />
-      <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: s.sphere, boxShadow: `inset -${size*0.07}px -${size*0.07}px ${size*0.18}px rgba(0,0,0,0.35), inset ${size*0.05}px ${size*0.05}px ${size*0.1}px rgba(255,255,255,0.18)` }}>
-        <div style={{ position: "absolute", top: "11%", left: "16%", width: "32%", height: "22%", borderRadius: "50%", background: "rgba(255,255,255,0.38)", filter: "blur(3px)" }} />
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.44, lineHeight: 1 }}>{emoji}</div>
-      </div>
-    </div>
-  );
-}
 
 export interface MessageBubbleProps {
   message: Message;
@@ -422,7 +403,6 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
   const isMine = message.senderId === currentUserId;
   const viewerIsPrimePlus = !!(me as any)?.hasPrime && (me as any)?.primeTier === "prime_plus";
   const effect = (message as any).effect as string | null;
-  const [showGiftInfo, setShowGiftInfo] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -688,32 +668,6 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
   const replyTo = (message as any).replyTo as (Message & { sender?: any }) | null;
   const pollData = (message as any).pollData;
 
-  if (message.type === "gift") {
-    const giftItem = (message as any).giftData?.giftItem;
-    const emoji = giftItem?.emoji || "🎁";
-    const giftName = giftItem?.name || "Подарок";
-    const senderName = message.sender?.displayName ?? "Кто-то";
-    return (
-      <div className={cn("flex w-full", isMine ? "justify-end" : "justify-start")}>
-        <div
-          className={cn(
-            "px-5 py-3.5 rounded-[24px] max-w-[80%]",
-            isMine
-              ? "bubble-mine text-primary-foreground rounded-br-sm"
-              : "bg-secondary text-foreground rounded-bl-sm border border-border shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
-          )}
-          style={isMine && ownBubbleStyle ? ownBubbleStyle : undefined}
-        >
-          <p className="text-[15px] font-semibold">{emoji} {isMine ? "Вы отправили подарок" : `${giftName} — от ${senderName}`}</p>
-          {message.text && <p className="text-[13px] opacity-65 mt-1 italic">«{message.text}»</p>}
-          <div className={cn("flex items-center justify-end gap-1.5 mt-2 text-[11px] font-bold", isMine ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
-            <span>{formatTime(message.createdAt)}</span>
-            {isMine && <CheckCheck size={13} strokeWidth={2.5} />}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const renderContent = () => {
     switch (message.type as string) {
@@ -1204,6 +1158,16 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
 
       <AnimatePresence>
         {showMenu && menuPos && (
+          <>
+            <motion.div
+              key="menu-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[998] bg-black/40"
+              onMouseDown={closeMenu}
+              onTouchStart={closeMenu}
+            />
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1211,8 +1175,8 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="fixed z-[999] select-none"
             style={{
-              left: Math.max(8, Math.min(menuPos.x, window.innerWidth - 248)),
-              top: Math.max(8, Math.min(menuPos.y, window.innerHeight - 368)),
+              left: Math.max(8, Math.min(menuPos.x, window.innerWidth - 256)),
+              top: Math.max(8, Math.min(menuPos.y, window.innerHeight - 400)),
             }}
             onMouseDown={e => e.stopPropagation()}
           >
@@ -1301,6 +1265,7 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
               </div>
             </div>
           </motion.div>
+          </>
         )}
       </AnimatePresence>
 

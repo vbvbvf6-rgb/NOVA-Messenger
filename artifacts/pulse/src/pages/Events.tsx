@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CalendarDays, MapPin, Users, Clock, Star, Flame, Zap,
-  Trophy, CheckCircle2, Gift, Target, Swords,
+  Trophy, CheckCircle2, Target, Swords,
   MessageCircle, Phone, Heart, Send, Crown, ChevronRight,
   TrendingUp, Lock, Sparkles, Medal, UserPlus, Info, Plus, Settings,
 } from "lucide-react";
