@@ -1,14 +1,13 @@
 /**
- * Converts an emoji string to its Twemoji CDN PNG URL.
+ * Converts an emoji string to its Twemoji CDN SVG URL.
  * Uses jsDelivr CDN — Twitter Twemoji (CC-BY 4.0).
  * Handles simple emoji, variation selectors, and ZWJ sequences.
  */
 export function emojiToTwemojiUrl(emoji: string): string {
   const cps = [...emoji].map(c => c.codePointAt(0)!.toString(16));
   const hasZWJ = cps.includes("200d");
-  // Keep all codepoints for ZWJ sequences; strip lone fe0f variation selector otherwise
   const filtered = hasZWJ ? cps : cps.filter(cp => cp !== "fe0f");
-  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${filtered.join("-")}.png`;
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${filtered.join("-")}.svg`;
 }
 
 /**

@@ -735,63 +735,70 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                     />
                   </button>
                 ))}
-                {/* Sticker tab */}
+                {/* Sticker tab — coming soon */}
                 <button
                   onClick={() => setEmojiCategory(STICKERS_TAB)}
-                  title="Стикеры"
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ml-0.5 ${emojiCategory === STICKERS_TAB ? "bg-background shadow-sm border border-border scale-110 text-primary" : "hover:bg-background/50 text-muted-foreground"}`}
+                  title="Стикеры (скоро)"
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ml-0.5 relative ${emojiCategory === STICKERS_TAB ? "bg-background shadow-sm border border-border scale-110 text-muted-foreground" : "hover:bg-background/50 text-muted-foreground/50"}`}
                 >
-                  <Sticker size={18} />
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/><circle cx="10" cy="13" r="1"/><circle cx="14" cy="13" r="1"/><path d="M10 17c.67.67 3.33.67 4 0"/>
+                  </svg>
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 rounded-full flex items-center justify-center">
+                    <svg width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M12 2v20M2 12h20" stroke="white" strokeWidth="3" strokeLinecap="round"/></svg>
+                  </span>
                 </button>
                 <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 shrink-0 pr-1">
-                  {emojiCategory === STICKERS_TAB ? "Стикеры" : EMOJI_CATEGORIES[emojiCategory].label}
+                  {emojiCategory === STICKERS_TAB ? "Скоро" : EMOJI_CATEGORIES[emojiCategory].label}
                 </span>
               </div>
 
               {emojiCategory === STICKERS_TAB ? (
-                /* Sticker panel */
-                <div>
-                  {isPrimePlus && (
-                    <div className="flex gap-1 px-3 pt-2">
-                      <button
-                        onClick={() => setStickerTab("regular")}
-                        className={`flex-1 py-1.5 rounded-[10px] text-[12px] font-black transition-all ${stickerTab === "regular" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                      >
-                        Стикеры
-                      </button>
-                      <button
-                        onClick={() => setStickerTab("prime")}
-                        className={`flex-1 py-1.5 rounded-[10px] text-[12px] font-black transition-all flex items-center justify-center gap-1 ${stickerTab === "prime" ? "bg-purple-500/20 text-purple-400" : "text-muted-foreground hover:text-purple-400"}`}
-                      >
-                        <span className="text-[11px]">👑</span> Prime+
-                      </button>
-                    </div>
-                  )}
-                  <div className="p-3 grid grid-cols-4 gap-2 max-h-[240px] landscape:max-h-[120px] overflow-y-auto scrollbar-none">
-                    {(stickerTab === "prime" && isPrimePlus ? PRIME_STICKERS : STICKERS).map(s => (
-                      <button
-                        key={s.id}
-                        onClick={() => sendSticker(s)}
-                        title={s.label}
-                        className={`aspect-square rounded-xl transition-all hover:scale-110 active:scale-95 p-1 flex items-center justify-center ${stickerTab === "prime" ? "hover:bg-purple-500/10 ring-1 ring-purple-500/20" : "hover:bg-secondary"}`}
-                      >
-                        <img src={s.url} alt={s.label} className="w-full h-full object-contain" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                      </button>
-                    ))}
+                /* Sticker panel — coming soon */
+                <div className="p-6 flex flex-col items-center justify-center gap-3 min-h-[180px] text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-400">
+                      <path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/><circle cx="10" cy="13" r="1"/><circle cx="14" cy="13" r="1"/><path d="M10 17c.67.67 3.33.67 4 0"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-black text-foreground">Стикеры появятся скоро</p>
+                    <p className="text-[12px] text-muted-foreground mt-1 max-w-[220px] leading-relaxed">
+                      Мы готовим уникальный пак стикеров Nova — следите за обновлениями!
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <span className="text-[11px] font-black text-amber-400 uppercase tracking-wider">В разработке</span>
                   </div>
                 </div>
               ) : (
-                /* Emoji grid — rendered as native <span> for correct flag & all emoji support */
+                /* Emoji grid */
                 <div className="p-3 grid grid-cols-8 gap-0.5 max-h-[240px] landscape:max-h-[120px] overflow-y-auto scrollbar-none">
                   {EMOJI_CATEGORIES[emojiCategory].emojis.map((emoji, i) => (
                     <button key={i} onClick={() => insertEmoji(emoji)}
                       className="hover:bg-secondary rounded-xl p-1.5 transition-colors flex items-center justify-center hover:scale-110 active:scale-95">
-                      <span
-                        style={{ fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif', fontSize: '20px', lineHeight: 1, userSelect: 'none' }}
-                        aria-label={emoji}
-                      >
-                        {emoji}
-                      </span>
+                      {emojiCategory === FLAGS_CATEGORY ? (
+                        <img
+                          src={emojiToTwemojiUrl(emoji)}
+                          alt={emoji}
+                          width={20}
+                          height={20}
+                          draggable={false}
+                          onError={e => {
+                            const el = e.currentTarget as HTMLImageElement;
+                            el.style.display = "none";
+                            el.insertAdjacentText("afterend", emoji);
+                          }}
+                        />
+                      ) : (
+                        <span
+                          style={{ fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif', fontSize: '20px', lineHeight: 1, userSelect: 'none' }}
+                          aria-label={emoji}
+                        >
+                          {emoji}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
