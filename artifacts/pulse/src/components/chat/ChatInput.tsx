@@ -3,48 +3,10 @@ import { emojiToTwemojiUrl } from "@/lib/twemoji";
 import { useSendMessage, useGetMe, getGetMessagesQueryKey, getGetChatsQueryKey, Message } from "@workspace/api-client-react";
 import type { P2PChannel } from "@/hooks/useP2PChannel";
 import { useQueryClient } from "@tanstack/react-query";
-import { Paperclip, Mic, SendHorizontal, X, Square, Trash2, Images, Reply, Pencil, Clock, BarChart2, Plus, Minus, Wand2, CalendarClock, Hourglass, Sticker, Smile } from "lucide-react";
+import { Paperclip, Mic, SendHorizontal, X, Square, Trash2, Images, Reply, Pencil, Clock, BarChart2, Plus, Minus, Wand2, CalendarClock, Hourglass, Smile, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
-const STICKERS = [
-  { id: "sticker-01", url: "/stickers/sticker-01.svg", label: "Счастье" },
-  { id: "sticker-02", url: "/stickers/sticker-02.svg", label: "Радость" },
-  { id: "sticker-03", url: "/stickers/sticker-03.svg", label: "Крутой" },
-  { id: "sticker-04", url: "/stickers/sticker-04.svg", label: "Мило" },
-  { id: "sticker-05", url: "/stickers/sticker-05.svg", label: "Огонь" },
-  { id: "sticker-06", url: "/stickers/sticker-06.svg", label: "Праздник" },
-  { id: "sticker-07", url: "/stickers/sticker-07.svg", label: "Злюка" },
-  { id: "sticker-08", url: "/stickers/sticker-08.svg", label: "Вечеринка" },
-  { id: "sticker-09", url: "/stickers/sticker-09.svg", label: "Задумался" },
-  { id: "sticker-10", url: "/stickers/sticker-10.svg", label: "Звёздочки" },
-  { id: "sticker-11", url: "/stickers/sticker-11.svg", label: "Гордость" },
-  { id: "sticker-12", url: "/stickers/sticker-12.svg", label: "Сон" },
-];
-
-function makePrimeSVG(emoji: string, from: string, to: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:${from}"/><stop offset="100%" style="stop-color:${to}"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#g)"/><text x="50" y="68" font-size="52" text-anchor="middle" font-family="Apple Color Emoji,Segoe UI Emoji,Noto Color Emoji,sans-serif">${emoji}</text></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-
-const PRIME_STICKERS = [
-  { id: "prime-01", url: makePrimeSVG("💎", "#7c3aed", "#06b6d4"), label: "Бриллиант" },
-  { id: "prime-02", url: makePrimeSVG("👑", "#f59e0b", "#ef4444"), label: "Корона" },
-  { id: "prime-03", url: makePrimeSVG("🌟", "#a855f7", "#ec4899"), label: "Звезда" },
-  { id: "prime-04", url: makePrimeSVG("🔥", "#ef4444", "#f97316"), label: "Огонь" },
-  { id: "prime-05", url: makePrimeSVG("🦋", "#3b82f6", "#06b6d4"), label: "Бабочка" },
-  { id: "prime-06", url: makePrimeSVG("🌈", "#22c55e", "#3b82f6"), label: "Радуга" },
-  { id: "prime-07", url: makePrimeSVG("🎯", "#ec4899", "#8b5cf6"), label: "Цель" },
-  { id: "prime-08", url: makePrimeSVG("🚀", "#7c3aed", "#ec4899"), label: "Ракета" },
-  { id: "prime-09", url: makePrimeSVG("🌙", "#1e40af", "#7c3aed"), label: "Луна" },
-  { id: "prime-10", url: makePrimeSVG("⚡", "#f59e0b", "#ef4444"), label: "Молния" },
-  { id: "prime-11", url: makePrimeSVG("🦄", "#ec4899", "#8b5cf6"), label: "Единорог" },
-  { id: "prime-12", url: makePrimeSVG("🌺", "#ef4444", "#f97316"), label: "Цветок" },
-  { id: "prime-13", url: makePrimeSVG("🐉", "#7c3aed", "#ef4444"), label: "Дракон" },
-  { id: "prime-14", url: makePrimeSVG("🎸", "#1e40af", "#06b6d4"), label: "Гитара" },
-  { id: "prime-15", url: makePrimeSVG("🏆", "#f59e0b", "#22c55e"), label: "Трофей" },
-  { id: "prime-16", url: makePrimeSVG("🎪", "#ec4899", "#f97316"), label: "Шоу" },
-];
 
 const EMOJI_CATEGORIES: { label: string; icon: string; emojis: string[] }[] = [
   { label: "Смайлы", icon: "😀", emojis: ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎","😍","🥰","😘","🥲","😗","😙","🥺","😚","🙂","🤗","🤭","🤫","🤔","🤐","😐","😑","😶","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🥵","🥶","🥴","😵","🤯","🤠","🥳","😕","☹️","😟","😧","😮","😲","😳","🥸","😢","😭","😤","😠","😡","🤬","💀","👻","👽","🤖","💩","😈","👹","👺","🤡","💫","💥","❗","❓","‼️"] },
@@ -114,7 +76,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
   const { toast } = useToast();
 
   const [text, setText] = useState("");
-  const STICKERS_TAB = -1;
+  const FLAGS_CATEGORY = 7;
   const [showEmoji, setShowEmoji] = useState(false);
   const [emojiCategory, setEmojiCategory] = useState(0);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -135,7 +97,6 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [pollSending, setPollSending] = useState(false);
   const [pollError, setPollError] = useState("");
-  const [stickerTab, setStickerTab] = useState<"regular" | "prime">("regular");
   const [selectedEffect, setSelectedEffect] = useState<string | null>(null);
   const [showEffectPicker, setShowEffectPicker] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(false);
@@ -545,22 +506,6 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
       textareaRef.current?.focus();
     }
   };
-
-  const sendSticker = async (sticker: { url: string }) => {
-    setShowEmoji(false);
-    setIsSending(true);
-    try {
-      await sendMessage.mutateAsync({
-        data: { chatId, type: "sticker", mediaUrl: sticker.url, text: "" }
-      });
-      queryClient.invalidateQueries({ queryKey: getGetMessagesQueryKey({ chatId }) });
-      queryClient.invalidateQueries({ queryKey: getGetChatsQueryKey() });
-      onMessageSent?.();
-    } finally {
-      setIsSending(false);
-    }
-  };
-
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
