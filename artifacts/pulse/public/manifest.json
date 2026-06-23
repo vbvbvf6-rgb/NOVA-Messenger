@@ -1,14 +1,14 @@
 {
-  "name": "Nova Messenger",
-  "short_name": "Nova",
-  "description": "Nova — быстрый и красивый мессенджер с голосовыми и видеозвонками, историями, подарками и ИИ-ассистентом.",
+  "name": "Aura Messenger",
+  "short_name": "Aura",
+  "description": "Aura — быстрый и красивый мессенджер с голосовыми и видеозвонками, историями, подарками и ИИ-ассистентом.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "theme_color": "#ff6b35",
   "background_color": "#0d0d0d",
-  "id": "nova-messenger",
+  "id": "aura-messenger",
   "icons": [
     {
       "src": "/favicon.svg",
@@ -41,7 +41,7 @@
       "sizes": "1200x630",
       "type": "image/jpeg",
       "form_factor": "wide",
-      "label": "Nova Messenger — Чаты"
+      "label": "Aura Messenger — Чаты"
     }
   ],
   "categories": ["social", "communication"],

@@ -1,4 +1,4 @@
-- [App rebranding](rebrand-nova.md) — App renamed from "Pulse"/"Aether" to "Nova"; internal localStorage/sessionStorage keys intentionally keep "pulse-" prefix to avoid logging out existing users.
+- [App rebranding](rebrand-nova.md) — App renamed from "Pulse"/"Aether" → "Nova" → "Aura"; internal localStorage/sessionStorage keys intentionally keep "pulse-"/"nova-" prefix to avoid logging out existing users.
 - [PWA offline updates](pwa-update-flow.md) — SW no longer auto-calls skipWaiting(); instead waits for user to confirm via toast banner; hook in src/hooks/useServiceWorkerUpdate.ts + PwaUpdateBanner in App.tsx.
 - [Drizzle-kit push interactive hang](drizzle-prod-push.md) — drizzle-kit push is interactive and hangs when prompted; use direct SQL (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`) for schema additions instead.
 - [Seed bulk upsert](seed-optimization.md) — gift catalog must use single bulk `INSERT ... ON CONFLICT (name) DO UPDATE`; requires `unique()` on `gift_items.name` in schema. Direct SQL used to add constraint.

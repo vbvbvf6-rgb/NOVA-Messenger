@@ -40,7 +40,7 @@ export default function PulseLogo({ size = 40 }: { size?: number }) {
       {/* Inner subtle border for depth */}
       <rect x="3" y="3" width="94" height="94" rx="24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"/>
 
-      {/* Nova 4-pointed star burst */}
+      {/* Aura 4-pointed star burst */}
       <path
         d="M50 13 C50 13 54.5 41 87 50 C54.5 59 50 87 50 87 C50 87 45.5 59 13 50 C45.5 41 50 13 50 13Z"
         fill={`url(#${id}_star)`}

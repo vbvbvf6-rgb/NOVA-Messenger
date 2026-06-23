@@ -262,7 +262,7 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
             backgroundClip: "text",
           }}
         >
-          Nova
+          Aura
         </span>
         <div className="flex gap-1">
           <button
@@ -510,7 +510,7 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
             }}
-          >Nova</span>
+          >Aura</span>
           <button
             onClick={toggleTheme}
             title={isDark ? "Светлая тема" : "Тёмная тема"}

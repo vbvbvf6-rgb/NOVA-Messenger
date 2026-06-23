@@ -72,7 +72,7 @@ function VerificationPending({ onLogout }: { onLogout: () => void }) {
           </motion.div>
           <h1 className="text-2xl font-black text-foreground mb-2">Аккаунт на проверке</h1>
           <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-            Ваш документ отправлен на проверку администратору. После подтверждения вы получите полный доступ к Nova.
+            Ваш документ отправлен на проверку администратору. После подтверждения вы получите полный доступ к Aura.
           </p>
           <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 mb-6 flex items-center gap-3 text-left">
             <Clock size={18} className="text-primary shrink-0" />
@@ -184,7 +184,7 @@ function PwaUpdateBanner() {
     if (updateAvailable && !shown.current) {
       shown.current = true;
       toast({
-        title: "Доступно обновление Nova",
+        title: "Доступно обновление Aura",
         description: "Новая версия готова к установке.",
         duration: 0,
         action: (

@@ -29,7 +29,7 @@ function VerifiedBadge() {
 function AdminBadge() {
   return (
     <span
-      title="Администратор Nova"
+      title="Администратор Aura"
       className="inline-flex items-center gap-0.5 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full shrink-0"
       style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(220,38,38,0.15))", border: "1px solid rgba(245,158,11,0.45)", color: "#f59e0b", boxShadow: "0 0 8px rgba(245,158,11,0.22)" }}
     >

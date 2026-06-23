@@ -14,16 +14,16 @@ export default function Privacy() {
     title: { en: "Privacy Policy", ru: "Политика конфиденциальности" },
     updated: { en: "Last updated", ru: "Последнее обновление" },
     intro: {
-      en: 'This Privacy Policy describes how Nova Messenger ("Nova", "we", "us") collects, uses, stores, and protects your personal information. Nova is a global service — this policy complies with GDPR (EU), CCPA (California), and other applicable international privacy frameworks.',
-      ru: "Настоящая Политика конфиденциальности описывает, как Nova Messenger («Nova», «мы») собирает, использует, хранит и защищает вашу персональную информацию. Nova — глобальный сервис; настоящая политика соответствует GDPR (ЕС), CCPA (Калифорния), ФЗ-152 (Россия) и другим применимым международным стандартам.",
+      en: 'This Privacy Policy describes how Aura Messenger ("Aura", "we", "us") collects, uses, stores, and protects your personal information. Aura is a global service — this policy complies with GDPR (EU), CCPA (California), and other applicable international privacy frameworks.',
+      ru: "Настоящая Политика конфиденциальности описывает, как Aura Messenger («Aura», «мы») собирает, использует, хранит и защищает вашу персональную информацию. Aura — глобальный сервис; настоящая политика соответствует GDPR (ЕС), CCPA (Калифорния), ФЗ-152 (Россия) и другим применимым международным стандартам.",
     },
   };
 
   const sections = [
     {
       id: "1",
-      en: { title: "Data Controller", body: "Nova Messenger operates as the data controller for information you provide when using the Service. Contact us through the in-app Support section for any data-related inquiries." },
-      ru: { title: "Оператор данных", body: "Nova Messenger выступает оператором данных в отношении информации, предоставленной вами при использовании Сервиса. По вопросам обработки данных обращайтесь через раздел «Поддержка» в приложении." },
+      en: { title: "Data Controller", body: "Aura Messenger operates as the data controller for information you provide when using the Service. Contact us through the in-app Support section for any data-related inquiries." },
+      ru: { title: "Оператор данных", body: "Aura Messenger выступает оператором данных в отношении информации, предоставленной вами при использовании Сервиса. По вопросам обработки данных обращайтесь через раздел «Поддержка» в приложении." },
     },
     {
       id: "2",
@@ -86,11 +86,11 @@ export default function Privacy() {
       id: "5",
       en: {
         title: "International Data Transfers",
-        body: "Nova may store data on servers in multiple countries. Regardless of where data is processed, we apply the same privacy protections described in this policy. By using Nova, you consent to your data being processed in countries that may have different privacy laws than your own.",
+        body: "Aura may store data on servers in multiple countries. Regardless of where data is processed, we apply the same privacy protections described in this policy. By using Aura, you consent to your data being processed in countries that may have different privacy laws than your own.",
       },
       ru: {
         title: "Международная передача данных",
-        body: "Nova может хранить данные на серверах в разных странах. Независимо от места обработки мы применяем единые стандарты защиты, описанные в настоящей Политике. Используя Nova, вы соглашаетесь на обработку данных в странах с иными законами о конфиденциальности.",
+        body: "Aura может хранить данные на серверах в разных странах. Независимо от места обработки мы применяем единые стандарты защиты, описанные в настоящей Политике. Используя Aura, вы соглашаетесь на обработку данных в странах с иными законами о конфиденциальности.",
       },
     },
     {
@@ -162,33 +162,33 @@ export default function Privacy() {
       id: "9",
       en: {
         title: "Cookies & Local Storage",
-        body: "Nova uses browser localStorage and sessionStorage to store your authentication token and user preferences. We do not use third-party tracking cookies or advertising trackers.",
+        body: "Aura uses browser localStorage and sessionStorage to store your authentication token and user preferences. We do not use third-party tracking cookies or advertising trackers.",
       },
       ru: {
         title: "Файлы cookie и локальное хранилище",
-        body: "Nova использует localStorage и sessionStorage браузера для хранения токена авторизации и пользовательских настроек. Мы не используем сторонние трекинговые cookie и рекламные трекеры.",
+        body: "Aura использует localStorage и sessionStorage браузера для хранения токена авторизации и пользовательских настроек. Мы не используем сторонние трекинговые cookie и рекламные трекеры.",
       },
     },
     {
       id: "10",
       en: {
         title: "Content Moderation",
-        body: "To maintain a safe environment and comply with applicable laws, Nova may review public posts for policy violations. Private direct messages are not automatically scanned.",
+        body: "To maintain a safe environment and comply with applicable laws, Aura may review public posts for policy violations. Private direct messages are not automatically scanned.",
       },
       ru: {
         title: "Модерация контента",
-        body: "Для обеспечения безопасной среды и соблюдения применимого законодательства Nova может проверять публичные публикации на соответствие правилам. Личные сообщения не проверяются автоматически.",
+        body: "Для обеспечения безопасной среды и соблюдения применимого законодательства Aura может проверять публичные публикации на соответствие правилам. Личные сообщения не проверяются автоматически.",
       },
     },
     {
       id: "11",
       en: {
         title: "Children's Privacy",
-        body: "Nova is not directed to children under 16. We do not knowingly collect personal information from children under 16. If you believe a child has provided us data without parental consent, please contact us immediately.",
+        body: "Aura is not directed to children under 16. We do not knowingly collect personal information from children under 16. If you believe a child has provided us data without parental consent, please contact us immediately.",
       },
       ru: {
         title: "Конфиденциальность детей",
-        body: "Nova не предназначена для лиц младше 16 лет. Мы не собираем намеренно персональные данные детей до 16 лет. Если вы считаете, что ребёнок предоставил нам данные без согласия родителей, немедленно свяжитесь с нами.",
+        body: "Aura не предназначена для лиц младше 16 лет. Мы не собираем намеренно персональные данные детей до 16 лет. Если вы считаете, что ребёнок предоставил нам данные без согласия родителей, немедленно свяжитесь с нами.",
       },
     },
     {
@@ -271,8 +271,8 @@ export default function Privacy() {
 
         <div className="p-4 bg-muted/40 rounded-2xl text-xs text-muted-foreground">
           {l === "en"
-            ? "This Privacy Policy is effective globally. Nova complies with applicable data protection laws in the jurisdictions where it operates."
-            : "Настоящая Политика конфиденциальности действует глобально. Nova соответствует применимым законам о защите данных в юрисдикциях, в которых работает."}
+            ? "This Privacy Policy is effective globally. Aura complies with applicable data protection laws in the jurisdictions where it operates."
+            : "Настоящая Политика конфиденциальности действует глобально. Aura соответствует применимым законам о защите данных в юрисдикциях, в которых работает."}
         </div>
       </div>
     </div>

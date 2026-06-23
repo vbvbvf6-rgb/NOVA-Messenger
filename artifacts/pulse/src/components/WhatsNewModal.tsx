@@ -29,7 +29,7 @@ const CHANGELOG: ChangelogEntry[] = [
     icon: <Star size={18} />,
     color: "text-purple-400 bg-purple-500/15",
     title: "Стикеры — скоро",
-    description: "Раздел стикеров временно скрыт. Мы готовим уникальный пак стикеров Nova — следите за обновлениями!",
+    description: "Раздел стикеров временно скрыт. Мы готовим уникальный пак стикеров Aura — следите за обновлениями!",
   },
   {
     icon: <Bell size={18} />,
@@ -111,7 +111,7 @@ export function WhatsNewModal() {
                       Версия {APP_VERSION}
                     </p>
                     <h2 className="text-[22px] font-black text-foreground leading-tight">
-                      Что нового в Nova
+                      Что нового в Aura
                     </h2>
                     <p className="text-[13px] text-muted-foreground mt-1">
                       Обновление уже установлено — вот что изменилось

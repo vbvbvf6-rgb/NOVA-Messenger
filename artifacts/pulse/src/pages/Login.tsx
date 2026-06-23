@@ -176,7 +176,7 @@ export default function Login({ onLogin }: LoginProps) {
   const getStepTitle = () => {
     if (step === "2fa") return "Верификация";
     if (step === "qr") return "QR вход";
-    return "Nova";
+    return "Aura";
   };
 
   const getStepSubtitle = () => {

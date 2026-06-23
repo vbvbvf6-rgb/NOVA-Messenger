@@ -844,17 +844,24 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
         const durSec = parseInt((message.text || "voice:0").replace("voice:", "")) || 0;
         return <VoicePlayer src={message.mediaUrl || ""} durationSec={durSec} isMine={isMine} messageId={message.id} viewerIsPrimePlus={viewerIsPrimePlus} />;
       }
-      case "sticker":
+      case "sticker": {
+        const rawUrl = message.mediaUrl || "";
+        const svgUrl = rawUrl.replace(/\.png(\?.*)?$/, ".svg");
         return (
           <div className="-mx-3 -my-2">
             <img
-              src={message.mediaUrl || ""}
+              src={svgUrl || rawUrl}
               alt="стикер"
-              className="w-28 h-28 object-contain block"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              className="w-32 h-32 object-contain block"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                if (img.src !== rawUrl && rawUrl) { img.src = rawUrl; return; }
+                img.style.display = "none";
+              }}
             />
           </div>
         );
+      }
       case "call":
         return <p className="text-[15px] font-bold italic opacity-80">📞 Звонок завершён</p>;
       default:

@@ -14,8 +14,8 @@ export default function Terms() {
     title: { en: "Terms of Service", ru: "Пользовательское соглашение" },
     updated: { en: "Last updated", ru: "Последнее обновление" },
     intro: {
-      en: 'These Terms of Service govern your use of Nova Messenger ("Nova", "Service"). By registering or using Nova, you agree to these Terms. Nova is a global service available worldwide.',
-      ru: "Настоящее Пользовательское соглашение регулирует использование мессенджера Nova. Регистрируясь или используя Nova, вы принимаете условия настоящего Соглашения. Nova — глобальный сервис, доступный по всему миру.",
+      en: 'These Terms of Service govern your use of Aura Messenger ("Aura", "Service"). By registering or using Aura, you agree to these Terms. Aura is a global service available worldwide.',
+      ru: "Настоящее Пользовательское соглашение регулирует использование мессенджера Aura. Регистрируясь или используя Aura, вы принимаете условия настоящего Соглашения. Aura — глобальный сервис, доступный по всему миру.",
     },
   };
 
@@ -35,18 +35,18 @@ export default function Terms() {
       id: "2",
       en: {
         title: "Description of Service",
-        body: "Nova is a global instant messenger offering text and media messaging, voice and video calls, group chats, channels, stories, and related features. The Service is provided \"as is\" without warranties of uninterrupted availability.",
+        body: "Aura is a global instant messenger offering text and media messaging, voice and video calls, group chats, channels, stories, and related features. The Service is provided \"as is\" without warranties of uninterrupted availability.",
       },
       ru: {
         title: "Описание Сервиса",
-        body: "Nova — глобальный мессенджер для обмена текстовыми и медиасообщениями, голосовых и видеозвонков, групп, каналов, историй и сопутствующих функций. Сервис предоставляется «как есть» без гарантий бесперебойной доступности.",
+        body: "Aura — глобальный мессенджер для обмена текстовыми и медиасообщениями, голосовых и видеозвонков, групп, каналов, историй и сопутствующих функций. Сервис предоставляется «как есть» без гарантий бесперебойной доступности.",
       },
     },
     {
       id: "3",
       en: {
         title: "Prohibited Conduct",
-        intro: "You may not use Nova to:",
+        intro: "You may not use Aura to:",
         list: [
           "Distribute content that is illegal under applicable law in your jurisdiction or ours.",
           "Promote, glorify, or incite violence, terrorism, or extremism.",
@@ -55,14 +55,14 @@ export default function Terms() {
           "Distribute malware, spyware, or engage in phishing or fraud.",
           "Send unsolicited bulk messages (spam).",
           "Infringe on intellectual property rights of third parties.",
-          "Attempt unauthorized access to other users' accounts or Nova's infrastructure.",
+          "Attempt unauthorized access to other users' accounts or Aura's infrastructure.",
           "Engage in automated or bot activity without explicit permission.",
           "Violate any applicable local, national, or international law.",
         ],
       },
       ru: {
         title: "Запрещённые действия",
-        intro: "Вам запрещено использовать Nova для:",
+        intro: "Вам запрещено использовать Aura для:",
         list: [
           "Распространения контента, незаконного по применимым законам вашей юрисдикции или нашей.",
           "Пропаганды, прославления или подстрекательства к насилию, терроризму, экстремизму.",
@@ -71,7 +71,7 @@ export default function Terms() {
           "Распространения вредоносного ПО, шпионских программ или фишинга.",
           "Массовой рассылки нежелательных сообщений (спам).",
           "Нарушения интеллектуальных прав третьих лиц.",
-          "Попыток несанкционированного доступа к аккаунтам или инфраструктуре Nova.",
+          "Попыток несанкционированного доступа к аккаунтам или инфраструктуре Aura.",
           "Автоматизированной активности или ботов без явного разрешения.",
           "Нарушения любых применимых местных, национальных или международных законов.",
         ],
@@ -81,11 +81,11 @@ export default function Terms() {
       id: "4",
       en: {
         title: "User Content",
-        body: "You are solely responsible for all content you post or transmit through Nova. By submitting content, you warrant that you own or have the right to share it, and that it does not violate these Terms or any applicable law. Nova does not endorse user-generated content.",
+        body: "You are solely responsible for all content you post or transmit through Aura. By submitting content, you warrant that you own or have the right to share it, and that it does not violate these Terms or any applicable law. Aura does not endorse user-generated content.",
       },
       ru: {
         title: "Контент пользователей",
-        body: "Вы несёте полную ответственность за весь контент, публикуемый или передаваемый через Nova. Размещая контент, вы гарантируете, что владеете им или имеете право им делиться, и что он не нарушает настоящее Соглашение или применимые законы. Nova не несёт ответственности за пользовательский контент.",
+        body: "Вы несёте полную ответственность за весь контент, публикуемый или передаваемый через Aura. Размещая контент, вы гарантируете, что владеете им или имеете право им делиться, и что он не нарушает настоящее Соглашение или применимые законы. Aura не несёт ответственности за пользовательский контент.",
       },
     },
     {
@@ -115,11 +115,11 @@ export default function Terms() {
       id: "6",
       en: {
         title: "Content Moderation & Enforcement",
-        body: "Nova reserves the right to remove content that violates these Terms and to suspend or terminate accounts of users who repeatedly violate our policies. In serious cases (e.g., CSAM, terrorism), we will report to appropriate law enforcement authorities.",
+        body: "Aura reserves the right to remove content that violates these Terms and to suspend or terminate accounts of users who repeatedly violate our policies. In serious cases (e.g., CSAM, terrorism), we will report to appropriate law enforcement authorities.",
       },
       ru: {
         title: "Модерация и правоприменение",
-        body: "Nova оставляет за собой право удалять контент, нарушающий настоящее Соглашение, а также приостанавливать или удалять аккаунты нарушителей. В серьёзных случаях (например, CSAM, терроризм) Nova передаёт информацию в компетентные правоохранительные органы.",
+        body: "Aura оставляет за собой право удалять контент, нарушающий настоящее Соглашение, а также приостанавливать или удалять аккаунты нарушителей. В серьёзных случаях (например, CSAM, терроризм) Aura передаёт информацию в компетентные правоохранительные органы.",
       },
     },
     {
@@ -137,22 +137,22 @@ export default function Terms() {
       id: "8",
       en: {
         title: "Intellectual Property",
-        body: "Nova and its design, code, and branding are owned by the Service operator. You receive a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes. You retain ownership of content you create.",
+        body: "Aura and its design, code, and branding are owned by the Service operator. You receive a limited, non-exclusive, non-transferable license to use the Service for personal, non-commercial purposes. You retain ownership of content you create.",
       },
       ru: {
         title: "Интеллектуальная собственность",
-        body: "Nova, её дизайн, код и бренд принадлежат оператору Сервиса. Вам предоставляется ограниченная, неисключительная, непередаваемая лицензия на использование Сервиса в личных некоммерческих целях. Права на созданный вами контент остаются за вами.",
+        body: "Aura, её дизайн, код и бренд принадлежат оператору Сервиса. Вам предоставляется ограниченная, неисключительная, непередаваемая лицензия на использование Сервиса в личных некоммерческих целях. Права на созданный вами контент остаются за вами.",
       },
     },
     {
       id: "9",
       en: {
         title: "Disclaimer & Limitation of Liability",
-        body: "The Service is provided \"as is\". To the maximum extent permitted by law, Nova disclaims all warranties and shall not be liable for indirect, incidental, or consequential damages. Nova's liability shall not exceed the amount you paid for the Service (if any) in the 12 months prior to the claim.",
+        body: "The Service is provided \"as is\". To the maximum extent permitted by law, Aura disclaims all warranties and shall not be liable for indirect, incidental, or consequential damages. Aura's liability shall not exceed the amount you paid for the Service (if any) in the 12 months prior to the claim.",
       },
       ru: {
         title: "Отказ от гарантий и ограничение ответственности",
-        body: "Сервис предоставляется «как есть». В максимальной степени, допустимой применимым правом, Nova отказывается от любых гарантий и не несёт ответственности за косвенные, случайные или последующие убытки. Ответственность Nova ограничена суммой, уплаченной вами за Сервис (если таковая имеется) за 12 месяцев до предъявления требования.",
+        body: "Сервис предоставляется «как есть». В максимальной степени, допустимой применимым правом, Aura отказывается от любых гарантий и не несёт ответственности за косвенные, случайные или последующие убытки. Ответственность Aura ограничена суммой, уплаченной вами за Сервис (если таковая имеется) за 12 месяцев до предъявления требования.",
       },
     },
     {
@@ -237,8 +237,8 @@ export default function Terms() {
 
         <div className="p-4 bg-muted/40 rounded-2xl text-xs text-muted-foreground">
           {l === "en"
-            ? "These Terms of Service constitute a binding agreement between you and Nova Messenger. By using Nova, you acknowledge that you have read, understood, and agree to be bound by these Terms."
-            : "Настоящее Соглашение является обязательным договором между вами и Nova Messenger. Используя Nova, вы подтверждаете, что прочитали, поняли и согласны соблюдать его условия."}
+            ? "These Terms of Service constitute a binding agreement between you and Aura Messenger. By using Aura, you acknowledge that you have read, understood, and agree to be bound by these Terms."
+            : "Настоящее Соглашение является обязательным договором между вами и Aura Messenger. Используя Aura, вы подтверждаете, что прочитали, поняли и согласны соблюдать его условия."}
         </div>
       </div>
     </div>

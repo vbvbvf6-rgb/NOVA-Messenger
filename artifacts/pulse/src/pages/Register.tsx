@@ -285,7 +285,7 @@ export default function Register({ onLogin }: RegisterProps) {
             transition={{ delay: 0.2 }}
             className="text-center"
           >
-            <h1 className="text-4xl font-black tracking-tight text-foreground mb-1.5">Nova</h1>
+            <h1 className="text-4xl font-black tracking-tight text-foreground mb-1.5">Aura</h1>
             <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-[0.2em]">
               {step === "verify-email" ? "Подтверждение email" : "Новый аккаунт"}
             </p>
@@ -400,7 +400,7 @@ export default function Register({ onLogin }: RegisterProps) {
               </div>
               <h2 className="font-black text-2xl text-foreground mb-3">Доступ закрыт</h2>
               <p className="text-sm font-medium text-muted-foreground mb-6 leading-relaxed">
-                Вам <span className="text-foreground">{calculatedAge} {calculatedAge === 1 ? "год" : "лет"}</span>. Nova предназначен для пользователей старше 13 лет.
+                Вам <span className="text-foreground">{calculatedAge} {calculatedAge === 1 ? "год" : "лет"}</span>. Aura предназначен для пользователей старше 13 лет.
               </p>
               <button
                 onClick={() => { setDobDay(""); setDobMonth(""); setDobYear(""); setStep("age-gate"); }}
@@ -500,7 +500,7 @@ export default function Register({ onLogin }: RegisterProps) {
                     className="mt-1 w-5 h-5 rounded accent-green-500 cursor-pointer shrink-0"
                   />
                   <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors leading-relaxed">
-                    Я принимаю <a href="/terms" className="text-green-500 underline underline-offset-2 hover:text-green-400 transition-colors" onClick={e => e.stopPropagation()}>Пользовательское соглашение</a> и <a href="/privacy" className="text-green-500 underline underline-offset-2 hover:text-green-400 transition-colors" onClick={e => e.stopPropagation()}>Политику конфиденциальности</a> Nova.
+                    Я принимаю <a href="/terms" className="text-green-500 underline underline-offset-2 hover:text-green-400 transition-colors" onClick={e => e.stopPropagation()}>Пользовательское соглашение</a> и <a href="/privacy" className="text-green-500 underline underline-offset-2 hover:text-green-400 transition-colors" onClick={e => e.stopPropagation()}>Политику конфиденциальности</a> Aura.
                   </span>
                 </label>
               </div>
@@ -710,7 +710,7 @@ export default function Register({ onLogin }: RegisterProps) {
                 <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors underline underline-offset-2">
                   Политику конфиденциальности
                 </Link>{" "}
-                Nova. Ваши данные защищены в соответствии с GDPR и ФЗ-152.
+                Aura. Ваши данные защищены в соответствии с GDPR и ФЗ-152.
               </p>
             </motion.div>
           )}

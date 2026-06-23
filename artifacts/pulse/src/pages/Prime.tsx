@@ -379,7 +379,7 @@ export default function Prime() {
       queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       setShowModal(false);
       toast({
-        title: pendingTier === "prime_plus" ? "Nova Prime+ активирован! 💎" : "Nova Prime активирован! ⭐",
+        title: pendingTier === "prime_plus" ? "Aura Prime+ активирован! 💎" : "Aura Prime активирован! ⭐",
         description: `Остаток: ${data.balance} ⚡ Spark`,
       });
     } catch {
@@ -398,7 +398,7 @@ export default function Prime() {
           <Crown size={18} className="text-yellow-400" />
         </div>
         <div className="relative z-10">
-          <h1 className="font-black text-foreground text-xl leading-none tracking-tight">Nova Prime</h1>
+          <h1 className="font-black text-foreground text-xl leading-none tracking-tight">Aura Prime</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Эксклюзивные возможности</p>
         </div>
       </header>
@@ -476,7 +476,7 @@ export default function Prime() {
                     <Crown size={36} className="text-yellow-400" />
                   </div>
                 </motion.div>
-                <h2 className="text-2xl font-black text-foreground mb-1">Nova Prime</h2>
+                <h2 className="text-2xl font-black text-foreground mb-1">Aura Prime</h2>
                 <p className="text-muted-foreground text-sm max-w-xs mx-auto">
                   Золотые привилегии и эксклюзивные возможности
                 </p>
@@ -607,7 +607,7 @@ export default function Prime() {
                 <h2 className="text-2xl font-black mb-1"
                   style={{ background: "linear-gradient(90deg, #a855f7, #d946ef, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}
                 >
-                  Nova Prime+
+                  Aura Prime+
                 </h2>
                 <p className="text-muted-foreground text-sm max-w-xs mx-auto">
                   Максимум возможностей — всё от Prime плюс эксклюзив
@@ -802,7 +802,7 @@ export default function Prime() {
                       {pendingTier === "prime_plus" ? <Sparkles size={24} className="text-purple-400" /> : <Crown size={24} className="text-yellow-400" />}
                     </div>
                     <div>
-                      <h3 className="font-black text-base">{pendingTier === "prime_plus" ? "Nova Prime+" : "Nova Prime"}</h3>
+                      <h3 className="font-black text-base">{pendingTier === "prime_plus" ? "Aura Prime+" : "Aura Prime"}</h3>
                       <p className={`text-xs font-semibold ${pendingTier === "prime_plus" ? "text-purple-400" : "text-yellow-400"}`}>
                         {selectedPlan.name} — {selectedPlan.spark} ⚡ Spark
                       </p>

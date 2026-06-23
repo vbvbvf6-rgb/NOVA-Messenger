@@ -447,7 +447,7 @@ export function ChatList() {
             <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #ea580c, #f97316)", boxShadow: "0 2px 10px rgba(234,88,12,0.45)" }}>
               <Crown size={15} className="text-white" />
             </div>
-            <span className="text-[18px] font-black text-foreground tracking-tight">Nova</span>
+            <span className="text-[18px] font-black text-foreground tracking-tight">Aura</span>
           </div>
           <button
             onClick={openCreate}
