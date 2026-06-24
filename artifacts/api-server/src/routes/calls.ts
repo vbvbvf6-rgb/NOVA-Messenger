@@ -28,6 +28,37 @@ async function fetchXirsysIce(): Promise<RTCIceServer[]> {
   }
 }
 
+// Free public TURN servers via Open Relay Project (Metered.ca)
+// These require no credentials and work globally — good baseline for NAT traversal
+const FREE_TURN_SERVERS: RTCIceServer[] = [
+  { urls: "stun:stun.relay.metered.ca:80" },
+  {
+    urls: "turn:global.relay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:global.relay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:global.relay.metered.ca:80?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turns:global.relay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turns:global.relay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+];
+
 router.get("/calls/ice-servers", async (_req, res) => {
   const servers: RTCIceServer[] = [
     { urls: "stun:stun.l.google.com:19302" },
@@ -35,6 +66,7 @@ router.get("/calls/ice-servers", async (_req, res) => {
     { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
     { urls: "stun:global.stun.twilio.com:3478" },
+    ...FREE_TURN_SERVERS,
   ];
 
   // Generic TURN — works with ANY provider (Twilio, coturn, etc.)
