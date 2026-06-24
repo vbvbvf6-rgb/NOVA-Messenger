@@ -572,81 +572,60 @@ export function ActiveCall() {
             </div>
           )}
 
-          {/* ── CONTROL BAR ── */}
+          {/* ── CONTROL BAR ── single row ── */}
           <div className="absolute bottom-0 left-0 right-0 z-30">
-            {/* Semi-transparent bg for control bar */}
-            <div className={`absolute inset-0 ${isVideo ? "bg-black/40 backdrop-blur-md" : ""}`} />
-            <div className="relative mx-auto max-w-sm px-4 pb-[env(safe-area-inset-bottom,2.5rem)] pt-4 flex flex-col items-center gap-3">
-              {/* Secondary row: screen share + invite + speaker (video) */}
-              <div className="flex items-center gap-3">
-                {/* Screen share (video calls only) */}
-                {isVideo && (
-                  <ControlBtn
-                    active={isScreenSharing}
-                    activeColor="blue"
-                    isVideo={isVideo}
-                    onClick={isScreenSharing ? stopScreenShare : startScreenShare}
-                    label={isScreenSharing ? "Остановить показ экрана" : "Показать экран"}
-                  >
-                    {isScreenSharing ? <MonitorOff size={20} /> : <Monitor size={20} />}
-                  </ControlBtn>
-                )}
+            <div className={`absolute inset-0 ${isVideo ? "bg-black/50 backdrop-blur-md" : ""}`} />
+            <div
+              className="relative px-3 flex items-center justify-center gap-2 flex-wrap"
+              style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 1.75rem)", paddingTop: "1rem" }}
+            >
+              {/* Mic */}
+              <ControlBtn active={isMuted} activeColor="red" isVideo={isVideo} onClick={handleToggleMute} label={isMuted ? "Включить микр." : "Выключить микр."} shortLabel={isMuted ? "Включить" : "Микрофон"}>
+                {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+              </ControlBtn>
 
-                {/* Invite participant */}
-                <ControlBtn
-                  active={false}
-                  activeColor="blue"
-                  isVideo={isVideo}
-                  onClick={() => setShowInvite(true)}
-                  label="Пригласить участника"
-                >
-                  <UserPlus size={20} />
+              {/* Speaker */}
+              <ControlBtn active={isSpeakerOff} activeColor="red" isVideo={isVideo} onClick={() => setIsSpeakerOff((p) => !p)} label={isSpeakerOff ? "Включить динамик" : "Выключить динамик"} shortLabel={isSpeakerOff ? "Без звука" : "Динамик"}>
+                {isSpeakerOff ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              </ControlBtn>
+
+              {/* Camera toggle (video only) */}
+              {isVideo && (
+                <ControlBtn active={isVideoOff} activeColor="red" isVideo={isVideo} onClick={handleToggleVideo} label={isVideoOff ? "Включить камеру" : "Выключить камеру"} shortLabel={isVideoOff ? "Камера выкл" : "Камера"}>
+                  {isVideoOff ? <CameraOff size={20} /> : <Camera size={20} />}
                 </ControlBtn>
+              )}
 
-                {/* Speaker toggle (both audio and video calls) */}
-                <ControlBtn
-                  active={isSpeakerOff}
-                  activeColor="red"
-                  isVideo={isVideo}
-                  onClick={() => setIsSpeakerOff((p) => !p)}
-                  label={isSpeakerOff ? "Включить динамик" : "Выключить динамик"}
-                >
-                  {isSpeakerOff ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              {/* Flip camera (video only) */}
+              {isVideo && (
+                <ControlBtn active={false} activeColor="blue" isVideo={isVideo} onClick={handleFlipCamera} label="Перевернуть камеру" shortLabel="Повернуть">
+                  <FlipHorizontal size={20} />
                 </ControlBtn>
-              </div>
+              )}
 
-              {/* Main row */}
-              <div className="flex items-center justify-center gap-4">
-                {/* Mute */}
-                <ControlBtn active={isMuted} activeColor="red" isVideo={isVideo} onClick={handleToggleMute} label={isMuted ? "Включить микр." : "Выключить микр."}>
-                  {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
+              {/* Screen share (video only) */}
+              {isVideo && (
+                <ControlBtn active={isScreenSharing} activeColor="blue" isVideo={isVideo} onClick={isScreenSharing ? stopScreenShare : startScreenShare} label={isScreenSharing ? "Стоп демонстрация" : "Показать экран"} shortLabel={isScreenSharing ? "Стоп экран" : "Экран"}>
+                  {isScreenSharing ? <MonitorOff size={20} /> : <Monitor size={20} />}
                 </ControlBtn>
+              )}
 
-                {/* End call */}
+              {/* Invite */}
+              <ControlBtn active={false} activeColor="blue" isVideo={isVideo} onClick={() => setShowInvite(true)} label="Добавить участника" shortLabel="Добавить">
+                <UserPlus size={20} />
+              </ControlBtn>
+
+              {/* End call */}
+              <div className="flex flex-col items-center gap-1.5">
                 <motion.button
                   whileTap={{ scale: 0.92 }}
                   onClick={hangUp}
-                  className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.5)] hover:bg-red-600 transition-colors"
+                  className="w-12 h-12 rounded-full bg-red-500 text-white flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.5)] hover:bg-red-600 transition-colors"
                   title="Завершить"
                 >
-                  <PhoneOff size={26} />
+                  <PhoneOff size={22} />
                 </motion.button>
-
-                {/* Camera toggle (video) */}
-                {isVideo && (
-                  <>
-                    <ControlBtn active={isVideoOff} activeColor="red" isVideo={isVideo} onClick={handleToggleVideo} label={isVideoOff ? "Включить камеру" : "Выключить камеру"}>
-                      {isVideoOff ? <CameraOff size={22} /> : <Camera size={22} />}
-                    </ControlBtn>
-
-                    <ControlBtn active={false} activeColor="blue" isVideo={isVideo} onClick={handleFlipCamera} label="Перевернуть камеру">
-                      <FlipHorizontal size={22} />
-                    </ControlBtn>
-                  </>
-                )}
-
-                {/* Mute button for audio-only: keep it in this row (no cam buttons) */}
-                {/* Speaker for audio-only call is already in secondary row */}
+                <span className={`text-[10px] font-medium ${isVideo ? "text-white/70" : "text-muted-foreground"}`}>Завершить</span>
               </div>
             </div>
           </div>
@@ -665,7 +644,7 @@ export function ActiveCall() {
 }
 
 function ControlBtn({
-  children, active, activeColor, isVideo, onClick, label,
+  children, active, activeColor, isVideo, onClick, label, shortLabel,
 }: {
   children: React.ReactNode;
   active: boolean;
@@ -673,6 +652,7 @@ function ControlBtn({
   isVideo: boolean;
   onClick: () => void;
   label: string;
+  shortLabel: string;
 }) {
   const activeClass = activeColor === "red"
     ? "bg-red-500/30 text-red-400"
@@ -680,15 +660,19 @@ function ControlBtn({
   const inactiveClass = isVideo
     ? "bg-white/15 text-white hover:bg-white/25"
     : "bg-secondary text-foreground hover:bg-secondary/80";
+  const labelClass = isVideo ? "text-white/70" : "text-muted-foreground";
 
   return (
-    <motion.button
-      whileTap={{ scale: 0.9 }}
-      onClick={onClick}
-      title={label}
-      className={`w-14 h-14 rounded-full flex items-center justify-center transition-colors ${active ? activeClass : inactiveClass}`}
-    >
-      {children}
-    </motion.button>
+    <div className="flex flex-col items-center gap-1.5">
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={onClick}
+        title={label}
+        className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${active ? activeClass : inactiveClass}`}
+      >
+        {children}
+      </motion.button>
+      <span className={`text-[10px] font-medium leading-tight text-center ${labelClass}`}>{shortLabel}</span>
+    </div>
   );
 }
