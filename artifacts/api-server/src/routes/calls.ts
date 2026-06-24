@@ -7,37 +7,51 @@ import { broadcastToUser } from "../lib/sse";
 const router = Router();
 
 // ── ICE server config (served from backend so TURN creds stay server-side) ──
-router.get("/calls/ice-servers", (_req, res) => {
+// Xirsys: fetch short-lived credentials from their API (recommended)
+async function fetchXirsysIce(): Promise<RTCIceServer[]> {
+  const ident   = process.env.XIRSYS_IDENT;
+  const secret  = process.env.XIRSYS_SECRET;
+  const channel = process.env.XIRSYS_CHANNEL ?? "aura";
+  if (!ident || !secret) return [];
+  try {
+    const auth = Buffer.from(`${ident}:${secret}`).toString("base64");
+    const resp = await fetch(`https://global.xirsys.net/_turn/${channel}`, {
+      method: "PUT",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ format: "urls" }),
+    });
+    if (!resp.ok) return [];
+    const data = await resp.json() as { v?: { iceServers?: RTCIceServer[] } };
+    return Array.isArray(data?.v?.iceServers) ? data.v.iceServers : [];
+  } catch {
+    return [];
+  }
+}
+
+router.get("/calls/ice-servers", async (_req, res) => {
   const servers: RTCIceServer[] = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
     { urls: "stun:global.stun.twilio.com:3478" },
-    { urls: "stun:openrelay.metered.ca:80" },
   ];
 
-  // Custom TURN from env (set in Render dashboard, never baked into frontend bundle)
+  // Generic TURN — works with ANY provider (Twilio, coturn, etc.)
+  // Set TURN_URL, TURN_USER, TURN_CRED in your environment
   const turnUrl  = process.env.TURN_URL;
   const turnUser = process.env.TURN_USER;
   const turnCred = process.env.TURN_CRED;
   if (turnUrl && turnUser && turnCred) {
     servers.push({ urls: turnUrl, username: turnUser, credential: turnCred });
-    const tlsUrl = turnUrl.replace(/^turn:/, "turns:") + (turnUrl.includes("?") ? "" : "?transport=tcp");
+    // Also add TLS variant for strict firewalls
+    const tlsUrl = turnUrl.replace(/^turn:/, "turns:").replace(/(\?.*)?$/, "?transport=tcp");
     servers.push({ urls: tlsUrl, username: turnUser, credential: turnCred });
   }
 
-  // OpenRelay public TURN as fallback
-  const openRelayUser = "openrelayproject";
-  const openRelayCred = "openrelayproject";
-  servers.push(
-    { urls: "turn:openrelay.metered.ca:80",                    username: openRelayUser, credential: openRelayCred },
-    { urls: "turn:openrelay.metered.ca:443",                   username: openRelayUser, credential: openRelayCred },
-    { urls: "turn:openrelay.metered.ca:443?transport=tcp",     username: openRelayUser, credential: openRelayCred },
-    { urls: "turns:openrelay.metered.ca:443?transport=tcp",    username: openRelayUser, credential: openRelayCred },
-  );
+  // Xirsys TURN — set XIRSYS_IDENT + XIRSYS_SECRET to enable
+  const xirsysServers = await fetchXirsysIce();
+  servers.push(...xirsysServers);
 
   res.json({ iceServers: servers });
 });
