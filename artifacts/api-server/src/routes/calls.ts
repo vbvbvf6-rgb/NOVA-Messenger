@@ -10,14 +10,15 @@ const router = Router();
 
 // Metered.ca: generates per-request time-limited credentials (recommended, free tier available)
 // Embedded key works out of the box; override via METERED_API_KEY env var if needed
-const EMBEDDED_METERED_KEY = "83b0160103e6a4d931eb32dee124b7329923";
+const EMBEDDED_METERED_KEY = "c1849909a19114e1a7f4f5497847976a0b3b";
+const METERED_APP_URL = "https://pulse_messenger.metered.live";
 
 async function fetchMeteredIce(): Promise<RTCIceServer[]> {
   const apiKey = process.env.METERED_API_KEY || EMBEDDED_METERED_KEY;
   if (!apiKey) return [];
   try {
     const resp = await fetch(
-      `https://aura.metered.live/api/v1/turn/credentials?apiKey=${encodeURIComponent(apiKey)}`,
+      `${METERED_APP_URL}/api/v1/turn/credentials?apiKey=${encodeURIComponent(apiKey)}`,
       { signal: AbortSignal.timeout(4000) },
     );
     if (!resp.ok) return [];
