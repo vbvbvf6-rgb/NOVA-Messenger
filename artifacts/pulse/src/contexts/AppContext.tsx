@@ -221,14 +221,14 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     };
 
     pc.ontrack = (e) => {
-      const stream = e.streams?.[0];
-      if (stream) {
-        setRemoteStreams((prev) => {
-          const next = new Map(prev);
-          next.set(targetUserId, stream);
-          return next;
-        });
-      }
+      // e.streams[0] can be undefined in Firefox and some bundlePolicy configs —
+      // fall back to wrapping the individual track in a fresh MediaStream
+      const stream = e.streams?.[0] ?? new MediaStream([e.track]);
+      setRemoteStreams((prev) => {
+        const next = new Map(prev);
+        next.set(targetUserId, stream);
+        return next;
+      });
     };
 
     // ICE restart on disconnection — aggressive recovery for cross-network calls

@@ -272,9 +272,26 @@ export function ActiveCall() {
     if (remoteStream) {
       audio.srcObject = remoteStream;
       audio.volume = 1;
+      // Try to play; browsers may block autoplay — the unlock banner handles that case
       audio.play()
         .then(() => setAudioUnlocked(true))
-        .catch(() => setAudioUnlocked(false));
+        .catch(() => {
+          // Autoplay blocked — try unlocking via silent AudioContext trick
+          try {
+            const ac = new AudioContext();
+            if (ac.state === "suspended") {
+              ac.resume().then(() => {
+                audio.play()
+                  .then(() => setAudioUnlocked(true))
+                  .catch(() => setAudioUnlocked(false));
+              }).catch(() => setAudioUnlocked(false));
+            } else {
+              setAudioUnlocked(false);
+            }
+          } catch {
+            setAudioUnlocked(false);
+          }
+        });
     } else {
       audio.srcObject = null;
       setAudioUnlocked(false);
@@ -304,6 +321,9 @@ export function ActiveCall() {
   const handleUnlockAudio = () => {
     const audio = remoteAudioRef.current;
     if (!audio) return;
+    // Re-assign srcObject in case it lost the stream reference
+    if (remoteStream && !audio.srcObject) audio.srcObject = remoteStream;
+    audio.volume = 1;
     audio.play().then(() => setAudioUnlocked(true)).catch(() => {});
   };
 
@@ -415,19 +435,21 @@ export function ActiveCall() {
             </motion.div>
           )}
 
-          {/* Audio unlock banner — shown when browser blocks autoplay */}
+          {/* Audio unlock overlay — shown when browser blocks autoplay */}
           {!audioUnlocked && remoteStream && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute top-16 left-1/2 -translate-x-1/2 z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm cursor-pointer"
+              onClick={handleUnlockAudio}
             >
-              <button
-                onClick={handleUnlockAudio}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-lg"
-              >
-                <Volume2 size={14} /> Включить звук
-              </button>
+              <div className="flex flex-col items-center gap-4 text-white">
+                <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center shadow-2xl animate-pulse">
+                  <Volume2 size={36} />
+                </div>
+                <p className="text-xl font-bold">Нажмите, чтобы включить звук</p>
+                <p className="text-sm text-white/60">Браузер заблокировал автовоспроизведение</p>
+              </div>
             </motion.div>
           )}
 
