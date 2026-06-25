@@ -7,7 +7,26 @@ import { broadcastToUser } from "../lib/sse";
 const router = Router();
 
 // ── ICE server config (served from backend so TURN creds stay server-side) ──
-// Xirsys: fetch short-lived credentials from their API (recommended)
+
+// Metered.ca: generates per-request time-limited credentials (recommended, free tier available)
+// Register at https://dashboard.metered.ca/signup → API Keys → copy key → set METERED_API_KEY secret
+async function fetchMeteredIce(): Promise<RTCIceServer[]> {
+  const apiKey = process.env.METERED_API_KEY;
+  if (!apiKey) return [];
+  try {
+    const resp = await fetch(
+      `https://aura.metered.live/api/v1/turn/credentials?apiKey=${encodeURIComponent(apiKey)}`,
+      { signal: AbortSignal.timeout(4000) },
+    );
+    if (!resp.ok) return [];
+    const data = await resp.json() as RTCIceServer[];
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+// Xirsys: fetch short-lived credentials from their API
 async function fetchXirsysIce(): Promise<RTCIceServer[]> {
   const ident   = process.env.XIRSYS_IDENT;
   const secret  = process.env.XIRSYS_SECRET;
@@ -19,6 +38,7 @@ async function fetchXirsysIce(): Promise<RTCIceServer[]> {
       method: "PUT",
       headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
       body: JSON.stringify({ format: "urls" }),
+      signal: AbortSignal.timeout(4000),
     });
     if (!resp.ok) return [];
     const data = await resp.json() as { v?: { iceServers?: RTCIceServer[] } };
@@ -28,62 +48,61 @@ async function fetchXirsysIce(): Promise<RTCIceServer[]> {
   }
 }
 
-// Free public TURN servers via Open Relay Project (Metered.ca)
-// These require no credentials and work globally — good baseline for NAT traversal
-const FREE_TURN_SERVERS: RTCIceServer[] = [
+// Fallback public TURN servers — multiple providers for maximum coverage across networks
+// These are last-resort relays; dedicated credentials (METERED_API_KEY) are strongly preferred
+const FALLBACK_TURN_SERVERS: RTCIceServer[] = [
+  // Metered.ca Open Relay (public shared creds — rate limited but globally distributed)
   { urls: "stun:stun.relay.metered.ca:80" },
-  {
-    urls: "turn:global.relay.metered.ca:80",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:global.relay.metered.ca:443",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:global.relay.metered.ca:80?transport=tcp",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turns:global.relay.metered.ca:443",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turns:global.relay.metered.ca:443?transport=tcp",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
+  { urls: "turn:global.relay.metered.ca:80",         username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:global.relay.metered.ca:443",        username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:global.relay.metered.ca:80?transport=tcp",  username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turns:global.relay.metered.ca:443",       username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+  // Numb — secondary free TURN relay
+  { urls: "turn:numb.viagenie.ca", username: "webrtc@live.com", credential: "muazkh" },
+  { urls: "turns:numb.viagenie.ca", username: "webrtc@live.com", credential: "muazkh" },
 ];
 
 router.get("/calls/ice-servers", async (_req, res) => {
+  // Base STUN servers — diverse providers for global coverage
   const servers: RTCIceServer[] = [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
     { urls: "stun:global.stun.twilio.com:3478" },
-    ...FREE_TURN_SERVERS,
+    { urls: "stun:stun.nextcloud.com:443" },
   ];
 
-  // Generic TURN — works with ANY provider (Twilio, coturn, etc.)
-  // Set TURN_URL, TURN_USER, TURN_CRED in your environment
+  // Prefer dedicated TURN providers (fetched in parallel for speed)
+  const [meteredServers, xirsysServers] = await Promise.all([
+    fetchMeteredIce(),
+    fetchXirsysIce(),
+  ]);
+
+  if (meteredServers.length > 0) {
+    // Metered.ca gave us fresh per-request credentials — use those
+    servers.push(...meteredServers);
+  } else if (xirsysServers.length > 0) {
+    // Xirsys gave us fresh credentials
+    servers.push(...xirsysServers);
+  } else {
+    // Neither premium provider configured — fall back to public servers
+    servers.push(...FALLBACK_TURN_SERVERS);
+  }
+
+  // Generic TURN override — works with ANY provider (Twilio, coturn, etc.)
+  // Set TURN_URL, TURN_USER, TURN_CRED in your environment to use your own server
   const turnUrl  = process.env.TURN_URL;
   const turnUser = process.env.TURN_USER;
   const turnCred = process.env.TURN_CRED;
   if (turnUrl && turnUser && turnCred) {
     servers.push({ urls: turnUrl, username: turnUser, credential: turnCred });
-    // Also add TLS variant for strict firewalls
     const tlsUrl = turnUrl.replace(/^turn:/, "turns:").replace(/(\?.*)?$/, "?transport=tcp");
     servers.push({ urls: tlsUrl, username: turnUser, credential: turnCred });
   }
-
-  // Xirsys TURN — set XIRSYS_IDENT + XIRSYS_SECRET to enable
-  const xirsysServers = await fetchXirsysIce();
-  servers.push(...xirsysServers);
 
   res.json({ iceServers: servers });
 });

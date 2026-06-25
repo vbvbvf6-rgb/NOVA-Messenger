@@ -198,14 +198,14 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const createPeer = useCallback((targetUserId: number, roomId: number): RTCPeerConnection => {
     const pc = new RTCPeerConnection({
       iceServers: iceServersRef.current,
-      // bundle all media into one transport — reduces ICE candidates & ports needed
-      bundlePolicy: "max-bundle",
-      // use a single RTCP mux — simpler traversal through firewalls
+      // balanced: try direct first, relay via TURN if needed — works across any NAT
+      bundlePolicy: "balanced",
       rtcpMuxPolicy: "require",
-      // allow both relay (TURN) and direct (host/srflx) — required for international calls
+      // "all" = use both direct + relay paths; browser picks fastest that works
       iceTransportPolicy: "all",
     });
 
+    // Send ICE candidates as they trickle in — don't wait for gathering to finish
     pc.onicecandidate = (e) => {
       if (e.candidate && socketRef.current) {
         socketRef.current.emit("webrtc-signal", {
@@ -214,41 +214,64 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
           signal: { type: "ice", candidate: e.candidate.toJSON() },
         });
       }
+      // null candidate = gathering complete; log for diagnostics
+      if (!e.candidate) {
+        console.debug(`[WebRTC] ICE gathering complete for peer ${targetUserId}`);
+      }
     };
 
     pc.ontrack = (e) => {
-      if (e.streams?.[0]) {
+      const stream = e.streams?.[0];
+      if (stream) {
         setRemoteStreams((prev) => {
           const next = new Map(prev);
-          next.set(targetUserId, e.streams[0]);
+          next.set(targetUserId, stream);
           return next;
         });
       }
     };
 
-    // ICE restart on disconnection — try to recover before giving up
+    // ICE restart on disconnection — aggressive recovery for cross-network calls
     let iceRestartTimer: ReturnType<typeof setTimeout> | null = null;
+    let iceRestartCount = 0;
+    const MAX_ICE_RESTARTS = 3;
+
     pc.oniceconnectionstatechange = () => {
       const ice = pc.iceConnectionState;
+      console.debug(`[WebRTC] ICE state → ${ice} (peer ${targetUserId})`);
+
       if (ice === "failed") {
-        // Attempt ICE restart immediately on hard failure
-        try { pc.restartIce(); } catch (_) {}
+        // Hard failure — restart ICE immediately (up to MAX_ICE_RESTARTS times)
+        if (iceRestartCount < MAX_ICE_RESTARTS) {
+          iceRestartCount++;
+          console.debug(`[WebRTC] ICE restart #${iceRestartCount}`);
+          try { pc.restartIce(); } catch (_) {}
+        } else {
+          window.dispatchEvent(new CustomEvent("pulse:call-error", {
+            detail: { message: "Не удалось установить соединение. Проверьте интернет." },
+          }));
+        }
       } else if (ice === "disconnected") {
-        // "disconnected" can be transient — give it 4 s before restarting
+        // Transient disconnect — give it 3 s then restart
         iceRestartTimer = setTimeout(() => {
           if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
-            try { pc.restartIce(); } catch (_) {}
+            if (iceRestartCount < MAX_ICE_RESTARTS) {
+              iceRestartCount++;
+              try { pc.restartIce(); } catch (_) {}
+            }
           }
-        }, 4000);
+        }, 3000);
       } else if (ice === "connected" || ice === "completed") {
+        // Successfully connected — reset restart counter and clear timer
+        iceRestartCount = 0;
         if (iceRestartTimer) { clearTimeout(iceRestartTimer); iceRestartTimer = null; }
+        console.debug(`[WebRTC] Connected to peer ${targetUserId} ✓`);
       }
     };
 
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState;
-      // "disconnected" is a transient state — ICE may recover on its own.
-      // Only tear down on permanently terminal states.
+      console.debug(`[WebRTC] Connection state → ${state} (peer ${targetUserId})`);
       if (state === "failed" || state === "closed") {
         if (iceRestartTimer) { clearTimeout(iceRestartTimer); iceRestartTimer = null; }
         peersRef.current.delete(targetUserId);
@@ -258,9 +281,8 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
           return next;
         });
         if (state === "failed") {
-          // WebRTC failed — notify UI but keep call alive so user can still hang up manually
           window.dispatchEvent(new CustomEvent("pulse:call-error", {
-            detail: { message: "Соединение прервано. Проверьте интернет или настройте TURN-сервер." },
+            detail: { message: "Соединение разорвано. Попробуйте позвонить снова." },
           }));
         } else if (state === "closed" && peersRef.current.size === 0) {
           cleanupCall();
