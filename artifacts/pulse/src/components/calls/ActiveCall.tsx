@@ -215,6 +215,9 @@ export function ActiveCall() {
   const [showInvite, setShowInvite] = useState(false);
   const [callError, setCallError] = useState<string | null>(null);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
+  // Track whether streams actually have video tracks (camera available)
+  const [hasLocalVideo, setHasLocalVideo] = useState(false);
+  const [hasRemoteVideo, setHasRemoteVideo] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -247,10 +250,18 @@ export function ActiveCall() {
     return () => clearInterval(interval);
   }, [activeCall?.id, activeCall?.status]);
 
+  // Local video — always attach when stream changes; video element is always mounted
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-      localVideoRef.current.play().catch(() => {});
+    const video = localVideoRef.current;
+    if (!video) return;
+    if (localStream) {
+      video.srcObject = localStream;
+      video.play().catch(() => {});
+      const hasCam = localStream.getVideoTracks().some((t) => t.enabled && t.readyState !== "ended");
+      setHasLocalVideo(hasCam);
+    } else {
+      video.srcObject = null;
+      setHasLocalVideo(false);
     }
   }, [localStream]);
 
@@ -270,15 +281,18 @@ export function ActiveCall() {
     }
   }, [remoteStream]);
 
-  // Remote video (video tracks only — audio is handled by the audio element above)
+  // Remote video — always mounted, hidden when no video tracks
   useEffect(() => {
     const video = remoteVideoRef.current;
     if (!video) return;
     if (remoteStream) {
       video.srcObject = remoteStream;
       video.play().catch(() => {});
+      const hasCam = remoteStream.getVideoTracks().some((t) => t.readyState !== "ended");
+      setHasRemoteVideo(hasCam);
     } else {
       video.srcObject = null;
+      setHasRemoteVideo(false);
     }
   }, [remoteStream]);
 
