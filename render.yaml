@@ -6,9 +6,9 @@ services:
     buildCommand: npm install -g pnpm@10 && pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server run build && BASE_PATH=/ pnpm --filter @workspace/pulse run build
     startCommand: node --enable-source-maps ./artifacts/api-server/dist/index.mjs
     plan: free
-    healthCheckPath: /api/healthz
+    healthCheckPath: /api/health
     # Render автоматически задаёт PORT, DATABASE_URL читается из envVars
-    autoDeploy: false
+    autoDeploy: true
 
     envVars:
       - key: NODE_ENV

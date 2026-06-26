@@ -1,4 +1,4 @@
-const CACHE_NAME = "aura-v1";
+const CACHE_NAME = "aura-__BUILD_VERSION__";
 const SHELL_URLS = ["/", "/manifest.json", "/favicon.svg", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {

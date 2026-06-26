@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import path from "node:path";
+import fs from "node:fs";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { initSocketIO } from "./lib/socket";
@@ -28,7 +29,11 @@ if (Number.isNaN(port) || port <= 0) {
 // In production the Dockerfile copies lib/db/drizzle/ → /app/migrations/.
 // In dev (Replit) the DB is managed by drizzle-kit push, so we skip this.
 if (process.env.NODE_ENV === "production") {
-  const migrationsFolder = path.join(process.cwd(), "migrations");
+  // Docker mode: migrations/ is at /app/migrations (copied from lib/db/drizzle)
+  // Render Node.js mode: migrations live at lib/db/drizzle relative to project root
+  const dockerPath = path.join(process.cwd(), "migrations");
+  const nativePath = path.join(process.cwd(), "lib/db/drizzle");
+  const migrationsFolder = fs.existsSync(dockerPath) ? dockerPath : nativePath;
   try {
     logger.info({ migrationsFolder }, "Running DB migrations…");
     await migrate(db, { migrationsFolder });
