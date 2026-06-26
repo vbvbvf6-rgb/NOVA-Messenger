@@ -3,9 +3,22 @@ import { setBaseUrl } from "@workspace/api-client-react";
 import App from "./App";
 import "./index.css";
 
-// When deployed on Vercel (frontend-only), VITE_API_URL points to the Render backend.
+// When deployed on Vercel (frontend-only), VITE_API_URL points to the backend server.
 // In local dev or single-server deploys this is empty and relative URLs are used.
-setBaseUrl(import.meta.env.VITE_API_URL ?? "");
+const _API_BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+setBaseUrl(_API_BASE || null);
+
+// Patch global fetch so every raw fetch("/api/…") call is also redirected
+// to the remote backend when VITE_API_URL is set.
+if (_API_BASE) {
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    if (typeof input === "string" && input.startsWith("/api")) {
+      input = `${_API_BASE}${input}`;
+    }
+    return _origFetch(input, init);
+  };
+}
 
 const _savedFs = localStorage.getItem("pulse-font-size");
 const _fsMap: Record<string, string> = { small: "13px", medium: "15px", large: "17px" };
