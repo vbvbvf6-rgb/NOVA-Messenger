@@ -61,9 +61,9 @@ const FALLBACK_TURN_SERVERS: RTCIceServer[] = [
   { urls: "turn:global.relay.metered.ca:80?transport=tcp",  username: "openrelayproject", credential: "openrelayproject" },
   { urls: "turns:global.relay.metered.ca:443",       username: "openrelayproject", credential: "openrelayproject" },
   { urls: "turns:global.relay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-  // ExpressTurn — free public TURN relay
-  { urls: "turn:free.expressturn.com:3478", username: "efun", credential: "expressturn" },
-  { urls: "turn:free.expressturn.com:3478?transport=tcp", username: "efun", credential: "expressturn" },
+  // ExpressTurn — free public TURN relay (account key)
+  { urls: "turn:free.expressturn.com:3478", username: "efun", credential: "b211abe84d3263408ab0d6a0c46ed6e0a15f" },
+  { urls: "turn:free.expressturn.com:3478?transport=tcp", username: "efun", credential: "b211abe84d3263408ab0d6a0c46ed6e0a15f" },
   // Numb — secondary free TURN relay
   { urls: "turn:numb.viagenie.ca", username: "webrtc@live.com", credential: "muazkh" },
   { urls: "turns:numb.viagenie.ca", username: "webrtc@live.com", credential: "muazkh" },
