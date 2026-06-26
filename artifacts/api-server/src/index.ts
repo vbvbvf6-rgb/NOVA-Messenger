@@ -1,10 +1,12 @@
 import { createServer } from "node:http";
+import path from "node:path";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { initSocketIO } from "./lib/socket";
 import { runSeed } from "./seed";
 import { db, messagesTable } from "@workspace/db";
 import { sql, and, eq, lte } from "drizzle-orm";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { broadcastToChat } from "./lib/sse";
 import { runWeeklyScan } from "./routes/admin";
 
@@ -20,6 +22,20 @@ const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+// ── Auto-migrate on startup (production / Docker only) ────────────────────
+// In production the Dockerfile copies lib/db/drizzle/ → /app/migrations/.
+// In dev (Replit) the DB is managed by drizzle-kit push, so we skip this.
+if (process.env.NODE_ENV === "production") {
+  const migrationsFolder = path.join(process.cwd(), "migrations");
+  try {
+    logger.info({ migrationsFolder }, "Running DB migrations…");
+    await migrate(db, { migrationsFolder });
+    logger.info("DB migrations complete ✓");
+  } catch (migErr) {
+    logger.warn({ err: migErr }, "DB migration warning (non-fatal) — server will continue");
+  }
 }
 
 const httpServer = createServer(app);

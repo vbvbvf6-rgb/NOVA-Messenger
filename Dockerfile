@@ -40,6 +40,7 @@ RUN npm install --omit=dev nodemailer@^8
 
 COPY --from=builder /workspace/artifacts/api-server/dist ./artifacts/api-server/dist
 COPY --from=builder /workspace/artifacts/pulse/dist ./artifacts/pulse/dist
+COPY --from=builder /workspace/lib/db/drizzle ./migrations
 
 ENV NODE_ENV=production
 
