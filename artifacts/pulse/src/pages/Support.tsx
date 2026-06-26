@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bug, MessageSquare, Plus, Send, ChevronLeft, ChevronRight,
-  CheckCircle2, Clock, X, RefreshCw, AlertCircle, Inbox, Crown, Zap
+  CheckCircle2, Clock, X, RefreshCw, AlertCircle, Inbox, Crown, Zap,
+  Trash2, Paperclip, Image, Flag
 } from "lucide-react";
 import { useGetMe } from "@workspace/api-client-react";
 import { useSearch } from "wouter";
@@ -163,6 +164,7 @@ function BugReportsList() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -174,6 +176,16 @@ function BugReportsList() {
   };
 
   useEffect(() => { fetchReports(); }, []);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Удалить этот репорт?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/support/bugs/${id}`, { method: "DELETE", headers: getHeader() });
+      if (res.ok) setReports(prev => prev.filter(r => r.id !== id));
+    } catch {}
+    setDeletingId(null);
+  };
 
   if (showForm) {
     return (
@@ -213,8 +225,17 @@ function BugReportsList() {
           {reports.map(r => (
             <div key={r.id} className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-start justify-between gap-2 mb-2">
-                <p className="font-semibold text-sm">{r.title}</p>
-                {statusBadge(r.status)}
+                <p className="font-semibold text-sm flex-1">{r.title}</p>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {statusBadge(r.status)}
+                  <button
+                    onClick={() => handleDelete(r.id)}
+                    disabled={deletingId === r.id}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors disabled:opacity-40"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{r.description}</p>
               <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
@@ -243,7 +264,12 @@ function TicketThread({ ticketId, onBack }: { ticketId: number; onBack: () => vo
   const [loading, setLoading] = useState(true);
   const [msgText, setMsgText] = useState("");
   const [sending, setSending] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [showAppeal, setShowAppeal] = useState(false);
+  const [appealText, setAppealText] = useState("");
+  const [appealSending, setAppealSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const fetchTicket = async () => {
     try {
@@ -256,27 +282,59 @@ function TicketThread({ ticketId, onBack }: { ticketId: number; onBack: () => vo
   useEffect(() => { fetchTicket(); }, [ticketId]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [ticket?.messages?.length]);
 
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!msgText.trim() || sending) return;
+    if ((!msgText.trim() && !photoPreview) || sending) return;
     setSending(true);
     try {
       const res = await fetch(`/api/support/tickets/${ticketId}/messages`, {
         method: "POST",
         headers: getHeader(),
-        body: JSON.stringify({ text: msgText.trim() }),
+        body: JSON.stringify({ text: msgText.trim() || " ", imageUrl: photoPreview || undefined }),
       });
       if (res.ok) {
         const msg = await res.json();
         setTicket((t: any) => ({ ...t, messages: [...(t.messages || []), msg] }));
         setMsgText("");
+        setPhotoPreview(null);
       }
     } catch {}
     setSending(false);
   };
 
+  const handleAppeal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!appealText.trim() || appealSending) return;
+    setAppealSending(true);
+    try {
+      const res = await fetch(`/api/support/tickets/${ticketId}/messages`, {
+        method: "POST",
+        headers: getHeader(),
+        body: JSON.stringify({ text: `🚩 АПЕЛЛЯЦИЯ: ${appealText.trim()}`, imageUrl: undefined }),
+      });
+      if (res.ok) {
+        const msg = await res.json();
+        setTicket((t: any) => ({ ...t, status: "open", messages: [...(t.messages || []), msg] }));
+        setShowAppeal(false);
+        setAppealText("");
+      }
+    } catch {}
+    setAppealSending(false);
+  };
+
   if (loading) return <div className="flex items-center justify-center py-16"><RefreshCw size={24} className="animate-spin text-muted-foreground" /></div>;
   if (!ticket) return <div className="text-center py-16 text-muted-foreground">Тикет не найден</div>;
+
+  const isClosed = ticket.status === "closed" || ticket.status === "resolved";
 
   return (
     <div className="flex flex-col h-full">
@@ -304,7 +362,10 @@ function TicketThread({ ticketId, onBack }: { ticketId: number; onBack: () => vo
               {msg.is_admin && (
                 <p className="text-[10px] font-bold text-primary mb-0.5 uppercase tracking-wider">Поддержка</p>
               )}
-              <p className="whitespace-pre-wrap">{msg.text}</p>
+              {msg.image_url && (
+                <img src={msg.image_url} alt="Фото" className="rounded-xl mb-2 max-w-[240px] max-h-48 object-cover cursor-pointer" onClick={() => window.open(msg.image_url, "_blank")} />
+              )}
+              {msg.text && msg.text.trim() !== " " && <p className="whitespace-pre-wrap">{msg.text}</p>}
               <p className={`text-[10px] mt-1 ${msg.is_admin ? "text-muted-foreground" : "text-primary-foreground/60"}`}>
                 {new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
               </p>
@@ -314,24 +375,71 @@ function TicketThread({ ticketId, onBack }: { ticketId: number; onBack: () => vo
         <div ref={bottomRef} />
       </div>
 
-      {ticket.status === 'closed' ? (
-        <div className="text-center text-sm text-muted-foreground py-3 border-t border-border">Тикет закрыт</div>
+      {isClosed ? (
+        <div className="shrink-0 border-t border-border pt-3">
+          <p className="text-center text-sm text-muted-foreground mb-3">Тикет закрыт</p>
+          {!showAppeal ? (
+            <button
+              onClick={() => setShowAppeal(true)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-500/30 bg-orange-500/5 text-orange-400 hover:bg-orange-500/10 text-sm font-semibold transition-colors"
+            >
+              <Flag size={14} /> Подать апелляцию
+            </button>
+          ) : (
+            <form onSubmit={handleAppeal} className="space-y-2">
+              <textarea
+                value={appealText}
+                onChange={e => setAppealText(e.target.value)}
+                placeholder="Опишите причину апелляции..."
+                rows={3}
+                className="w-full bg-background border border-orange-500/30 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500/50 transition-colors resize-none"
+              />
+              <div className="flex gap-2">
+                <button type="button" onClick={() => { setShowAppeal(false); setAppealText(""); }} className="flex-1 py-2 rounded-xl border border-border text-muted-foreground text-sm font-semibold hover:bg-secondary transition-colors">
+                  Отмена
+                </button>
+                <button type="submit" disabled={!appealText.trim() || appealSending} className="flex-1 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold disabled:opacity-50 transition-colors">
+                  {appealSending ? "Отправка..." : "Отправить"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       ) : (
-        <form onSubmit={handleSend} className="flex gap-2 shrink-0">
-          <input
-            value={msgText}
-            onChange={e => setMsgText(e.target.value)}
-            placeholder="Написать сообщение..."
-            className="flex-1 bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={!msgText.trim() || sending}
-            className="p-2.5 bg-primary text-primary-foreground rounded-xl disabled:opacity-50 hover:bg-primary/90 transition-colors"
-          >
-            <Send size={16} />
-          </button>
-        </form>
+        <div className="shrink-0">
+          {photoPreview && (
+            <div className="relative mb-2 inline-block">
+              <img src={photoPreview} alt="Превью" className="rounded-xl max-h-28 object-cover border border-border" />
+              <button onClick={() => setPhotoPreview(null)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-destructive text-white rounded-full flex items-center justify-center">
+                <X size={10} />
+              </button>
+            </div>
+          )}
+          <form onSubmit={handleSend} className="flex gap-2">
+            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              className="p-2.5 rounded-xl border border-border text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors shrink-0"
+              title="Прикрепить фото"
+            >
+              <Image size={16} />
+            </button>
+            <input
+              value={msgText}
+              onChange={e => setMsgText(e.target.value)}
+              placeholder="Написать сообщение..."
+              className="flex-1 bg-background border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={(!msgText.trim() && !photoPreview) || sending}
+              className="p-2.5 bg-primary text-primary-foreground rounded-xl disabled:opacity-50 hover:bg-primary/90 transition-colors"
+            >
+              <Send size={16} />
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );
@@ -485,7 +593,7 @@ export default function Support() {
       <header className="border-b border-border flex items-center px-5 gap-3 bg-card/90 backdrop-blur-xl z-10 shrink-0 relative overflow-hidden" style={{ minHeight: "calc(4rem + env(safe-area-inset-top, 0px))", paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="absolute inset-0 bg-gradient-to-r from-primary/6 via-transparent to-transparent pointer-events-none" />
         <div className="flex items-center gap-3 relative z-10 flex-1">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, rgba(234,88,12,0.15), rgba(234,88,12,0.05))", border: "1px solid rgba(234,88,12,0.2)" }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.05))", border: "1px solid rgba(59,130,246,0.2)" }}>
             <MessageSquare size={17} className="text-primary" />
           </div>
           <h1 className="text-xl font-black text-foreground">Поддержка</h1>

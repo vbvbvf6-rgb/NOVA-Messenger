@@ -50,8 +50,8 @@ const CHAT_THEMES: ChatTheme[] = [
   {
     id: "sunset", name: "Закат", emoji: "🌅", tier: "prime",
     bg: { background: "linear-gradient(160deg, #fff5f0 0%, #fff0e6 40%, #fef3c7 100%)" },
-    bubble: { background: "linear-gradient(135deg, #ea580c, #f97316)", boxShadow: "0 2px 12px rgba(234,88,12,0.2)" },
-    preview: "linear-gradient(135deg, #ea580c, #f97316)",
+    bubble: { background: "linear-gradient(135deg, #3b82f6, #60a5fa)", boxShadow: "0 2px 12px rgba(59,130,246,0.2)" },
+    preview: "linear-gradient(135deg, #3b82f6, #60a5fa)",
   },
   {
     id: "ocean", name: "Океан", emoji: "🌊", tier: "prime",

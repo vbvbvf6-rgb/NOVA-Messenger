@@ -123,6 +123,9 @@ app.use("/api/users/me", express.json({ limit: "5mb" })); // avatar upload via b
 // Voice messages are base64-encoded audio blobs — allow up to 25mb
 app.use("/api/messages", express.json({ limit: "25mb" }));
 app.use("/api/messages", express.urlencoded({ extended: true, limit: "25mb" }));
+// Support messages can contain base64 photos
+app.use("/api/support", express.json({ limit: "10mb" }));
+app.use("/api/support", express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
@@ -225,14 +228,52 @@ const PUBLIC_API_PATHS = [
   "/invite",
 ];
 
-app.use((req: Request, _res: Response, next: NextFunction) => {
+// ── Session validity cache — avoids DB hit on every request ──────────────
+// Maps sessionId → { valid: boolean, expires: timestamp }
+const sessionCache = new Map<string, { valid: boolean; expires: number }>();
+const SESSION_CACHE_TTL = 30_000; // 30 seconds
+
+async function isSessionValid(sid: string): Promise<boolean> {
+  const now = Date.now();
+  const cached = sessionCache.get(sid);
+  if (cached && cached.expires > now) return cached.valid;
+  try {
+    const { db } = await import("@workspace/db");
+    const { sql } = await import("drizzle-orm");
+    const rows = await db.execute(sql`SELECT 1 FROM user_sessions WHERE id = ${sid} LIMIT 1`);
+    const valid = rows.rows.length > 0;
+    sessionCache.set(sid, { valid, expires: now + SESSION_CACHE_TTL });
+    // Update last_active_at in background (don't await)
+    if (valid) {
+      db.execute(sql`UPDATE user_sessions SET last_active_at = NOW() WHERE id = ${sid}`).catch(() => {});
+    }
+    return valid;
+  } catch {
+    return true; // fail-open: don't lock out users if DB is down
+  }
+}
+
+// Invalidate cache entry when session is terminated
+export function invalidateSessionCache(sid: string) {
+  sessionCache.delete(sid);
+}
+
+app.use(async (req: Request, _res: Response, next: NextFunction) => {
   // 1. JWT from Authorization header (normal API calls)
   const authHeader = req.headers["authorization"];
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
     try {
-      const payload = jwt.verify(token, EFFECTIVE_JWT_SECRET) as { userId: number; pending2fa?: boolean };
+      const payload = jwt.verify(token, EFFECTIVE_JWT_SECRET) as { userId: number; sid?: string; pending2fa?: boolean };
       if (!payload.pending2fa && Number.isFinite(payload.userId) && payload.userId > 0) {
+        // If token has a session ID, validate it exists in DB
+        if (payload.sid) {
+          const valid = await isSessionValid(payload.sid);
+          if (!valid) {
+            req.currentUserId = 0;
+            return next();
+          }
+        }
         req.currentUserId = payload.userId;
         return next();
       }
@@ -243,8 +284,15 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   const queryToken = (req.query._token as string | undefined) || (req.query.token as string | undefined);
   if (queryToken) {
     try {
-      const payload = jwt.verify(queryToken, EFFECTIVE_JWT_SECRET) as { userId: number; pending2fa?: boolean };
+      const payload = jwt.verify(queryToken, EFFECTIVE_JWT_SECRET) as { userId: number; sid?: string; pending2fa?: boolean };
       if (!payload.pending2fa && Number.isFinite(payload.userId) && payload.userId > 0) {
+        if (payload.sid) {
+          const valid = await isSessionValid(payload.sid);
+          if (!valid) {
+            req.currentUserId = 0;
+            return next();
+          }
+        }
         req.currentUserId = payload.userId;
         return next();
       }

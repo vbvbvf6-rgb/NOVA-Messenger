@@ -1700,36 +1700,48 @@ export default function Admin() {
                         {bug.admin_note && (
                           <div className="pl-9 text-[10px] text-primary italic">Ответ: {bug.admin_note}</div>
                         )}
-                        {bug.status !== 'resolved' && bug.status !== 'closed' && (
-                          <div className="pl-9 space-y-1.5">
-                            <div className="flex gap-1.5">
-                              {(['acknowledged', 'in_progress', 'resolved'] as const).map(s => (
+                        <div className="pl-9 space-y-1.5">
+                          {(bug.status !== 'resolved' && bug.status !== 'closed') && (
+                            <>
+                              <div className="flex gap-1.5">
+                                {(['acknowledged', 'in_progress', 'resolved'] as const).map(s => (
+                                  <button
+                                    key={s}
+                                    onClick={() => setBugStatusEdit(prev => ({ ...prev, [bug.id]: s }))}
+                                    className={`text-[10px] px-2 py-1 rounded-lg border transition-all ${bugStatusEdit[bug.id] === s ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                                  >
+                                    {s === 'acknowledged' ? 'Принят' : s === 'in_progress' ? 'В работе' : 'Решён'}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="flex gap-1.5">
+                                <input
+                                  value={bugNote[bug.id] || ""}
+                                  onChange={e => setBugNote(prev => ({ ...prev, [bug.id]: e.target.value }))}
+                                  placeholder="Ответ пользователю (необязательно)..."
+                                  className="flex-1 bg-background border border-border rounded-lg px-2 py-1 text-[10px] focus:outline-none focus:border-primary transition-colors"
+                                />
                                 <button
-                                  key={s}
-                                  onClick={() => setBugStatusEdit(prev => ({ ...prev, [bug.id]: s }))}
-                                  className={`text-[10px] px-2 py-1 rounded-lg border transition-all ${bugStatusEdit[bug.id] === s ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}
+                                  onClick={() => handleBugUpdate(bug.id)}
+                                  disabled={bugActionId === bug.id || (!bugStatusEdit[bug.id] && !bugNote[bug.id])}
+                                  className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
                                 >
-                                  {s === 'acknowledged' ? 'Принят' : s === 'in_progress' ? 'В работе' : 'Решён'}
+                                  {bugActionId === bug.id ? "..." : "Сохранить"}
                                 </button>
-                              ))}
-                            </div>
-                            <div className="flex gap-1.5">
-                              <input
-                                value={bugNote[bug.id] || ""}
-                                onChange={e => setBugNote(prev => ({ ...prev, [bug.id]: e.target.value }))}
-                                placeholder="Ответ пользователю (необязательно)..."
-                                className="flex-1 bg-background border border-border rounded-lg px-2 py-1 text-[10px] focus:outline-none focus:border-primary transition-colors"
-                              />
-                              <button
-                                onClick={() => handleBugUpdate(bug.id)}
-                                disabled={bugActionId === bug.id || (!bugStatusEdit[bug.id] && !bugNote[bug.id])}
-                                className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground text-[10px] font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
-                              >
-                                {bugActionId === bug.id ? "..." : "Сохранить"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                              </div>
+                            </>
+                          )}
+                          <button
+                            onClick={async () => {
+                              if (!confirm("Удалить репорт?")) return;
+                              const res = await fetch(`/api/admin/support/bugs/${bug.id}`, { method: "DELETE", headers: getHeader() });
+                              if (res.ok) setBugs(prev => prev.filter(b => b.id !== bug.id));
+                            }}
+                            className="text-[10px] text-destructive hover:underline flex items-center gap-1"
+                          >
+                            🗑 Удалить репорт
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

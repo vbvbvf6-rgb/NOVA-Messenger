@@ -591,6 +591,18 @@ router.patch("/admin/support/bugs/:id", requireAdmin, async (req, res) => {
   }
 });
 
+router.delete("/admin/support/bugs/:id", requireAdmin, async (req, res) => {
+  try {
+    const bugId = Number(req.params.id);
+    if (!bugId) return res.status(400).json({ error: "Неверный id" });
+    await db.execute(sql`DELETE FROM bug_reports WHERE id = ${bugId}`);
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 router.get("/admin/support/tickets", requireAdmin, async (req, res) => {
   try {
     const rows = await db.execute(sql`

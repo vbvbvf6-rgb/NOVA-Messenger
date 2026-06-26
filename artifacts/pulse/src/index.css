@@ -58,8 +58,8 @@
   --popover-foreground: 220 18% 12%;
   --popover-border: 210 16% 90%;
 
-  /* Softer, warmer amber-orange — much gentler on the eyes */
-  --primary: 32 72% 52%;
+  /* Blue accent */
+  --primary: 213 94% 55%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 210 16% 92%;
@@ -68,7 +68,7 @@
   --muted: 210 14% 91%;
   --muted-foreground: 210 12% 44%;
 
-  --accent: 32 72% 54%;
+  --accent: 213 94% 55%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 80% 58%;
@@ -76,7 +76,7 @@
 
   --border: 210 16% 89%;
   --input: 210 16% 89%;
-  --ring: 32 72% 52%;
+  --ring: 213 94% 55%;
 
   --radius: 1rem;
 }
@@ -94,7 +94,7 @@
   --popover-foreground: 210 24% 97%;
   --popover-border: 222 24% 18%;
 
-  --primary: 22 100% 58%;
+  --primary: 213 94% 60%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 222 24% 15%;
@@ -103,7 +103,7 @@
   --muted: 222 24% 13%;
   --muted-foreground: 210 18% 62%;
 
-  --accent: 22 100% 58%;
+  --accent: 213 94% 60%;
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 80% 60%;
@@ -111,7 +111,7 @@
 
   --border: 222 22% 18%;
   --input: 222 22% 18%;
-  --ring: 22 100% 58%;
+  --ring: 213 94% 60%;
 }
 
 @layer base {
@@ -332,7 +332,7 @@
 
 /* ── Message bubbles ────────────────────────────────────────────────────── */
 .bubble-mine {
-  background: linear-gradient(145deg, hsl(var(--primary)), hsl(16 100% 44%));
+  background: linear-gradient(145deg, hsl(var(--primary)), hsl(213 94% 40%));
   box-shadow: 0 4px 20px -2px hsl(var(--primary) / 0.35), inset 0 1px 1px rgba(255,255,255,0.25);
   border: 1px solid hsl(var(--primary) / 0.85);
   color: hsl(var(--primary-foreground));

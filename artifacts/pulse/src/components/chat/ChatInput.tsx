@@ -3,7 +3,7 @@ import { emojiToTwemojiUrl } from "@/lib/twemoji";
 import { useSendMessage, useGetMe, getGetMessagesQueryKey, getGetChatsQueryKey, Message } from "@workspace/api-client-react";
 import type { P2PChannel } from "@/hooks/useP2PChannel";
 import { useQueryClient } from "@tanstack/react-query";
-import { Paperclip, Mic, SendHorizontal, X, Square, Trash2, Images, Reply, Pencil, Clock, BarChart2, Plus, Minus, Wand2, CalendarClock, Hourglass, Smile, Package } from "lucide-react";
+import { Paperclip, Mic, SendHorizontal, X, Square, Trash2, Images, Reply, Pencil, Clock, BarChart2, Plus, Minus, CalendarClock, Hourglass, Smile, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
@@ -98,8 +98,6 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
   const [pollAllowMultiple, setPollAllowMultiple] = useState(false);
   const [pollSending, setPollSending] = useState(false);
   const [pollError, setPollError] = useState("");
-  const [selectedEffect, setSelectedEffect] = useState<string | null>(null);
-  const [showEffectPicker, setShowEffectPicker] = useState(false);
   const [showMobileActions, setShowMobileActions] = useState(false);
 
   const isPrimePlus = !!(me as any)?.hasPrime && (me as any)?.primeTier === "prime_plus";
@@ -364,18 +362,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
         setText("");
         if (textareaRef.current) textareaRef.current.style.height = "44px";
 
-        if (selectedEffect) {
-          const token = sessionStorage.getItem("pulse-token");
-          const hdrs: Record<string, string> = { "Content-Type": "application/json" };
-          if (token) hdrs["Authorization"] = `Bearer ${token}`;
-          const res = await fetch("/api/messages", {
-            method: "POST",
-            headers: hdrs,
-            body: JSON.stringify({ chatId, text: textToSend, type: "text", replyToId: capturedReplyTo?.id, effect: selectedEffect }),
-          });
-          if (res.ok) { const m = await res.json(); if (m?.id) p2p?.send(m); }
-          setSelectedEffect(null);
-        } else {
+        {
           // Optimistic: add message to cache immediately so user sees it at once
           const tempId = -Date.now();
           queryClient.setQueryData(getGetMessagesQueryKey({ chatId }), (old: any) => {
@@ -1014,17 +1001,6 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                       </span>
                     )}
                   </button>
-                ) : isPrimePlus ? (
-                  <button
-                    type="button"
-                    onClick={() => { setShowEffectPicker(v => !v); setShowMobileActions(false); }}
-                    className="flex flex-col items-center gap-1.5 py-4 px-2 hover:bg-secondary/60 transition-colors text-muted-foreground hover:text-foreground active:bg-secondary"
-                  >
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${selectedEffect ? "bg-purple-500/20" : "bg-purple-500/15"}`}>
-                      <Wand2 size={19} className="text-purple-400" />
-                    </div>
-                    <span className="text-[10px] font-bold leading-none">Эффект</span>
-                  </button>
                 ) : (
                   <button
                     type="button"
@@ -1092,49 +1068,6 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
                       className={`w-10 h-10 md:w-10 md:h-10 flex items-center justify-center rounded-full transition-colors shrink-0 ${showEmoji ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}>
                       <Smile size={20} strokeWidth={1.75} />
                     </button>
-                    {isPrimePlus && (
-                      <div className="relative hidden md:block">
-                        <button
-                          type="button"
-                          onClick={() => setShowEffectPicker(v => !v)}
-                          className={`w-12 h-12 flex items-center justify-center rounded-full transition-colors shrink-0 mb-[2px] ${showEffectPicker || selectedEffect ? "bg-purple-500/20 text-purple-400" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-                          title="Эффект отправки"
-                        >
-                          <Wand2 size={20} />
-                        </button>
-                        <AnimatePresence>
-                          {showEffectPicker && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.9, y: 8 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.9, y: 8 }}
-                              className="absolute bottom-14 left-1/2 -translate-x-1/2 bg-card border border-border rounded-2xl p-2 shadow-xl z-50 flex gap-1.5"
-                            >
-                              {[
-                                { id: null, label: "Нет", icon: "✖" },
-                                { id: "confetti", label: "Конфетти", icon: "🎊" },
-                                { id: "snow", label: "Снег", icon: "❄️" },
-                                { id: "fire", label: "Огонь", icon: "🔥" },
-                              ].map(eff => (
-                                <button
-                                  key={String(eff.id)}
-                                  type="button"
-                                  onClick={() => { setSelectedEffect(eff.id); setShowEffectPicker(false); }}
-                                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all text-center ${
-                                    selectedEffect === eff.id
-                                      ? "bg-purple-500/20 text-purple-400 ring-1 ring-purple-500/40"
-                                      : "hover:bg-secondary text-foreground"
-                                  }`}
-                                >
-                                  <span className="text-lg leading-none">{eff.icon}</span>
-                                  <span className="text-[10px] font-bold leading-none">{eff.label}</span>
-                                </button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )}
                   </>
                 )}
 

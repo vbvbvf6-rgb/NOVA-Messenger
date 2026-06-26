@@ -47,7 +47,7 @@ function VerifiedBadge() {
 function PrimeBadge() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="shrink-0 inline-block">
-      <circle cx="12" cy="12" r="12" fill="#f97316"/>
+      <circle cx="12" cy="12" r="12" fill="#60a5fa"/>
       <path d="M5 15l3-5 4 3 4-3 3 5H5z" fill="white"/>
       <path d="M12 7l1.2 2.5L16 9.8l-1.9 1.9.5 2.8L12 13.2l-2.6 1.3.5-2.8L8 9.8l2.8-.3L12 7z" fill="white"/>
     </svg>
@@ -450,7 +450,7 @@ export function ChatList() {
       <div className="px-4 pb-3" style={{ paddingTop: "max(16px, env(safe-area-inset-top, 16px))" }}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #ea580c, #f97316)", boxShadow: "0 2px 10px rgba(234,88,12,0.45)" }}>
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #3b82f6, #60a5fa)", boxShadow: "0 2px 10px rgba(59,130,246,0.45)" }}>
               <Crown size={15} className="text-white" />
             </div>
             <span className="text-[18px] font-black text-foreground tracking-tight">Aura</span>
@@ -458,7 +458,7 @@ export function ChatList() {
           <button
             onClick={openCreate}
             className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all shrink-0 hover:scale-105 active:scale-95"
-            style={{ background: "linear-gradient(135deg, rgba(234,88,12,0.15), rgba(249,115,22,0.1))", border: "1px solid rgba(234,88,12,0.25)" }}
+            style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(96,165,250,0.1))", border: "1px solid rgba(59,130,246,0.25)" }}
           >
             <SquarePen size={18} className="text-primary" />
           </button>
@@ -751,7 +751,7 @@ export function ChatList() {
                         {chat.unreadCount > 0 && (
                           <div className={cn(
                             "text-[11px] font-black px-2 py-0.5 rounded-full min-w-[22px] text-center leading-none",
-                            chat.isMuted ? "bg-secondary text-muted-foreground border border-border" : "bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(234,88,12,0.4)]"
+                            chat.isMuted ? "bg-secondary text-muted-foreground border border-border" : "bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(59,130,246,0.4)]"
                           )}>
                             {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
                           </div>
@@ -854,7 +854,7 @@ export function ChatList() {
                       <button
                         disabled={!createName.trim()}
                         onClick={() => setCreateStep("members")}
-                        className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-black disabled:opacity-50 hover:bg-primary/90 transition-all text-base shadow-[0_4px_14px_rgba(234,88,12,0.3)] hover:-translate-y-0.5 active:translate-y-0 disabled:shadow-none disabled:-translate-y-0"
+                        className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-black disabled:opacity-50 hover:bg-primary/90 transition-all text-base shadow-[0_4px_14px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 active:translate-y-0 disabled:shadow-none disabled:-translate-y-0"
                       >
                         Далее
                       </button>
@@ -922,7 +922,7 @@ export function ChatList() {
                       <button
                         onClick={handleCreate}
                         disabled={creating}
-                        className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-black disabled:opacity-50 hover:bg-primary/90 transition-all text-base shadow-[0_4px_14px_rgba(234,88,12,0.3)] hover:-translate-y-0.5 active:translate-y-0"
+                        className="w-full py-4 rounded-xl bg-primary text-primary-foreground font-black disabled:opacity-50 hover:bg-primary/90 transition-all text-base shadow-[0_4px_14px_rgba(59,130,246,0.3)] hover:-translate-y-0.5 active:translate-y-0"
                       >
                         {creating ? "Создание..." : `Создать ${createType === "group" ? "группу" : "канал"} (${selectedMembers.length})`}
                       </button>
@@ -998,7 +998,7 @@ export function ChatList() {
                 <button
                   onClick={createFolder}
                   disabled={!newFolderName.trim() || creatingFolder}
-                  className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-black disabled:opacity-50 hover:bg-primary/90 transition-all shadow-[0_4px_14px_rgba(234,88,12,0.3)]"
+                  className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-black disabled:opacity-50 hover:bg-primary/90 transition-all shadow-[0_4px_14px_rgba(59,130,246,0.3)]"
                 >
                   {creatingFolder ? "Создание..." : `Создать папку ${newFolderIcon}`}
                 </button>

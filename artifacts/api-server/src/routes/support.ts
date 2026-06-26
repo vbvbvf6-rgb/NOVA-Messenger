@@ -41,6 +41,19 @@ router.get("/support/bugs", async (req, res) => {
   }
 });
 
+router.delete("/support/bugs/:id", async (req, res) => {
+  try {
+    const uid = req.currentUserId;
+    const bugId = Number(req.params.id);
+    if (!bugId) return res.status(400).json({ error: "Неверный id" });
+    await db.execute(sql`DELETE FROM bug_reports WHERE id = ${bugId} AND user_id = ${uid}`);
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 // ── Support Tickets ───────────────────────────────────────────────────────────
 
 router.post("/support/tickets", async (req, res) => {
@@ -118,18 +131,31 @@ router.post("/support/tickets/:ticketId/messages", async (req, res) => {
   try {
     const uid = req.currentUserId;
     const ticketId = Number(req.params.ticketId);
-    const { text } = req.body;
-    if (!text || !text.trim()) return res.status(400).json({ error: "text обязателен" });
+    const { text, imageUrl } = req.body;
+    if (!text && !imageUrl) return res.status(400).json({ error: "text или imageUrl обязателен" });
 
     const ticketRow = await db.execute(sql`SELECT id, status FROM support_tickets WHERE id = ${ticketId} AND user_id = ${uid}`);
     const ticket = ticketRow.rows[0] as any;
     if (!ticket) return res.status(404).json({ error: "Тикет не найден" });
-    if (ticket.status === 'closed') return res.status(400).json({ error: "Тикет закрыт" });
+
+    // If ticket is closed/resolved, only allow appeal messages
+    const isAppeal = text && text.startsWith("🚩 АПЕЛЛЯЦИЯ:");
+    if ((ticket.status === 'closed' || ticket.status === 'resolved') && !isAppeal) {
+      return res.status(400).json({ error: "Тикет закрыт" });
+    }
+
+    const safeText = text ? String(text).slice(0, 5000) : null;
+    const safeImageUrl = imageUrl ? String(imageUrl).slice(0, 500000) : null;
+
+    // Add image_url column if not exists (safe migration)
+    try {
+      await db.execute(sql`ALTER TABLE support_messages ADD COLUMN IF NOT EXISTS image_url TEXT`);
+    } catch {}
 
     const msgRow = await db.execute(sql`
-      INSERT INTO support_messages (ticket_id, user_id, is_admin, text)
-      VALUES (${ticketId}, ${uid}, false, ${text.trim()})
-      RETURNING id, is_admin, text, created_at, user_id
+      INSERT INTO support_messages (ticket_id, user_id, is_admin, text, image_url)
+      VALUES (${ticketId}, ${uid}, false, ${safeText}, ${safeImageUrl})
+      RETURNING id, is_admin, text, image_url, created_at, user_id
     `);
 
     await db.execute(sql`UPDATE support_tickets SET updated_at = NOW(), status = 'open' WHERE id = ${ticketId}`);

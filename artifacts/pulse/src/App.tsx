@@ -297,11 +297,11 @@ function PwaUpdateBanner() {
             <div className="pointer-events-auto w-full max-w-sm bg-card border border-border rounded-3xl shadow-2xl overflow-hidden">
               {/* Top stripe: animated shimmer when idle, real progress when updating */}
               {!updating ? (
-                <div className="h-1 bg-gradient-to-r from-primary via-orange-400 to-amber-500 animate-pulse" />
+                <div className="h-1 bg-gradient-to-r from-primary via-blue-400 to-blue-500 animate-pulse" />
               ) : (
                 <div className="h-1 bg-secondary/60 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-primary via-orange-400 to-amber-500 transition-all duration-100"
+                    className="h-full bg-gradient-to-r from-primary via-blue-400 to-blue-500 transition-all duration-100"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -310,7 +310,7 @@ function PwaUpdateBanner() {
               <div className="px-6 pt-6 pb-5">
                 {/* Icon */}
                 <div className="flex items-center gap-4 mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
                     <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
                       <path d="M50 13 C50 13 54.5 41 87 50 C54.5 59 50 87 50 87 C50 87 45.5 59 13 50 C45.5 41 50 13 50 13Z" fill="white" />
                     </svg>
@@ -357,7 +357,7 @@ function PwaUpdateBanner() {
                       </button>
                       <button
                         onClick={handleUpdate}
-                        className="flex-[2] py-3 bg-primary text-primary-foreground rounded-[16px] text-[15px] font-black hover:bg-primary/90 transition-all shadow-[0_4px_14px_rgba(234,88,12,0.4)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                        className="flex-[2] py-3 bg-primary text-primary-foreground rounded-[16px] text-[15px] font-black hover:bg-primary/90 transition-all shadow-[0_4px_14px_rgba(59,130,246,0.4)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                       >
                         ✨ Обновить сейчас
                       </button>
@@ -369,7 +369,7 @@ function PwaUpdateBanner() {
                   <div className="space-y-3">
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-100"
+                        className="h-full bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-100"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
