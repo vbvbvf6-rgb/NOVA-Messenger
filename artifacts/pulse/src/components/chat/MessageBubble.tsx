@@ -800,38 +800,61 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
         } catch { albumUrls = [message.mediaUrl || ""]; }
         const visibleCount = Math.min(albumUrls.length, 4);
         const extra = albumUrls.length - 4;
-        const gridClass = visibleCount === 1
-          ? "grid-cols-1"
-          : visibleCount === 2
-          ? "grid-cols-2"
-          : "grid-cols-2";
+        const isThree = visibleCount === 3;
         return (
           <div className="rounded-xl overflow-hidden -mx-1 -mt-1 mb-1">
-            <div className={`grid gap-[1px] ${gridClass}`}>
-              {albumUrls.slice(0, 4).map((url, i) => (
-                <div
-                  key={i}
-                  className="relative overflow-hidden bg-secondary"
-                  style={{ aspectRatio: visibleCount === 1 ? "4/3" : "1/1" }}
-                >
+            {isThree ? (
+              <div className="flex flex-col gap-[1px]">
+                <div className="relative overflow-hidden bg-secondary" style={{ aspectRatio: "16/9" }}>
                   <img
-                    src={url}
-                    alt={`photo ${i + 1}`}
+                    src={albumUrls[0]}
+                    alt="photo 1"
                     className="w-full h-full object-cover cursor-zoom-in block"
-                    onClick={() => setLightbox({ urls: albumUrls, idx: i })}
+                    onClick={() => setLightbox({ urls: albumUrls, idx: 0 })}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
-                  {i === 3 && extra > 0 && (
-                    <div
-                      className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-zoom-in"
-                      onClick={() => setLightbox({ urls: albumUrls, idx: 3 })}
-                    >
-                      <span className="text-white text-2xl font-black">+{extra}</span>
-                    </div>
-                  )}
                 </div>
-              ))}
-            </div>
+                <div className="flex gap-[1px]">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="relative flex-1 overflow-hidden bg-secondary" style={{ aspectRatio: "1/1" }}>
+                      <img
+                        src={albumUrls[i]}
+                        alt={`photo ${i + 1}`}
+                        className="w-full h-full object-cover cursor-zoom-in block"
+                        onClick={() => setLightbox({ urls: albumUrls, idx: i })}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className={`grid gap-[1px] ${visibleCount === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+                {albumUrls.slice(0, 4).map((url, i) => (
+                  <div
+                    key={i}
+                    className="relative overflow-hidden bg-secondary"
+                    style={{ aspectRatio: visibleCount === 1 ? "4/3" : "1/1" }}
+                  >
+                    <img
+                      src={url}
+                      alt={`photo ${i + 1}`}
+                      className="w-full h-full object-cover cursor-zoom-in block"
+                      onClick={() => setLightbox({ urls: albumUrls, idx: i })}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                    {i === 3 && extra > 0 && (
+                      <div
+                        className="absolute inset-0 bg-black/50 flex items-center justify-center cursor-zoom-in"
+                        onClick={() => setLightbox({ urls: albumUrls, idx: 3 })}
+                      >
+                        <span className="text-white text-2xl font-black">+{extra}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
             {albumCaption && <p className="text-[15px] mt-2 px-2 mb-1 font-medium">{albumCaption}</p>}
           </div>
         );

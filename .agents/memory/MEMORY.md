@@ -13,3 +13,4 @@
 - [Prime+ Lounge visibility](prime-lounge.md) — After Prime+ subscribe, must invalidate both /api/users/me AND ["/api/chats"] query keys; otherwise the Lounge chat won't appear until page refresh.
 - [Settings dead code](settings-dead-code.md) — FeaturesSection, aiAvatarGenerating state, handleGenerateAIAvatar, emojiSize state all removed as dead code. Wand2 removed from lucide imports.
 - [WebRTC call signaling](webrtc-call-signaling.md) — pre-offer in startCall was the bug; peer-joined handler creates the offer; identity guard in onconnectionstatechange; relay fallback via createPeerRef.
+- [Call minimize/media fixes](call-minimize-fixes.md) — isCallMinimized/minimizeCall/expandCall added to AppState; getUserMedia uses ideal constraints with 3-tier fallback; visibilitychange resumes audio when tab becomes visible; getDisplayMedia simplified to {video:true,audio:true}.

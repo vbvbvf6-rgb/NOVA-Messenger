@@ -79,6 +79,9 @@ export interface AppState {
   isScreenSharing: boolean;
   callParticipantIds: number[];
   userStatusMap: Record<number, string>;
+  isCallMinimized: boolean;
+  minimizeCall: () => void;
+  expandCall: () => void;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -105,6 +108,9 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const [remoteStreams, setRemoteStreams] = useState<Map<number, MediaStream>>(new Map());
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [userStatusMap, setUserStatusMap] = useState<Record<number, string>>({});
+  const [isCallMinimized, setIsCallMinimized] = useState(false);
+  const minimizeCall = useCallback(() => setIsCallMinimized(true), []);
+  const expandCall = useCallback(() => setIsCallMinimized(false), []);
 
   const currentUserId = Number(sessionStorage.getItem("pulse-user-id") || "1");
   const currentUserIdRef = useRef(currentUserId);
@@ -210,6 +216,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     setLocalStream(null);
     setRemoteStreams(new Map());
     setIsScreenSharing(false);
+    setIsCallMinimized(false);
     setActiveCall(null);
   }, []);
 
@@ -480,34 +487,35 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const startCall = useCallback(async (calleeId: number, chatId: number | null, type: "audio" | "video") => {
     // 1. Get media — always falls back gracefully, never throws
     let stream: MediaStream;
+    const getMedia = async (video: boolean | MediaTrackConstraints): Promise<MediaStream> => {
+      return navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video,
+      });
+    };
     try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === "video" });
-      } else {
+      if (!navigator.mediaDevices?.getUserMedia) {
         stream = createSilentStream();
         window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Медиаустройства недоступны в этом браузере." } }));
-      }
-    } catch (mediaErr: any) {
-      const errName: string = mediaErr?.name ?? "";
-      if (type === "video" && (errName === "NotFoundError" || errName === "DevicesNotFoundError")) {
-        // Camera not found — try audio only
-        try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
-        catch { stream = createSilentStream(); }
-        window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Камера не найдена. Видео недоступно." } }));
-      } else if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
-        // User denied camera/mic — try audio-only as fallback for video calls
-        if (type === "video") {
-          try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
-          catch { stream = createSilentStream(); }
-          window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Доступ к камере запрещён. Видео недоступно." } }));
-        } else {
-          stream = createSilentStream();
-          window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Доступ к микрофону запрещён." } }));
+      } else if (type === "video") {
+        try {
+          stream = await getMedia({ width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" });
+        } catch {
+          // Video failed — try without constraints
+          try { stream = await getMedia(true); }
+          catch {
+            // Camera fully unavailable — fallback to audio only
+            try { stream = await getMedia(false); }
+            catch { stream = createSilentStream(); }
+            window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Камера недоступна. Продолжаем без видео." } }));
+          }
         }
       } else {
-        stream = createSilentStream();
-        window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Не удалось получить доступ к медиаустройствам." } }));
+        try { stream = await getMedia(false); }
+        catch { stream = createSilentStream(); window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Доступ к микрофону запрещён." } })); }
       }
+    } catch {
+      stream = createSilentStream();
     }
     localStreamRef.current = stream;
     setLocalStream(stream);
@@ -577,31 +585,33 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
 
     // 1. Get media — never throws
     let stream: MediaStream;
+    const getMedia2 = async (video: boolean | MediaTrackConstraints): Promise<MediaStream> => {
+      return navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video,
+      });
+    };
     try {
-      if (navigator.mediaDevices?.getUserMedia) {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: call.type === "video" });
-      } else {
+      if (!navigator.mediaDevices?.getUserMedia) {
         stream = createSilentStream();
         window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Медиаустройства недоступны в этом браузере." } }));
-      }
-    } catch (mediaErr: any) {
-      const errName: string = mediaErr?.name ?? "";
-      if (call.type === "video" && (errName === "NotFoundError" || errName === "DevicesNotFoundError")) {
-        try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
-        catch { stream = createSilentStream(); }
-        window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Камера не найдена. Видео недоступно." } }));
-      } else if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
-        if (call.type === "video") {
-          try { stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); }
-          catch { stream = createSilentStream(); }
-          window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Доступ к камере запрещён. Видео недоступно." } }));
-        } else {
-          stream = createSilentStream();
-          window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Доступ к микрофону запрещён." } }));
+      } else if (call.type === "video") {
+        try {
+          stream = await getMedia2({ width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" });
+        } catch {
+          try { stream = await getMedia2(true); }
+          catch {
+            try { stream = await getMedia2(false); }
+            catch { stream = createSilentStream(); }
+            window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Камера недоступна. Продолжаем без видео." } }));
+          }
         }
       } else {
-        stream = createSilentStream();
+        try { stream = await getMedia2(false); }
+        catch { stream = createSilentStream(); window.dispatchEvent(new CustomEvent("pulse:call-error", { detail: { message: "Доступ к микрофону запрещён." } })); }
       }
+    } catch {
+      stream = createSilentStream();
     }
     localStreamRef.current = stream;
     setLocalStream(stream);
@@ -683,7 +693,7 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   const startScreenShare = useCallback(async () => {
     try {
       const screenStream = await (navigator.mediaDevices as any).getDisplayMedia({
-        video: { displaySurface: "monitor" },
+        video: true,
         audio: true,
       });
       screenStreamRef.current = screenStream;
@@ -929,6 +939,9 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
     isScreenSharing,
     callParticipantIds,
     userStatusMap,
+    isCallMinimized,
+    minimizeCall,
+    expandCall,
   };
 
   return <AppContext.Provider value={state}>{children}</AppContext.Provider>;

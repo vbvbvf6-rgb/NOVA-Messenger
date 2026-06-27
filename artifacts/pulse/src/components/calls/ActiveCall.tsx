@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic, MicOff, PhoneOff, Camera, CameraOff,
   Volume2, VolumeX, FlipHorizontal, Maximize2,
-  Monitor, MonitorOff, UserPlus, X, Search,
+  Monitor, MonitorOff, UserPlus, X, Search, Minimize2,
+  Phone, Video,
 } from "lucide-react";
 import { useAppContext } from "@/contexts/AppContext";
 import { useGetContacts } from "@workspace/api-client-react";
@@ -202,6 +203,7 @@ export function ActiveCall() {
     activeCall, currentUserId, hangUp,
     localStream, remoteStream, remoteStreams,
     isScreenSharing, startScreenShare, stopScreenShare,
+    isCallMinimized, minimizeCall, expandCall,
   } = useAppContext();
 
   const [duration, setDuration] = useState(0);
@@ -254,7 +256,7 @@ export function ActiveCall() {
     if (localStream) {
       video.srcObject = localStream;
       video.play().catch(() => {});
-      const hasCam = localStream.getVideoTracks().some((t) => t.enabled && t.readyState !== "ended");
+      const hasCam = localStream.getVideoTracks().some((t) => t.readyState !== "ended");
       setHasLocalVideo(hasCam);
     } else {
       video.srcObject = null;
@@ -263,7 +265,6 @@ export function ActiveCall() {
   }, [localStream]);
 
   // ── Remote audio — simple <audio> element approach ──
-  // Assign stream and attempt play; if blocked show the unlock overlay
   useEffect(() => {
     const audio = remoteAudioRef.current;
     if (!audio) return;
@@ -279,6 +280,20 @@ export function ActiveCall() {
       setAudioUnlocked(false);
     }
   }, [remoteStream]);
+
+  // Resume audio when tab becomes visible again (mobile background audio fix)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        const audio = remoteAudioRef.current;
+        if (audio && audio.paused && audio.srcObject) {
+          audio.play().then(() => setAudioUnlocked(true)).catch(() => {});
+        }
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   // Remote video — always mounted, hidden when no video tracks
   useEffect(() => {
@@ -342,6 +357,57 @@ export function ActiveCall() {
 
   const isOutgoing = activeCall.callerId === currentUserId;
   const isGroup = remoteStreams.size > 1;
+  const isVideo = activeCall.type === "video";
+  const otherUser = isOutgoing ? activeCall.callee : activeCall.caller;
+  const avatarBg = otherUser?.avatarColor || "#444";
+
+  /* ── MINIMIZED FLOATING PILL ── */
+  if (isCallMinimized && activeCall.status === "active") {
+    return (
+      <>
+        <motion.div
+          initial={{ y: -80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -80, opacity: 0 }}
+          className="fixed top-0 left-0 right-0 z-[99999] flex justify-center pointer-events-none"
+          style={{ paddingTop: "max(0.5rem, env(safe-area-inset-top, 0px))" }}
+        >
+          <div
+            className="pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-full bg-card/95 backdrop-blur-md border border-border shadow-[0_4px_32px_rgba(0,0,0,0.18)] cursor-pointer"
+            onClick={expandCall}
+          >
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {isVideo ? <Video size={14} className="text-primary" /> : <Phone size={14} className="text-primary" />}
+            </div>
+            {otherUser && (
+              <span className="text-foreground font-semibold text-sm">{otherUser.displayName}</span>
+            )}
+            <span className="font-mono text-xs text-muted-foreground tabular-nums">
+              {`${String(Math.floor((duration % 3600) / 60)).padStart(2, "0")}:${String(duration % 60).padStart(2, "0")}`}
+            </span>
+            <div className="flex items-center gap-1.5 ml-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); expandCall(); }}
+                className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
+                title="Развернуть"
+              >
+                <Maximize2 size={13} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); hangUp(); }}
+                className="w-7 h-7 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-colors"
+                title="Завершить"
+              >
+                <PhoneOff size={13} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+        <audio ref={remoteAudioRef} autoPlay playsInline style={{ display: "none" }} />
+      </>
+    );
+  }
 
   /* ── OUTGOING / RINGING STATE ── */
   if (activeCall.status === "ringing" && isOutgoing) {
@@ -394,9 +460,6 @@ export function ActiveCall() {
   }
 
   if (activeCall.status !== "active") return null;
-  const otherUser = isOutgoing ? activeCall.callee : activeCall.caller;
-  const isVideo = activeCall.type === "video";
-  const avatarBg = otherUser?.avatarColor || "#444";
 
   return (
     <>
@@ -482,7 +545,7 @@ export function ActiveCall() {
               </div>
 
               {/* Top bar */}
-              <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 pointer-events-none z-10" style={{ paddingTop: "max(1.25rem, env(safe-area-inset-top, 0px))" }}>
+              <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 z-10" style={{ paddingTop: "max(1rem, env(safe-area-inset-top, 0px))" }}>
                 <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full text-white font-mono text-sm tabular-nums">
                   {formatDuration(duration)}
                 </div>
@@ -490,14 +553,20 @@ export function ActiveCall() {
                   {isScreenSharing && (
                     <div className="bg-blue-500/80 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-xs font-semibold flex items-center gap-1.5">
                       <Monitor size={12} />
-                      Демонстрация экрана
+                      Демонстрация
                     </div>
                   )}
-                  <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full text-white text-sm font-medium">
+                  <div className="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-sm font-medium">
                     {isGroup ? `${remoteStreams.size + 1} участника` : otherUser?.displayName}
                   </div>
                 </div>
-                <div className="w-24" />
+                <button
+                  onClick={minimizeCall}
+                  className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white hover:bg-black/80 transition-colors"
+                  title="Свернуть"
+                >
+                  <Minimize2 size={16} />
+                </button>
               </div>
 
               {/* PiP local video */}
@@ -594,6 +663,17 @@ export function ActiveCall() {
                 <SoundWaves active={!isMuted && remoteStreams.size > 0} />
               </div>
             </div>
+          )}
+          {/* Minimize button for audio calls */}
+          {!isVideo && (
+            <button
+              onClick={minimizeCall}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors z-20"
+              style={{ top: "max(1rem, env(safe-area-inset-top, 0px))" }}
+              title="Свернуть"
+            >
+              <Minimize2 size={16} />
+            </button>
           )}
 
           {/* ── CONTROL BAR ── single row ── */}

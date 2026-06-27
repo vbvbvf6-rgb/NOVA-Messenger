@@ -252,7 +252,7 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
   );
 
   const DesktopSidebar = (
-    <div className="hidden md:flex flex-col w-[260px] bg-card dark:bg-[#0a0a0d] rounded-r-[28px] shrink-0 relative z-20 shadow-[4px_0_32px_rgba(0,0,0,0.18)] dark:shadow-[4px_0_32px_rgba(0,0,0,0.55)] overflow-hidden border-r border-border/40" style={{ height: "var(--app-h, 100dvh)" }}>
+    <div className="hidden md:flex flex-col w-[260px] bg-[#f2f3f5] dark:bg-[#0a0a0d] rounded-r-[28px] shrink-0 relative z-20 shadow-[4px_0_32px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_32px_rgba(0,0,0,0.55)] overflow-hidden border-r border-border/40" style={{ height: "var(--app-h, 100dvh)" }}>
       <div className="flex items-center gap-3 px-5 pt-5 pb-4">
         <div className="relative shrink-0 drop-shadow-[0_4px_12px_rgba(255,100,20,0.45)]">
           <PulseLogo size={38} />
@@ -373,7 +373,7 @@ export function Sidebar({ mobileSidebarOpen, onMobileClose, onMobileOpen, onOpen
       <div className="w-full px-4 pb-5 pt-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center gap-3 p-3 rounded-2xl bg-secondary/30 hover:bg-secondary border border-border/30 hover:border-border shadow-sm transition-all focus:outline-none">
+            <button className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/80 hover:bg-white dark:bg-white/5 dark:hover:bg-white/10 border border-black/8 dark:border-white/8 shadow-sm transition-all focus:outline-none">
               <div className="relative shrink-0">
                 {/* Animated ring for Prime+ / static for Prime */}
                 {isPremium && (me as any)?.primeTier === "prime_plus" ? (

@@ -1696,7 +1696,7 @@ export default function Admin() {
                             <p className="text-[10px] text-muted-foreground">@{bug.username} · #{bug.id} · {new Date(bug.created_at).toLocaleDateString("ru-RU")}</p>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 pl-9">{bug.description}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 pl-9 break-words overflow-hidden">{bug.description}</p>
                         {bug.admin_note && (
                           <div className="pl-9 text-[10px] text-primary italic">Ответ: {bug.admin_note}</div>
                         )}

@@ -333,14 +333,7 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
     try {
       if (images.length > 0) {
         const results = await Promise.all(images.map(f => compressImage(f)));
-        setImagePreviews(prev => {
-          const combined = [...prev, ...results];
-          if (combined.length > MAX_IMAGES_PER_ALBUM) {
-            toast({ title: "Максимум 20 фото", description: `Можно прикрепить до ${MAX_IMAGES_PER_ALBUM} фото за раз`, variant: "destructive" });
-            return combined.slice(0, MAX_IMAGES_PER_ALBUM);
-          }
-          return combined;
-        });
+        setImagePreviews(prev => [...prev, ...results]);
         sendTypingEvent("photo");
       }
       if (docs.length > 0) {
@@ -411,15 +404,25 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
             });
             if (sent) p2p?.send(sent as Message);
           } else {
-            // 2+ images — ONE album message with all photos
-            const m = await xhrPost("/api/messages", {
-              chatId,
-              type: "album",
-              mediaUrl: JSON.stringify({ urls: imagePreviews }),
-              text: text.trim() || undefined,
-              replyToId: replyTo?.id,
-            }, token, setUploadProgress);
-            if (m?.id) p2p?.send(m);
+            // 2+ images — split into batches of 20 and send each batch as a separate album
+            const BATCH = 20;
+            const batches: string[][] = [];
+            for (let i = 0; i < imagePreviews.length; i += BATCH) {
+              batches.push(imagePreviews.slice(i, i + BATCH));
+            }
+            for (let b = 0; b < batches.length; b++) {
+              const m = await xhrPost("/api/messages", {
+                chatId,
+                type: "album",
+                mediaUrl: JSON.stringify({ urls: batches[b] }),
+                text: b === 0 ? (text.trim() || undefined) : undefined,
+                replyToId: b === 0 ? replyTo?.id : undefined,
+              }, token, (pct) => {
+                const base = (b / batches.length) * 100;
+                setUploadProgress(Math.round(base + (pct / batches.length)));
+              });
+              if (m?.id) p2p?.send(m);
+            }
           }
         } finally {
           setUploadProgress(null);
