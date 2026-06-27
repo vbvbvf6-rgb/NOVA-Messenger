@@ -680,13 +680,17 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
   // ── inviteToCall ──────────────────────────────────────────────────────────
   const inviteToCall = useCallback(async (inviteeId: number) => {
     const call = activeCallRef.current;
-    if (!call) return;
+    if (!call) throw new Error("No active call");
     const roomId = groupRoomIdRef.current ?? call.id;
-    await fetch(`/api/calls/${roomId}/invite`, {
+    const res = await fetch(`/api/calls/${roomId}/invite`, {
       method: "POST",
       headers: getUserHeaders(),
       body: JSON.stringify({ inviteeId }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as any)?.error || "Invite failed");
+    }
   }, [getUserHeaders]);
 
   // ── screen sharing ────────────────────────────────────────────────────────
@@ -868,6 +872,25 @@ export function AppProvider({ children, onLogout, onSwitchAccount, onRemoveAccou
       sock.off("user-status");
     };
   }, [getSocket]);
+
+  // ── ICE restart on tab re-focus (mobile background fix) ──────────────────
+  // When a mobile browser backgrounds, ICE connections go "disconnected".
+  // JS timers are suspended so the 4-second restart never fires.
+  // Trigger restartIce() immediately when the page becomes visible again.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      if (peersRef.current.size === 0) return;
+      peersRef.current.forEach((pc) => {
+        const ice = pc.iceConnectionState;
+        if (ice === "disconnected" || ice === "failed") {
+          try { pc.restartIce(); } catch {}
+        }
+      });
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
 
   // ── socket cleanup on unmount ─────────────────────────────────────────────
   useEffect(() => {

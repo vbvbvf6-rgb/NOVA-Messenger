@@ -324,13 +324,15 @@ export function ActiveCall() {
   }, [localStream]);
 
   // ── Remote audio — simple <audio> element approach ──
+  // isCallMinimized is in deps because minimize swaps the audio DOM element;
+  // the new element needs srcObject re-attached even though remoteStream didn't change.
   useEffect(() => {
     const audio = remoteAudioRef.current;
     if (!audio) return;
     if (remoteStream) {
       audio.srcObject = remoteStream;
       audio.volume = 1;
-      audio.muted = false;
+      audio.muted = isSpeakerOff;
       audio.play()
         .then(() => setAudioUnlocked(true))
         .catch(() => setAudioUnlocked(false));
@@ -338,7 +340,8 @@ export function ActiveCall() {
       audio.srcObject = null;
       setAudioUnlocked(false);
     }
-  }, [remoteStream]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remoteStream, isCallMinimized]);
 
   // Resume audio when tab becomes visible again (mobile background audio fix)
   useEffect(() => {
@@ -354,15 +357,25 @@ export function ActiveCall() {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
-  // Remote video — always mounted, hidden when no video tracks
+  // Remote video — always keep the <video> element in the DOM so srcObject persists.
+  // Update hasRemoteVideo when tracks are added/ended (handles Firefox per-track delivery).
   useEffect(() => {
     const video = remoteVideoRef.current;
     if (!video) return;
     if (remoteStream) {
       video.srcObject = remoteStream;
       video.play().catch(() => {});
-      const hasCam = remoteStream.getVideoTracks().some((t) => t.readyState !== "ended");
-      setHasRemoteVideo(hasCam);
+      const checkVideo = () => {
+        const hasCam = remoteStream.getVideoTracks().some((t) => t.readyState !== "ended" && t.enabled);
+        setHasRemoteVideo(hasCam);
+      };
+      checkVideo();
+      remoteStream.addEventListener("addtrack", checkVideo);
+      remoteStream.addEventListener("removetrack", checkVideo);
+      return () => {
+        remoteStream.removeEventListener("addtrack", checkVideo);
+        remoteStream.removeEventListener("removetrack", checkVideo);
+      };
     } else {
       video.srcObject = null;
       setHasRemoteVideo(false);
@@ -572,34 +585,42 @@ export function ActiveCall() {
                       <ParticipantTile key={uid} stream={stream} />
                     ))}
                   </div>
-                ) : remoteStream ? (
-                  <video
-                    ref={remoteVideoRef}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-cover"
-                  />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center gap-5 bg-background">
-                    <div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{ background: `radial-gradient(circle at 50% 40%, ${avatarBg}25 0%, transparent 60%)` }}
+                  <>
+                    {/* Video element always in DOM so srcObject survives re-renders */}
+                    <video
+                      ref={remoteVideoRef}
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                      style={{ display: remoteStream && hasRemoteVideo ? "block" : "none" }}
                     />
-                    <motion.div className="relative z-10" animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 3, repeat: Infinity }}>
-                      <PulseRings color={avatarBg} />
-                      <div
-                        className="w-32 h-32 rounded-full flex items-center justify-center text-white font-bold text-5xl relative z-10 overflow-hidden shadow-2xl"
-                        style={{ backgroundColor: avatarBg }}
-                      >
-                        {otherUser?.avatarUrl ? (
-                          <img src={otherUser.avatarUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                        ) : (
-                          otherUser?.displayName?.[0]?.toUpperCase()
-                        )}
+                    {/* Placeholder shown when no stream or no video tracks */}
+                    {(!remoteStream || !hasRemoteVideo) && (
+                      <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center gap-5 bg-background">
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{ background: `radial-gradient(circle at 50% 40%, ${avatarBg}25 0%, transparent 60%)` }}
+                        />
+                        <motion.div className="relative z-10" animate={{ scale: [1, 1.03, 1] }} transition={{ duration: 3, repeat: Infinity }}>
+                          <PulseRings color={avatarBg} />
+                          <div
+                            className="w-32 h-32 rounded-full flex items-center justify-center text-white font-bold text-5xl relative z-10 overflow-hidden shadow-2xl"
+                            style={{ backgroundColor: avatarBg }}
+                          >
+                            {otherUser?.avatarUrl ? (
+                              <img src={otherUser.avatarUrl} alt="" className="w-full h-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                            ) : (
+                              otherUser?.displayName?.[0]?.toUpperCase()
+                            )}
+                          </div>
+                        </motion.div>
+                        <p className="text-muted-foreground text-sm tracking-wide animate-pulse z-10">
+                          {remoteStream ? "Камера отключена" : "Ожидание видео…"}
+                        </p>
                       </div>
-                    </motion.div>
-                    <p className="text-muted-foreground text-sm tracking-wide animate-pulse z-10">Ожидание видео…</p>
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
 

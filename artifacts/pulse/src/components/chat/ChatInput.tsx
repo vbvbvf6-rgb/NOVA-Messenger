@@ -437,9 +437,10 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
           const doc = docPreviews[i];
           setUploadProgress(0);
           try {
+            const isVideo = doc.mime.startsWith("video/");
             const m = await xhrPost("/api/messages", {
               chatId,
-              type: "document",
+              type: isVideo ? "video" : "document",
               mediaUrl: doc.data,
               text: JSON.stringify({ name: doc.name, size: doc.size, mime: doc.mime }),
               replyToId: replyTo?.id,
@@ -449,8 +450,9 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
               setUploadProgress(Math.round(base + (pct / 100) * step));
             });
             if (m?.id) p2p?.send(m);
-            // Remove this doc from previews immediately after successful send
             setDocPreviews(prev => prev.filter(d => d !== doc));
+          } catch (docErr) {
+            toast({ title: "Ошибка отправки", description: `Не удалось отправить «${doc.name}»`, variant: "destructive" });
           } finally {
             if (i === totalDocs - 1) setUploadProgress(null);
           }
