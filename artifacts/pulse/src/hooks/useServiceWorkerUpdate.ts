@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 
-const CHECK_INTERVAL_MS = 30 * 60 * 1000; // check every 30 min
+const CHECK_INTERVAL_MS = 30 * 60 * 1000;
+const JUST_UPDATED_KEY = "aura-just-updated";
+const JUST_UPDATED_TTL_MS = 10_000;
+
+function wasJustUpdated(): boolean {
+  const ts = Number(sessionStorage.getItem(JUST_UPDATED_KEY) ?? "0");
+  return ts > 0 && Date.now() - ts < JUST_UPDATED_TTL_MS;
+}
 
 export function useServiceWorkerUpdate() {
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
@@ -8,16 +15,24 @@ export function useServiceWorkerUpdate() {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
+    // Suppress banner if the user just triggered an update reload
+    if (wasJustUpdated()) {
+      sessionStorage.removeItem(JUST_UPDATED_KEY);
+      return;
+    }
 
     let reg: ServiceWorkerRegistration | null = null;
+    let applied = false;
 
     const markWaiting = (sw: ServiceWorker) => {
+      if (applied) return;
       setWaitingWorker(sw);
       setUpdateAvailable(true);
     };
 
     const watchInstalling = (installing: ServiceWorker) => {
       installing.addEventListener("statechange", () => {
+        if (applied) return;
         if (installing.state === "installed" && navigator.serviceWorker.controller) {
           markWaiting(installing);
         }
@@ -38,14 +53,12 @@ export function useServiceWorkerUpdate() {
       });
     });
 
-    // Poll for updates periodically so the banner shows while app is open
     const interval = setInterval(() => {
       reg?.update().catch(() => {});
     }, CHECK_INTERVAL_MS);
 
-    // Also check when user returns to the tab
     const onVisible = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && !applied) {
         reg?.update().catch(() => {});
       }
     };
@@ -58,10 +71,23 @@ export function useServiceWorkerUpdate() {
   }, []);
 
   const applyUpdate = () => {
-    waitingWorker?.postMessage({ type: "skip-waiting" });
+    if (!waitingWorker) return;
     setUpdateAvailable(false);
-    // Give SW a moment to activate, then reload to get the new bundle
-    setTimeout(() => window.location.reload(), 300);
+    sessionStorage.setItem(JUST_UPDATED_KEY, String(Date.now()));
+
+    const onControllerChange = () => {
+      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      window.location.reload();
+    };
+    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+
+    waitingWorker.postMessage({ type: "skip-waiting" });
+
+    // Fallback reload if controllerchange never fires within 2s
+    setTimeout(() => {
+      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      window.location.reload();
+    }, 2000);
   };
 
   return { updateAvailable, applyUpdate };
