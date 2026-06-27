@@ -248,28 +248,11 @@ function PwaUpdateBanner() {
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   const [dismissed, setDismissed] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   const handleUpdate = () => {
     setUpdating(true);
-    setProgress(0);
-
-    // Animate progress bar over ~2 seconds
-    const startTime = Date.now();
-    const duration = 2000;
-    const tick = () => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min(100, Math.round((elapsed / duration) * 100));
-      setProgress(pct);
-      if (pct < 100) {
-        requestAnimationFrame(tick);
-      } else {
-        // Mark changelog to show after reload, then apply update
-        localStorage.setItem("aura-pending-changelog", "true");
-        setTimeout(() => applyUpdate(), 150);
-      }
-    };
-    requestAnimationFrame(tick);
+    localStorage.setItem("aura-pending-changelog", "true");
+    applyUpdate();
   };
 
   const show = updateAvailable && !dismissed;
@@ -277,111 +260,62 @@ function PwaUpdateBanner() {
   return (
     <AnimatePresence>
       {show && (
-        <>
-          <motion.div
-            key="pwa-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[500] bg-black/60 backdrop-blur-sm"
-            onClick={() => !updating && setDismissed(true)}
-          />
-          <motion.div
-            key="pwa-modal"
-            initial={{ opacity: 0, scale: 0.92, y: 32 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 32 }}
-            transition={{ type: "spring", damping: 26, stiffness: 340 }}
-            className="fixed inset-0 z-[501] flex items-center justify-center p-5 pointer-events-none"
-          >
-            <div className="pointer-events-auto w-full max-w-sm bg-card border border-border rounded-3xl shadow-2xl overflow-hidden">
-              {/* Top stripe: animated shimmer when idle, real progress when updating */}
-              {!updating ? (
-                <div className="h-1 bg-gradient-to-r from-primary via-blue-400 to-blue-500 animate-pulse" />
-              ) : (
-                <div className="h-1 bg-secondary/60 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary via-blue-400 to-blue-500 transition-all duration-100"
-                    style={{ width: `${progress}%` }}
-                  />
+        <motion.div
+          key="pwa-toast"
+          initial={{ opacity: 0, y: 80, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 80, scale: 0.95 }}
+          transition={{ type: "spring", damping: 28, stiffness: 360 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[500] w-[calc(100%-2rem)] max-w-sm pointer-events-auto"
+        >
+          <div className="bg-card border border-primary/30 rounded-2xl shadow-2xl shadow-primary/10 overflow-hidden">
+            {/* Progress stripe at top */}
+            <div className={`h-0.5 bg-gradient-to-r from-primary via-blue-400 to-blue-500 ${!updating ? "animate-pulse" : ""}`}
+              style={updating ? { width: "100%", transition: "width 0.3s" } : {}}
+            />
+            <div className="flex items-center gap-3 px-4 py-3">
+              {/* Icon */}
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shrink-0 shadow shadow-primary/30">
+                <svg width="18" height="18" viewBox="0 0 100 100" fill="none">
+                  <path d="M50 13 C50 13 54.5 41 87 50 C54.5 59 50 87 50 87 C50 87 45.5 59 13 50 C45.5 41 50 13 50 13Z" fill="white" />
+                </svg>
+              </div>
+
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold text-foreground leading-tight">
+                  {updating ? "Устанавливаю обновление…" : "Доступно обновление Aura"}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {updating ? "Страница перезагрузится автоматически" : "Скачано и готово к установке"}
+                </p>
+              </div>
+
+              {/* Actions */}
+              {!updating && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setDismissed(true)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
+                    title="Позже"
+                  >
+                    <X size={14} />
+                  </button>
+                  <button
+                    onClick={handleUpdate}
+                    className="px-3 py-1.5 rounded-xl bg-primary text-primary-foreground text-[12px] font-black hover:bg-primary/90 transition-all shadow-[0_2px_10px_rgba(59,130,246,0.35)] active:scale-95"
+                  >
+                    Обновить
+                  </button>
                 </div>
               )}
 
-              <div className="px-6 pt-6 pb-5">
-                {/* Icon */}
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
-                    <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
-                      <path d="M50 13 C50 13 54.5 41 87 50 C54.5 59 50 87 50 87 C50 87 45.5 59 13 50 C45.5 41 50 13 50 13Z" fill="white" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-black uppercase tracking-widest text-primary mb-0.5">Новая версия</p>
-                    <h2 className="text-[20px] font-black text-foreground leading-tight">
-                      {updating ? "Устанавливаю..." : "Обновление Aura"}
-                    </h2>
-                    <p className="text-[13px] text-muted-foreground">
-                      {updating ? `${progress}% готово` : "готово к установке"}
-                    </p>
-                  </div>
-                </div>
-
-                {!updating && (
-                  <>
-                    {/* Description */}
-                    <div className="bg-secondary/60 border border-border rounded-2xl px-4 py-3 mb-5 space-y-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-green-500/15 flex items-center justify-center shrink-0">
-                          <Download size={14} className="text-green-400" />
-                        </div>
-                        <p className="text-[13px] text-foreground font-medium">Обновление уже скачано</p>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
-                          <RefreshCw size={14} className="text-blue-400" />
-                        </div>
-                        <p className="text-[13px] text-muted-foreground">После обновления откроется список изменений</p>
-                      </div>
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex gap-2.5">
-                      <button
-                        onClick={() => {
-                          localStorage.setItem("aura-update-pending", "true");
-                          setDismissed(true);
-                        }}
-                        className="flex-1 py-3 rounded-[16px] border border-border text-sm font-semibold text-muted-foreground hover:bg-secondary transition-all"
-                      >
-                        Позже
-                      </button>
-                      <button
-                        onClick={handleUpdate}
-                        className="flex-[2] py-3 bg-primary text-primary-foreground rounded-[16px] text-[15px] font-black hover:bg-primary/90 transition-all shadow-[0_4px_14px_rgba(59,130,246,0.4)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
-                      >
-                        ✨ Обновить сейчас
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {updating && (
-                  <div className="space-y-3">
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-100"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <p className="text-[13px] text-center text-muted-foreground">
-                      Пожалуйста, не закрывайте приложение…
-                    </p>
-                  </div>
-                )}
-              </div>
+              {updating && (
+                <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin shrink-0" />
+              )}
             </div>
-          </motion.div>
-        </>
+          </div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
