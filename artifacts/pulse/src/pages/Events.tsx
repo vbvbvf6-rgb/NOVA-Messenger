@@ -114,6 +114,8 @@ export default function Events() {
   const [progress, setProgress] = useState<Record<string, number>>(loadProgress);
   const [joined, setJoined] = useState<Set<number>>(loadJoined);
   const [sparks, setSparks] = useState<number>(() => Number(localStorage.getItem("pulse-sparks") || "0"));
+  const mountedRef = React.useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
   const [claimAnim, setClaimAnim] = useState<string | null>(null);
   const [questFilter, setQuestFilter] = useState<"all" | "daily" | "weekly" | "special">("all");
   const [apiEvents, setApiEvents] = useState<ApiEvent[]>([]);
@@ -183,15 +185,15 @@ export default function Events() {
       fetch("/api/platform-events/joined", { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.ok ? r.json() : []).catch(() => []),
     ]).then(([events, joinedIds]) => {
+      if (!mountedRef.current) return;
       setApiEvents(Array.isArray(events) ? events : []);
-      if (Array.isArray(joinedIds) && joinedIds.length > 0) {
-        setJoined(prev => {
-          const next = new Set([...prev, ...joinedIds.map(Number)]);
-          saveJoined(next);
-          return next;
-        });
-      }
-    }).finally(() => setEventsLoading(false));
+      // Use server's authoritative joined list merged with any local optimistic joins
+      const serverSet = new Set<number>(Array.isArray(joinedIds) ? joinedIds.map(Number) : []);
+      const localSet = loadJoined();
+      const merged = new Set<number>([...serverSet, ...localSet]);
+      saveJoined(merged);
+      setJoined(merged);
+    }).finally(() => { if (mountedRef.current) setEventsLoading(false); });
   }, []);
 
   /* Build quest list with persisted progress */
@@ -298,7 +300,7 @@ export default function Events() {
     const isJoined = joined.has(id);
     const token = sessionStorage.getItem("pulse-token");
 
-    // Optimistic update
+    // Optimistic update — save to localStorage immediately so state persists on navigation
     setJoined(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -314,26 +316,39 @@ export default function Events() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!r.ok) {
-        // Revert on failure
-        setJoined(prev => {
-          const next = new Set(prev);
-          if (isJoined) next.add(id); else next.delete(id);
-          saveJoined(next);
-          return next;
-        });
+        // Only revert if component is still mounted — prevents localStorage rollback after navigation
+        if (mountedRef.current) {
+          setJoined(prev => {
+            const next = new Set(prev);
+            if (isJoined) next.add(id); else next.delete(id);
+            saveJoined(next);
+            return next;
+          });
+        } else {
+          // Component unmounted — revert only localStorage
+          const current = loadJoined();
+          if (isJoined) current.add(id); else current.delete(id);
+          saveJoined(current);
+        }
         if (r.status === 402) {
           const data = await r.json().catch(() => ({}));
           alert(data.error || "Недостаточно искр");
         }
       }
     } catch {
-      // Revert on network error
-      setJoined(prev => {
-        const next = new Set(prev);
-        if (isJoined) next.add(id); else next.delete(id);
-        saveJoined(next);
-        return next;
-      });
+      // Revert on network error, same mounted check
+      if (mountedRef.current) {
+        setJoined(prev => {
+          const next = new Set(prev);
+          if (isJoined) next.add(id); else next.delete(id);
+          saveJoined(next);
+          return next;
+        });
+      } else {
+        const current = loadJoined();
+        if (isJoined) current.add(id); else current.delete(id);
+        saveJoined(current);
+      }
     }
   }
 

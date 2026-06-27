@@ -870,13 +870,62 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
         let docMeta = { name: "Файл", size: 0, mime: "application/octet-stream" };
         try { docMeta = { ...docMeta, ...JSON.parse(message.text || "{}") }; } catch {}
         const ext = docMeta.name.split(".").pop()?.toLowerCase() ?? "";
+        const isAudioFile = docMeta.mime.startsWith("audio/") || ["mp3","ogg","wav","flac","aac","m4a","opus","wma"].includes(ext);
+        const isVideoFile = docMeta.mime.startsWith("video/") || ["mp4","webm","mkv","avi","mov","m4v"].includes(ext);
         const iconColor =
           docMeta.mime === "application/pdf" ? "text-red-400 bg-red-500/10" :
           ["zip","rar","7z","tar","gz"].includes(ext) ? "text-yellow-400 bg-yellow-500/10" :
           ["js","ts","html","css","py","json","xml","php"].includes(ext) ? "text-green-400 bg-green-500/10" :
           ["doc","docx","xls","xlsx","ppt","pptx"].includes(ext) ? "text-blue-400 bg-blue-500/10" :
+          isAudioFile ? "text-purple-400 bg-purple-500/10" :
+          isVideoFile ? "text-blue-400 bg-blue-500/10" :
           "text-muted-foreground bg-secondary";
         const formatBytes = (b: number) => b < 1024 ? `${b} Б` : b < 1048576 ? `${(b/1024).toFixed(1)} КБ` : `${(b/1048576).toFixed(1)} МБ`;
+        if (isAudioFile && message.mediaUrl) {
+          return (
+            <div className="py-1 min-w-[220px]">
+              <audio
+                src={message.mediaUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full max-w-[280px] rounded-xl"
+                style={{ height: 36 }}
+                onClick={e => e.stopPropagation()}
+              />
+              <a
+                href={message.mediaUrl}
+                download={docMeta.name}
+                className={`block mt-1 text-[11px] ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"} truncate hover:underline`}
+                onClick={e => e.stopPropagation()}
+              >
+                {docMeta.name} {docMeta.size > 0 ? `· ${formatBytes(docMeta.size)}` : ""}
+              </a>
+            </div>
+          );
+        }
+        if (isVideoFile && message.mediaUrl) {
+          return (
+            <div className="rounded-xl overflow-hidden -mx-1 -mt-1 mb-1">
+              <video
+                src={message.mediaUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="max-w-[280px] max-h-[320px] w-full block rounded-xl"
+                onClick={e => e.stopPropagation()}
+              />
+              <a
+                href={message.mediaUrl}
+                download={docMeta.name}
+                className={`block px-2 pb-1 pt-1 text-[11px] ${isMine ? "text-primary-foreground/60" : "text-muted-foreground"} truncate hover:underline`}
+                onClick={e => e.stopPropagation()}
+              >
+                {docMeta.name} {docMeta.size > 0 ? `· ${formatBytes(docMeta.size)}` : ""}
+              </a>
+            </div>
+          );
+        }
         return (
           <a
             href={message.mediaUrl || ""}
@@ -892,6 +941,8 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
                docMeta.mime === "application/pdf" ? <span className="text-lg">📄</span> :
                ["doc","docx"].includes(ext) ? <span className="text-lg">📝</span> :
                ["xls","xlsx"].includes(ext) ? <span className="text-lg">📊</span> :
+               isAudioFile ? <span className="text-lg">🎵</span> :
+               isVideoFile ? <span className="text-lg">🎬</span> :
                <span className="text-lg">📎</span>}
             </div>
             <div className="flex-1 min-w-0">
