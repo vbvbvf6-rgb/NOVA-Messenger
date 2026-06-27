@@ -318,10 +318,14 @@ function PollDisplay({ pollData, messageId, chatId, currentUserId, isMine }: {
               onClick={() => handleVote(i)}
               disabled={voting}
               className={cn(
-                "w-full text-left rounded-xl overflow-hidden transition-all relative",
+                "w-full text-left rounded-xl overflow-hidden transition-all relative border",
                 isMyVote
-                  ? isMine ? "ring-2 ring-white/50" : "ring-2 ring-primary"
-                  : "hover:scale-[1.01] active:scale-[0.99]"
+                  ? isMine
+                    ? "ring-2 ring-white/50 border-white/30"
+                    : "ring-2 ring-primary border-primary/40"
+                  : isMine
+                    ? "border-white/15 hover:scale-[1.01] active:scale-[0.99]"
+                    : "border-border/60 hover:scale-[1.01] active:scale-[0.99]"
               )}
             >
               <div
@@ -334,13 +338,13 @@ function PollDisplay({ pollData, messageId, chatId, currentUserId, isMine }: {
                 style={{ width: `${pct}%`, minWidth: pct > 0 ? "8px" : "0" }}
               />
               <div className={cn(
-                "relative px-3 py-2 flex items-center justify-between",
-                isMine ? "bg-black/5" : "bg-secondary/50"
+                "relative px-3 py-2.5 flex items-center justify-between gap-2",
+                isMine ? "bg-black/8" : "bg-secondary/40"
               )}>
-                <span className={cn("text-[13px] font-semibold truncate pr-2", isMine ? "text-white" : "text-foreground")}>
+                <span className={cn("text-[13px] font-semibold truncate", isMine ? "text-white" : "text-foreground")}>
                   {option}
                 </span>
-                <span className={cn("text-[12px] font-black shrink-0", isMine ? "text-white/70" : "text-muted-foreground")}>
+                <span className={cn("text-[12px] font-black shrink-0 tabular-nums", isMine ? "text-white/70" : "text-primary/80")}>
                   {pct}%
                 </span>
               </div>
@@ -467,7 +471,7 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
     setDisplayedWords(0);
     typingDoneRef.current = false;
     let idx = 0;
-    const WORD_DELAY = Math.max(18, Math.min(45, 2400 / words.length));
+    const WORD_DELAY = Math.max(8, Math.min(14, 800 / words.length));
     const timer = setInterval(() => {
       idx++;
       setDisplayedWords(idx);
@@ -1049,7 +1053,7 @@ export function MessageBubble({ message, onReply, onEdit, ownBubbleStyle, onPin,
         >
         <div className={cn(
           "flex",
-          message.type === "audio" ? "max-w-[75%] md:max-w-[65%]" : "max-w-[85%] md:max-w-[70%]",
+          message.type === "audio" ? "max-w-[75%] md:max-w-[65%]" : (message.type === "album" ? "max-w-[72%] md:max-w-[60%]" : "max-w-[85%] md:max-w-[70%]"),
           isMine ? "flex-row-reverse" : "flex-row",
           "items-end gap-2.5"
         )}>

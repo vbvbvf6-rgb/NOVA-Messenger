@@ -242,6 +242,65 @@ export function ActiveCall() {
     return stop;
   }, [activeCall?.id, activeCall?.status, activeCall?.callerId, currentUserId]);
 
+  // Keep audio alive when tab is hidden / browser backgrounded on mobile
+  useEffect(() => {
+    if (!activeCall || activeCall.status !== "active") return;
+
+    // 1. Register MediaSession so OS treats this as active audio and doesn't suspend it
+    if ("mediaSession" in navigator) {
+      try {
+        (navigator as any).mediaSession.metadata = new (window as any).MediaMetadata({
+          title: "Звонок",
+          artist: "Aura Messenger",
+          album: "Активный звонок",
+        });
+        (navigator as any).mediaSession.playbackState = "playing";
+        (navigator as any).mediaSession.setActionHandler?.("pause", null);
+        (navigator as any).mediaSession.setActionHandler?.("stop", null);
+      } catch {}
+    }
+
+    // 2. Silent AudioContext oscillator — prevents mobile browser from suspending JS audio pipeline
+    let ac: AudioContext | null = null;
+    let sourceNode: AudioBufferSourceNode | null = null;
+    let running = true;
+    const scheduleNextBuffer = () => {
+      if (!ac || !running || ac.state === "closed") return;
+      try {
+        const buf = ac.createBuffer(1, Math.ceil(ac.sampleRate * 0.5), ac.sampleRate);
+        sourceNode = ac.createBufferSource();
+        sourceNode.buffer = buf;
+        const gain = ac.createGain();
+        gain.gain.value = 0.0001; // nearly silent but non-zero to keep pipeline active
+        sourceNode.connect(gain);
+        gain.connect(ac.destination);
+        sourceNode.onended = scheduleNextBuffer;
+        sourceNode.start();
+      } catch {}
+    };
+    try {
+      ac = new AudioContext();
+      if (ac.state === "suspended") ac.resume().catch(() => {});
+      scheduleNextBuffer();
+    } catch {}
+
+    // 3. Wake Lock to prevent screen sleep (not all browsers support it)
+    let wakeLock: any = null;
+    if ("wakeLock" in navigator) {
+      (navigator as any).wakeLock.request("screen").then((wl: any) => { wakeLock = wl; }).catch(() => {});
+    }
+
+    return () => {
+      running = false;
+      try { sourceNode?.stop(); } catch {}
+      ac?.close().catch(() => {});
+      wakeLock?.release().catch(() => {});
+      if ("mediaSession" in navigator) {
+        try { (navigator as any).mediaSession.playbackState = "none"; } catch {}
+      }
+    };
+  }, [activeCall?.id, activeCall?.status]);
+
   useEffect(() => {
     if (!activeCall || activeCall.status !== "active") return;
     setDuration(0);

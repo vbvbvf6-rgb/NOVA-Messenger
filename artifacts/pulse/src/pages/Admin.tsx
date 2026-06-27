@@ -255,6 +255,7 @@ export default function Admin() {
   interface TicketDetail extends AdminSupportTicket { messages: SupportMessage[]; }
 
   const [bugs, setBugs] = useState<AdminBugReport[]>([]);
+  const [expandedBugs, setExpandedBugs] = useState<Set<number>>(new Set());
   const [bugsLoading, setBugsLoading] = useState(false);
   const [showBugs, setShowBugs] = useState(false);
   const [bugActionId, setBugActionId] = useState<number | null>(null);
@@ -1675,7 +1676,14 @@ export default function Admin() {
                   <div className="p-6 text-center text-sm text-muted-foreground">Репортов нет</div>
                 ) : (
                   <div className="divide-y divide-border max-h-[480px] overflow-y-auto">
-                    {bugs.map(bug => (
+                    {bugs.map(bug => {
+                      const isExpanded = expandedBugs.has(bug.id);
+                      const toggleExpand = () => setExpandedBugs(prev => {
+                        const s = new Set(prev);
+                        s.has(bug.id) ? s.delete(bug.id) : s.add(bug.id);
+                        return s;
+                      });
+                      return (
                       <div key={bug.id} className="p-3 space-y-2">
                         <div className="flex items-start gap-2">
                           <div className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold overflow-hidden" style={{ backgroundColor: bug.avatar_color }}>
@@ -1683,7 +1691,7 @@ export default function Admin() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1">
-                              <p className="text-xs font-semibold truncate">{bug.title}</p>
+                              <p className="text-xs font-semibold break-words min-w-0">{bug.title}</p>
                               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${
                                 bug.status === 'new' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' :
                                 bug.status === 'in_progress' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' :
@@ -1696,7 +1704,14 @@ export default function Admin() {
                             <p className="text-[10px] text-muted-foreground">@{bug.username} · #{bug.id} · {new Date(bug.created_at).toLocaleDateString("ru-RU")}</p>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2 pl-9 break-words overflow-hidden">{bug.description}</p>
+                        <div className="pl-9">
+                          <p className={`text-xs text-muted-foreground break-words ${isExpanded ? "" : "line-clamp-2"}`}>{bug.description}</p>
+                          {bug.description && bug.description.length > 120 && (
+                            <button onClick={toggleExpand} className="text-[10px] text-primary mt-0.5 hover:underline">
+                              {isExpanded ? "Свернуть" : "Читать полностью"}
+                            </button>
+                          )}
+                        </div>
                         {bug.admin_note && (
                           <div className="pl-9 text-[10px] text-primary italic">Ответ: {bug.admin_note}</div>
                         )}
@@ -1743,7 +1758,8 @@ export default function Admin() {
                           </button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
