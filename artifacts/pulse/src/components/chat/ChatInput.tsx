@@ -388,68 +388,37 @@ export function ChatInput({ chatId, onMessageSent, replyTo, editMessage, onCance
         setRecordSeconds(0);
       } else if (imagePreviews.length > 0) {
         const token = sessionStorage.getItem("pulse-token");
-        const caption = text.trim() || undefined;
-        const capturedReplyId = replyTo?.id;
-        const BATCH = 4; // album grid shows max 4; keep each request small
-        // Snapshot the list so user edits during upload don't shift indices
-        const snapshot = [...imagePreviews];
-        const totalBatches = Math.ceil(snapshot.length / BATCH);
-        let captionUsed = false; // ensure caption/reply only go on the first successfully sent batch
-
-        for (let b = 0; b < totalBatches; b++) {
-          const batch = snapshot.slice(b * BATCH, (b + 1) * BATCH);
-          const attachMeta = !captionUsed;
-          setUploadProgress(Math.round((b / totalBatches) * 100));
-          try {
-            if (batch.length === 1) {
-              // Single image — lighter mutation path
-              const sent = await sendMessage.mutateAsync({
-                data: {
-                  chatId,
-                  type: "image",
-                  mediaUrl: batch[0],
-                  text: attachMeta ? caption : undefined,
-                  replyToId: attachMeta ? capturedReplyId : undefined,
-                }
-              });
-              if (sent) p2p?.send(sent as Message);
-            } else {
-              // 2-4 images → album
-              const m = await xhrPost("/api/messages", {
+        setUploadProgress(0);
+        try {
+          if (imagePreviews.length === 1) {
+            // Single image — lighter mutation path
+            const sent = await sendMessage.mutateAsync({
+              data: {
                 chatId,
-                type: "album",
-                mediaUrl: JSON.stringify({ urls: batch }),
-                text: attachMeta ? caption : undefined,
-                replyToId: attachMeta ? capturedReplyId : undefined,
-              }, token, (pct) => {
-                const base = (b / totalBatches) * 100;
-                const step = (1 / totalBatches) * 100;
-                setUploadProgress(Math.round(base + (pct / 100) * step));
-              });
-              if (m?.id) p2p?.send(m);
-            }
-            captionUsed = true;
-            // Remove exactly the sent batch items from state, one-at-a-time by value
-            // so duplicate base64 strings don't cause over-removal
-            setImagePreviews(prev => {
-              const remaining = [...prev];
-              for (const img of batch) {
-                const idx = remaining.indexOf(img);
-                if (idx >= 0) remaining.splice(idx, 1);
+                type: "image",
+                mediaUrl: imagePreviews[0],
+                text: text.trim() || undefined,
+                replyToId: replyTo?.id,
               }
-              return remaining;
             });
-            // Clear caption/reply from input immediately after first batch lands
-            if (attachMeta) {
-              setText("");
-              onCancelReply?.();
-            }
-          } catch (batchErr) {
-            setUploadProgress(null);
-            throw batchErr; // outer catch will show error toast
+            if (sent) p2p?.send(sent as Message);
+          } else {
+            // 2+ images — ONE album message with all photos
+            const m = await xhrPost("/api/messages", {
+              chatId,
+              type: "album",
+              mediaUrl: JSON.stringify({ urls: imagePreviews }),
+              text: text.trim() || undefined,
+              replyToId: replyTo?.id,
+            }, token, setUploadProgress);
+            if (m?.id) p2p?.send(m);
           }
+        } finally {
+          setUploadProgress(null);
         }
-        setUploadProgress(null);
+        setImagePreviews([]);
+        setText("");
+        onCancelReply?.();
       } else if (docPreviews.length > 0) {
         const token = sessionStorage.getItem("pulse-token");
         const totalDocs = docPreviews.length;

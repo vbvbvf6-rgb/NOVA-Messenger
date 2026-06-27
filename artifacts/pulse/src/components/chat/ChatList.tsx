@@ -628,6 +628,14 @@ export function ChatList() {
                   ? "📞 Звонок"
                   : lastMessage.type === "sticker"
                   ? "🎨 Стикер"
+                  : lastMessage.type === "album"
+                  ? "📷 Фото"
+                  : lastMessage.type === "document"
+                  ? "📎 Файл"
+                  : lastMessage.type === "video"
+                  ? "🎥 Видео"
+                  : lastMessage.type === "poll"
+                  ? "📊 Голосование"
                   : `[${lastMessage.type}]`
                 : "Нет сообщений";
 

@@ -500,7 +500,13 @@ router.post("/messages", async (req, res) => {
         const chatAvatar = chatInfo?.avatar_url || null;
 
         const effectLabel = allowedEffect === "confetti" ? " 🎊" : allowedEffect === "snow" ? " ❄️" : allowedEffect === "fire" ? " 🔥" : "";
-        const msgBody = body.type === "image" ? "📷 Фото" : body.type === "audio" ? "🎤 Голосовое" : (body.text || "") + effectLabel;
+        const msgBody = body.type === "image" ? "📷 Фото"
+          : body.type === "album" ? "📷 Фото"
+          : body.type === "audio" ? "🎤 Голосовое"
+          : body.type === "document" ? "📎 Файл"
+          : body.type === "sticker" ? "🎨 Стикер"
+          : body.type === "video" ? "🎥 Видео"
+          : (body.text || "") + effectLabel;
 
         // For group/channel: title = chatName, icon = chatAvatar; for direct: title = senderName, icon = senderAvatar
         const notifTitle = chatType === "direct" ? senderName : (chatInfo?.name || senderName);
